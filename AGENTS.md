@@ -18,3 +18,6 @@ package docs are unavailable, use <https://eve.dev/docs> as a fallback.
 
 - Do not add fail-open stubs or silent fallbacks that make broken required
   integrations look successful.
+- Before handing work over, run the repo validation command (`pnpm check`). Keep
+  all required validators wired into that command instead of relying on separate
+  remembered steps.
