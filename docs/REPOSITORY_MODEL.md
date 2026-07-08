@@ -21,6 +21,12 @@ The repository input contract captures:
 - `allowedActions`: clone, read, search, patch, run checks, and export diff.
 - `provenanceLabel`: `working-documentation-repository`.
 
+The app can persist app-local configuration in the untracked
+`.docs-maintainer/config.json` file. This is not a user, tenant, or account
+model. The first persisted setting is the default working documentation
+repository input, used when a session does not provide an explicit repository
+input. Explicit scenario input always wins.
+
 Host local paths are not supported as repository sources for the main workflow.
 Local development and production use the same sandbox-first contract: GitHub URL
 to Eve sandbox to report, diff artifact, and approved GitHub writeback.
@@ -31,10 +37,11 @@ to Eve sandbox to report, diff artifact, and approved GitHub writeback.
 uses `vercel()` when deployed on Vercel. Set `EVE_SANDBOX_BACKEND=vercel` during
 local development to test against hosted Vercel Sandbox explicitly.
 
-Both supported backends enforce the same initial network policy: only GitHub and
-GitHub content domains needed for repository materialization are allowed.
-Package-manager, provider, and arbitrary internet egress are out of scope until
-a later workflow explicitly requires them.
+Both supported backends enforce the same initial network policy: GitHub and
+GitHub content domains needed for repository materialization are allowed, and
+the npm registry domains needed for locked dependency installation are allowed
+so sandboxed docs checks can run. Provider and arbitrary internet egress remain
+out of scope until a later workflow explicitly requires them.
 
 If the sandbox cannot be created, the repository cannot be cloned or
 materialized, or the input uses an unsupported source such as a host local path,

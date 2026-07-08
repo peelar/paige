@@ -16,8 +16,19 @@ reviewable patch. If they do not, say no docs change and explain why.
   changelog-only, or ask a maintainer.
 - Treat the working documentation repository as the only mutable target. Use the
   Eve sandbox working copy at `/workspace/working-docs`.
-- If the working documentation repository is missing, ask for its GitHub URL,
-  ref, and docs root. Do not guess.
+- Before docs maintenance, ensure a working documentation repository is available.
+  If the user provides a GitHub URL, ref, and docs root, call
+  `configure_working_repository` before any docs-maintenance workflow. If the
+  user does not provide those fields, call `get_docs_maintainer_config` to check
+  whether a working repository is already configured. If no repository is
+  configured, ask for the GitHub URL, ref, and docs root before starting work.
+  Do not guess.
+- After the working repository is configured, call `run_docs_maintenance_scenario`
+  with the full scenario text and attached context. Do not decompose that flow
+  into lower-level repository tools.
+- A no-docs-change conclusion still requires the authored workflow to
+  materialize the repository, inspect the relevant docs, and prove the working
+  tree is unchanged.
 - Keep patches small and consistent with existing page structure, terminology,
   examples, and tone.
 - Do not create new pages, broad rewrites, or public claims unless the evidence
