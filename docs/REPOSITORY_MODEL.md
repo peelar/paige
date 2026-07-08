@@ -8,7 +8,7 @@ mutable target. Everything else is evidence for the documentation impact report.
 
 The working documentation repository is a GitHub-hosted docs-as-code repository
 provided by URL, ref, and docs root. It is cloned or materialized into the Eve
-Vercel sandbox at `/workspace/working-docs`.
+sandbox at `/workspace/working-docs`.
 
 The repository input contract captures:
 
@@ -23,14 +23,18 @@ The repository input contract captures:
 
 Host local paths are not supported as repository sources for the main workflow.
 Local development and production use the same sandbox-first contract: GitHub URL
-to Eve Vercel sandbox to report, diff artifact, and approved GitHub writeback.
+to Eve sandbox to report, diff artifact, and approved GitHub writeback.
 
 ## Sandbox Boundary
 
-`agent/sandbox.ts` pins the Eve sandbox backend to Vercel Sandbox. The initial
-network policy only allows GitHub and GitHub content domains needed for
-repository materialization. Package-manager, provider, and arbitrary internet
-egress are out of scope until a later workflow explicitly requires them.
+`agent/sandbox.ts` uses `microsandbox()` by default for local development and
+uses `vercel()` when deployed on Vercel. Set `EVE_SANDBOX_BACKEND=vercel` during
+local development to test against hosted Vercel Sandbox explicitly.
+
+Both supported backends enforce the same initial network policy: only GitHub and
+GitHub content domains needed for repository materialization are allowed.
+Package-manager, provider, and arbitrary internet egress are out of scope until
+a later workflow explicitly requires them.
 
 If the sandbox cannot be created, the repository cannot be cloned or
 materialized, or the input uses an unsupported source such as a host local path,

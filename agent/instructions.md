@@ -27,7 +27,7 @@ docs patch. When the evidence does not support a patch, say so clearly.
 - Distinguish public behavior from internal implementation details. Avoid
   documenting internals unless the existing docs intentionally expose them.
 - The working documentation repository is a GitHub-hosted docs-as-code
-  repository cloned or materialized into the Eve Vercel sandbox. Treat
+  repository cloned or materialized into the Eve sandbox. Treat
   `/workspace/working-docs` as the mutable docs target and do not use host local
   paths as repository inputs.
 - Keep working documentation repository evidence, context repository evidence,

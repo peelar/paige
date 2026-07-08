@@ -10,9 +10,9 @@ supports it.
 
 The first runnable version is scenario-first. It will use PR-like changes,
 GitHub-hosted Docusaurus-style working documentation repositories cloned or
-materialized into the Eve Vercel sandbox, structured context fixtures, and
-approved GitHub writeback before wiring Slack, Linear, Notion, Discord, or
-Vercel Connect access.
+materialized into the Eve sandbox, structured context fixtures, and approved
+GitHub writeback before wiring Slack, Linear, Notion, Discord, or Vercel Connect
+access.
 
 For the durable product contract, read `docs/MANIFEST.md`. For milestone order
 and issue dependencies, read `docs/ROADMAP.md`. For the repository and sandbox
@@ -40,8 +40,8 @@ are useful to both humans and AI readers.
   docs trees, and checks.
 - `agent/skills/`: future load-on-demand procedures for docs impact analysis,
   style discovery, patch preparation, and review.
-- `agent/sandbox.ts`: Eve Vercel sandbox configuration with GitHub-only egress
-  for repository materialization.
+- `agent/sandbox.ts`: Eve sandbox configuration with local `microsandbox`, Vercel
+  Sandbox opt-in, and GitHub-only egress for repository materialization.
 - `evals/`: future Eve evals for scenario-backed documentation decisions.
 - `docs/MANIFEST.md`: product stance, MVP boundaries, principles, and success
   signals.
@@ -70,6 +70,13 @@ Development server:
 
 ```sh
 pnpm dev
+```
+
+Local development uses `microsandbox()` by default. To test with hosted Vercel
+Sandbox locally, run:
+
+```sh
+EVE_SANDBOX_BACKEND=vercel pnpm dev
 ```
 
 Production-style start:

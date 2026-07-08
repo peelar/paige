@@ -28,7 +28,7 @@ when the right answer is no change, changelog only, or ask a maintainer.
 The MVP proves the sandboxed GitHub repository work loop. Given a configured
 GitHub working documentation repository, PR-like change context, and structured
 issue or product context, the agent clones or materializes the repository into
-the Eve Vercel sandbox, emits a documentation impact report, prepares a minimal
+the Eve sandbox, emits a documentation impact report, prepares a minimal
 Markdown or MDX patch when warranted, runs checks, exports a diff, and can push
 an approved branch or draft PR back to the same working repository.
 
@@ -41,10 +41,10 @@ sandbox-local patch/check workflow and approval boundary are proven.
 
 The central project concept is the **working documentation repository**. This is
 the GitHub-hosted docs-as-code repository a user provides during onboarding. It
-is cloned or materialized into the Eve Vercel sandbox at
-`/workspace/working-docs` and is the primary mutable target: the agent inspects
-it, applies sandbox-local patches to it, exports report and diff artifacts, and
-uses scoped GitHub authority to create approved branches or draft PRs in it.
+is cloned or materialized into the Eve sandbox at `/workspace/working-docs` and
+is the primary mutable target: the agent inspects it, applies sandbox-local
+patches to it, exports report and diff artifacts, and uses scoped GitHub
+authority to create approved branches or draft PRs in it.
 
 Host local paths are not supported as working documentation repository sources
 for the main workflow. Local development and production use the same
