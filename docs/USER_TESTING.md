@@ -25,13 +25,13 @@ metadata.
 
 Expected result:
 
-- Clone or materialize `peelar/saleor-docs` into `/workspace/working-docs`.
+- Clone, refresh, or reuse `peelar/saleor-docs` in `/workspace/working-docs`.
 - Inspect `docs/api-usage/metadata.mdx`.
 - Update only the existing "Filtering by metadata" section.
 - Mention that public metadata filtering remains unchanged.
 - Mention that private metadata filtering is permission-bound.
 - Leave generated API reference files untouched.
-- Run dependency install and docs checks in the sandbox before exporting a diff.
+- Run sandboxed git diff checks before exporting a diff.
 
 ### Incorrect: Sandbox Rate Limit False Alarm
 
@@ -42,7 +42,7 @@ requests per minute.
 
 Expected result:
 
-- Clone or materialize `peelar/saleor-docs` into `/workspace/working-docs`.
+- Clone, refresh, or reuse `peelar/saleor-docs` in `/workspace/working-docs`.
 - Inspect `docs/api-usage/usage-limits.mdx`.
 - Report that the current docs already say 120 requests/minute.
 - Produce no patch and no diff.
@@ -89,13 +89,20 @@ pnpm eval saleor-docs-user-tests --skip-report --verbose
 That command validates:
 
 - configure the working repository before running docs maintenance;
-- clone or materialize the GitHub working repository;
+- clone, refresh, or reuse the GitHub working repository;
 - the model chooses the authored repository workflow tool;
 - enforce repository allowed actions;
 - inspect and patch files inside the sandbox;
-- run checks inside the sandbox;
+- run bounded checks inside the sandbox;
 - export diffs;
 - keep raw Eve sandbox/file tools disabled for the workflow.
+
+`pnpm eval` seeds a template-scoped checkout cache for the Saleor docs dogfood
+repository. That lets each eval session restore the same checked-out repo
+instead of cloning from GitHub from scratch. The live eval still runs git diff
+checks, but it intentionally does not install dependencies or run the full
+Docusaurus production build because those checks can dominate local microsandbox
+runtime and belong in narrower CI gates.
 
 By default, evals use the Vercel AI Gateway model configured in
 `EVE_GATEWAY_MODEL`, or `zai/glm-5.2` when unset. To test another Gateway model,

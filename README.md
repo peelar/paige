@@ -41,12 +41,15 @@ are useful to both humans and AI readers.
 - `agent/skills/`: future load-on-demand procedures for docs impact analysis,
   style discovery, patch preparation, and review.
 - `agent/sandbox.ts`: Eve sandbox configuration with local `microsandbox`, Vercel
-  Sandbox opt-in, and GitHub-only egress for repository materialization.
-- `evals/`: future Eve evals for scenario-backed documentation decisions.
+  Sandbox opt-in, and egress for GitHub repository materialization plus locked
+  package installation.
+- `evals/`: Eve evals and typed scenario fixtures for scenario-backed
+  documentation decisions.
 - `docs/MANIFEST.md`: product stance, MVP boundaries, principles, and success
   signals.
 - `docs/REPOSITORY_MODEL.md`: working docs repository, context repository,
   external context, sandbox, and provenance contract.
+- `docs/USER_TESTING.md`: manual user-test scenarios and acceptance criteria.
 - `docs/ROADMAP.md`: milestone order, issue dependencies, and later work.
 - `AGENTS.md`: rules for coding agents working in this repo.
 
@@ -56,14 +59,26 @@ docs under `node_modules/eve/docs/` are the source of truth for those slots.
 
 ## Run Locally
 
-Use Node 24. The repository pins the expected version in `.node-version`. If
-your shell does not switch automatically, run `fnm use` first or prefix commands
-with `fnm exec --using 24.18.0`.
+Use Node 24.18.0. The repository pins the version in `.node-version` and
+enforces it through `package.json` engines plus `.npmrc`. If your shell does not
+switch automatically when you enter the directory, run `fnm use` once.
 
 ```sh
 pnpm install
 pnpm build
 pnpm typecheck
+pnpm eval --list
+pnpm eval saleor-docs-user-tests --skip-report
+```
+
+By default the agent uses the Vercel AI Gateway model configured in
+`EVE_GATEWAY_MODEL`, or `zai/glm-5.2` when unset. To try another Gateway model,
+set `EVE_GATEWAY_MODEL` to any model id available in the Vercel AI Gateway
+catalog:
+
+```sh
+EVE_GATEWAY_MODEL=anthropic/claude-sonnet-5 \
+pnpm eval saleor-docs-user-tests --skip-report --verbose
 ```
 
 Development server:

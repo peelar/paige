@@ -8,7 +8,7 @@ import {
 
 export default defineTool({
   description:
-    "Run the sandboxed docs-maintenance workflow for a provided working documentation repository scenario. Use this for repository materialization, docs impact analysis, patching, checks, and diff export.",
+    "Run the complete sandboxed docs-maintenance workflow for a provided working documentation repository scenario. Use this terminal workflow for repository materialization, docs impact analysis, patching, checks, and diff export instead of calling lower-level repo_* tools.",
   inputSchema: runDocsMaintenanceScenarioInputSchema,
   outputSchema: docsMaintenanceWorkflowResultSchema,
   execute: runDocsMaintenanceScenario,
@@ -27,6 +27,10 @@ export default defineTool({
         noDiff: output.noDiff,
         diff: output.diff,
         actionProvenance: output.actionProvenance,
+        nextAction:
+          output.ok
+            ? "Answer from this workflow result. Do not call lower-level repo_* tools unless the workflow reported a visible failure or missing evidence."
+            : "Report the visible workflow failure instead of hiding it.",
         patchSummary: output.report.patchSummary,
         checks: output.report.checks.map((check) => ({
           name: check.name,

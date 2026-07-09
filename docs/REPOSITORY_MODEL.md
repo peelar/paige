@@ -21,11 +21,10 @@ The repository input contract captures:
 - `allowedActions`: clone, read, search, patch, run checks, and export diff.
 - `provenanceLabel`: `working-documentation-repository`.
 
-The app can persist app-local configuration in the untracked
-`.docs-maintainer/config.json` file. This is not a user, tenant, or account
-model. The first persisted setting is the default working documentation
-repository input, used when a session does not provide an explicit repository
-input. Explicit scenario input always wins.
+The active working repository configuration is session-scoped. Calling
+`configure_working_repository` validates the repository input, materializes the
+checkout in the sandbox, and records that state for later repository workflow
+tools in the same session.
 
 Host local paths are not supported as repository sources for the main workflow.
 Local development and production use the same sandbox-first contract: GitHub URL
@@ -43,7 +42,24 @@ the npm registry domains needed for locked dependency installation are allowed
 so sandboxed docs checks can run. Provider and arbitrary internet egress remain
 out of scope until a later workflow explicitly requires them.
 
-If the sandbox cannot be created, the repository cannot be cloned or
+Materialization may reuse an existing sandbox checkout when the remote matches
+the requested working repository. It may also restore a matching template-scoped
+repository cache when one was seeded by the sandbox bootstrap. Reuse still
+resets tracked changes and cleans untracked non-ignored files before analysis.
+If neither cache is available, or the checkout belongs to another repository,
+the workflow clones a fresh copy.
+
+Dependency installation uses a sandbox-local cache marker outside the working
+repository. A cached install is valid only when `node_modules` exists, the
+`pnpm-lock.yaml` hash matches, and the prior install marker records a passed
+locked install for the same repository and ref. `pnpm eval` enables a
+template-scoped checkout cache for the Saleor docs dogfood repository so eval
+sessions can reuse the seeded checkout instead of cloning from GitHub every
+time. Normal runtime behavior stays repository-generic: it only restores a cache
+if a matching marker exists. Required checks such as git diff checks still run
+when the scenario requires them.
+
+If the sandbox cannot be created, the repository cannot be cloned, refreshed, or
 materialized, or the input uses an unsupported source such as a host local path,
 the workflow must fail visibly. It must not fall back to a local checkout, stub
 repository, fake diff, or false-success report.

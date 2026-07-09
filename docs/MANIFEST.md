@@ -63,6 +63,11 @@ links, and relationships instead of becoming a plain text blob.
 read-only evidence sources after the single working-repository loop is proven,
 but they are not part of the focused open backlog.
 
+The first user-test fixtures target `https://github.com/peelar/saleor-docs.git`
+and live in `evals/scenarios/saleor-docs-user-test-scenarios.ts`. They cover one
+evidence-backed docs patch and one false alarm where the correct outcome is no
+docs change.
+
 ## Not MVP
 
 - Chat SDK adapter work or multi-surface chat routing.
@@ -129,8 +134,9 @@ publishes approved changes back to the same GitHub repository.
 
 ## Open Questions
 
-- Which scenario format should represent a PR-like code change, working docs
-  repository input, linked context, and expected outcome?
+- Should the typed user-test scenario format in `evals/scenarios/` become the
+  durable eval format, or should runtime scenarios use a separate API-facing
+  envelope?
 - Should the first patch output be a git diff file, a working-tree edit inside
   the sandbox, or both?
 - Which scoped GitHub write path should ship first: GitHub App installation,
@@ -146,6 +152,10 @@ publishes approved changes back to the same GitHub repository.
 - `docs/ROADMAP.md`: milestones, appetite, dependencies, and fallback order.
 - `docs/REPOSITORY_MODEL.md`: working docs repository, context repository,
   external context, sandbox, and provenance contract.
+- `docs/USER_TESTING.md`: manual user-test scenarios, expected outcomes, and
+  eval readiness notes.
+- `evals/scenarios/`: typed user-test fixture data used by manual tests and
+  future executable evals.
 - `docs/adr/`: durable decision records, created through `$to-adr`.
 - `AGENTS.md`: agent rules and source-of-truth pointers only.
 - Installed Eve docs under `node_modules/eve/docs/`: source of truth for Eve

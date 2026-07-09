@@ -10,37 +10,18 @@ import {
 } from "../lib/repository-workflow.js";
 
 const outputSchema = z.object({
-  configured: z.literal(true),
   materialization: repositoryMaterializationSchema,
   actionProvenance: z.array(repositoryActionRecordSchema),
 });
 
 export default defineTool({
   description:
-    "Configure the session working documentation repository and materialize it in the sandbox.",
+    "Materialize a validated GitHub working documentation repository into the sandbox at /workspace/working-docs.",
   inputSchema: repositoryInputSchema,
   outputSchema,
   async execute(input, ctx) {
     const actionProvenance: RepositoryActionRecord[] = [];
     const materialization = await materializeWorkingRepository(ctx, input, actionProvenance);
-
-    return {
-      configured: true as const,
-      materialization,
-      actionProvenance,
-    };
-  },
-  toModelOutput(output) {
-    return {
-      type: "json",
-      value: {
-        configured: output.configured,
-        repository: output.materialization.repositoryUrl,
-        ref: output.materialization.requestedRef,
-        resolvedCommit: output.materialization.resolvedCommit,
-        docsRoot: output.materialization.docsRoot,
-        sandboxPath: output.materialization.sandboxPath,
-      },
-    };
+    return { materialization, actionProvenance };
   },
 });

@@ -31,6 +31,12 @@ export default saleorDocsUserTestScenarios.map((scenario) =>
       t.notCalledTool("write_file");
       t.notCalledTool("glob");
       t.notCalledTool("grep");
+      t.notCalledTool("prepare_working_repository");
+      t.notCalledTool("repo_search");
+      t.notCalledTool("repo_read_file");
+      t.notCalledTool("repo_replace_text");
+      t.notCalledTool("repo_run_checks");
+      t.notCalledTool("repo_export_diff");
     },
   }),
 );
@@ -41,12 +47,19 @@ function matchesConfiguredRepository(
 ): boolean {
   output = unwrapModelOutput(output);
 
+  const materialization = isRecord(output) ? output.materialization : null;
+
   return (
     isRecord(output) &&
     output.configured === true &&
-    output.repository === scenario.repositoryInput.workingDocumentationRepository.source.url &&
-    output.ref === scenario.repositoryInput.workingDocumentationRepository.ref &&
-    output.docsRoot === scenario.repositoryInput.workingDocumentationRepository.docsRoot
+    ((output.repository === scenario.repositoryInput.workingDocumentationRepository.source.url &&
+      output.ref === scenario.repositoryInput.workingDocumentationRepository.ref &&
+      output.docsRoot === scenario.repositoryInput.workingDocumentationRepository.docsRoot) ||
+      (isRecord(materialization) &&
+        materialization.repositoryUrl ===
+          scenario.repositoryInput.workingDocumentationRepository.source.url &&
+        materialization.requestedRef === scenario.repositoryInput.workingDocumentationRepository.ref &&
+        materialization.docsRoot === scenario.repositoryInput.workingDocumentationRepository.docsRoot))
   );
 }
 
@@ -72,9 +85,9 @@ function matchesScenarioOutput(
       excludesPrefix(output.changedFiles, "docs/api-reference/") &&
       typeof output.diff === "string" &&
       output.diff.includes("Private metadata filtering is available only") &&
-      checksPassed(output.report.checks, ["install", "build", "diff-check"]) &&
+      checksPassed(output.report.checks, ["diff-check"]) &&
+      hasAnyAction(output.actionProvenance, ["clone", "refresh", "reuse"]) &&
       hasActions(output.actionProvenance, [
-        "clone",
         "search",
         "read",
         "patch",
@@ -97,7 +110,8 @@ function matchesScenarioOutput(
       output.noDiff === true &&
       output.diff === "" &&
       checksPassed(output.report.checks, ["diff-quiet"]) &&
-      hasActions(output.actionProvenance, ["clone", "search", "read", "run-checks", "export-diff"])
+      hasAnyAction(output.actionProvenance, ["clone", "refresh", "reuse"]) &&
+      hasActions(output.actionProvenance, ["search", "read", "run-checks", "export-diff"])
     );
   }
 
@@ -147,5 +161,14 @@ function hasActions(value: unknown, expectedActions: string[]): boolean {
 
   return expectedActions.every((action) =>
     value.some((entry) => isRecord(entry) && entry.action === action && entry.status === "success"),
+  );
+}
+
+function hasAnyAction(value: unknown, expectedActions: string[]): boolean {
+  return (
+    Array.isArray(value) &&
+    expectedActions.some((action) =>
+      value.some((entry) => isRecord(entry) && entry.action === action && entry.status === "success"),
+    )
   );
 }

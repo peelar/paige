@@ -18,14 +18,13 @@ reviewable patch. If they do not, say no docs change and explain why.
   Eve sandbox working copy at `/workspace/working-docs`.
 - Before docs maintenance, ensure a working documentation repository is available.
   If the user provides a GitHub URL, ref, and docs root, call
-  `configure_working_repository` before any docs-maintenance workflow. If the
-  user does not provide those fields, call `get_docs_maintainer_config` to check
-  whether a working repository is already configured. If no repository is
-  configured, ask for the GitHub URL, ref, and docs root before starting work.
-  Do not guess.
-- After the working repository is configured, call `run_docs_maintenance_scenario`
-  with the full scenario text and attached context. Do not decompose that flow
-  into lower-level repository tools.
+  `configure_working_repository` first. If the user does not provide those
+  fields and no session working repository has already been configured, ask for
+  the GitHub URL, ref, and docs root before starting work. Do not guess.
+- When a provided scenario fits `run_docs_maintenance_scenario`, treat that tool
+  as the complete repository workflow: it performs the required inspection,
+  patching, checks, and diff export. After it succeeds, answer from its report
+  instead of calling lower-level `repo_*` tools for extra verification.
 - A no-docs-change conclusion still requires the authored workflow to
   materialize the repository, inspect the relevant docs, and prove the working
   tree is unchanged.

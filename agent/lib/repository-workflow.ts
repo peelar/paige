@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+
+import { defineState } from "eve/context";
 import type { SandboxCommandResult } from "eve/sandbox";
 import type { ToolContext } from "eve/tools";
 import { z } from "zod";
@@ -8,7 +11,6 @@ import {
   type RepositoryInput,
   type WorkingDocumentationRepository,
 } from "./repository-contract.js";
-import { readConfiguredRepositoryInput } from "./docs-maintainer-config.js";
 
 export const repositoryCheckNameSchema = z.enum([
   "install",
@@ -92,7 +94,24 @@ export type DocumentationImpactReport = z.infer<typeof documentationImpactReport
 export type DocsMaintenanceWorkflowResult = z.infer<typeof docsMaintenanceWorkflowResultSchema>;
 export type RunDocsMaintenanceScenarioInput = z.infer<typeof runDocsMaintenanceScenarioInputSchema>;
 
-const statePath = ".docs-maintainer/repository-state.json";
+const installCacheMarkerSchema = z.object({
+  version: z.literal(1),
+  repositoryUrl: z.string(),
+  requestedRef: z.string(),
+  lockfileHash: z.string(),
+  command: z.string(),
+  status: z.literal("passed"),
+});
+
+const repositoryCacheMarkerSchema = z.object({
+  version: z.literal(1),
+  repositoryUrl: z.string(),
+  requestedRef: z.string(),
+  docsRoot: z.string(),
+  sourcePath: z.string(),
+  resolvedCommit: z.string(),
+  status: z.literal("ready"),
+});
 
 type ScenarioKind = DocsMaintenanceWorkflowResult["scenarioKind"];
 
@@ -101,6 +120,11 @@ export interface WorkflowState {
   materialization: DocsMaintenanceWorkflowResult["materialization"];
   actionProvenance: RepositoryActionRecord[];
 }
+
+const repositoryWorkflowState = defineState<WorkflowState | null>(
+  "docs-maintainer.repository-workflow-state",
+  () => null,
+);
 
 class RepositoryPolicyError extends Error {
   constructor(message: string) {
@@ -113,13 +137,18 @@ export async function runDocsMaintenanceScenario(
   input: RunDocsMaintenanceScenarioInput,
   ctx: ToolContext,
 ): Promise<DocsMaintenanceWorkflowResult> {
-  const repositoryInput = await resolveRepositoryInput();
+  const state = await loadRepositoryWorkflowState();
+  const repositoryInput = state.repositoryInput;
   const repository = repositoryInput.workingDocumentationRepository;
   const sandbox = await ctx.getSandbox();
-  const actionProvenance: RepositoryActionRecord[] = [];
+  const actionProvenance = [...state.actionProvenance];
 
   try {
-    const materialization = await materializeWorkingRepository(ctx, repositoryInput, actionProvenance);
+    const materialization = await reuseMaterializedWorkingRepository(
+      ctx,
+      state,
+      actionProvenance,
+    );
     const scenarioKind = detectScenarioKind(input.scenarioText, repositoryInput.externalContext);
 
     let report: DocumentationImpactReport;
@@ -162,6 +191,11 @@ export async function runDocsMaintenanceScenario(
     await sandbox.writeTextFile({
       path: ".docs-maintainer/last-result.json",
       content: `${JSON.stringify(result, null, 2)}\n`,
+    });
+    await saveRepositoryWorkflowState({
+      repositoryInput,
+      materialization,
+      actionProvenance,
     });
 
     return result;
@@ -206,12 +240,215 @@ export async function materializeWorkingRepository(
   repositoryInput: RepositoryInput,
   actionProvenance: RepositoryActionRecord[] = [],
 ): Promise<DocsMaintenanceWorkflowResult["materialization"]> {
-  const sandbox = await ctx.getSandbox();
   const repository = repositoryInput.workingDocumentationRepository;
 
   assertActionAllowed(repository, "clone");
   assertSandboxPath(repository.sandboxPath);
 
+  const checkout = await inspectWorkingRepositoryCheckout(ctx, repository);
+  if (checkout === "matching") {
+    await refreshWorkingRepositoryCheckout(ctx, repository, actionProvenance);
+  } else if (await restoreCachedWorkingRepository(ctx, repository, actionProvenance)) {
+    // The restored checkout is reset before it is exposed as the working repo.
+  } else {
+    await cloneWorkingRepository(ctx, repository, actionProvenance);
+  }
+
+  const materialization = await resolveMaterialization(ctx, repository);
+
+  await saveRepositoryWorkflowState({
+    repositoryInput,
+    materialization,
+    actionProvenance,
+  });
+
+  return materialization;
+}
+
+export async function loadRepositoryWorkflowState(): Promise<WorkflowState> {
+  const state = repositoryWorkflowState.get();
+
+  if (state === null) {
+    throw new Error("Working repository has not been materialized in this session.");
+  }
+
+  return {
+    repositoryInput: repositoryInputSchema.parse(state.repositoryInput),
+    materialization: repositoryMaterializationSchema.parse(state.materialization),
+    actionProvenance: z.array(repositoryActionRecordSchema).parse(state.actionProvenance),
+  };
+}
+
+export async function saveRepositoryWorkflowState(state: WorkflowState): Promise<void> {
+  repositoryWorkflowState.update(() => state);
+}
+
+async function reuseMaterializedWorkingRepository(
+  ctx: ToolContext,
+  state: WorkflowState,
+  actionProvenance: RepositoryActionRecord[],
+): Promise<DocsMaintenanceWorkflowResult["materialization"]> {
+  const repository = state.repositoryInput.workingDocumentationRepository;
+  const checkout = await inspectWorkingRepositoryCheckout(ctx, repository);
+
+  if (checkout !== "matching") {
+    const reason = "Configured working repository checkout is missing or no longer matches.";
+    actionProvenance.push(recordAction(repository, "reuse", "failure", { reason }));
+    throw new Error(reason);
+  }
+
+  const sandbox = await ctx.getSandbox();
+  const clean = await sandbox.run({
+    command: [
+      "git",
+      "-C",
+      sh(repository.sandboxPath),
+      "reset",
+      "--hard",
+      "HEAD",
+      "&&",
+      "git",
+      "-C",
+      sh(repository.sandboxPath),
+      "clean",
+      "-fd",
+    ].join(" "),
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (clean.exitCode !== 0) {
+    const reason = summarizeCommandFailure(clean);
+    actionProvenance.push(recordAction(repository, "reuse", "failure", { reason }));
+    throw new Error(`Failed to reset configured working repository: ${reason}`);
+  }
+
+  actionProvenance.push(recordAction(repository, "reuse", "success", { target: repository.sandboxPath }));
+
+  return resolveMaterialization(ctx, repository);
+}
+
+async function inspectWorkingRepositoryCheckout(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+): Promise<"missing" | "matching" | "mismatched"> {
+  const sandbox = await ctx.getSandbox();
+  const gitDirCheck = await sandbox.run({
+    command: `test -d ${sh(joinSandboxPath(repository.sandboxPath, ".git"))}`,
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (gitDirCheck.exitCode !== 0) {
+    const pathCheck = await sandbox.run({
+      command: `test -e ${sh(repository.sandboxPath)}`,
+      abortSignal: ctx.abortSignal,
+    });
+    return pathCheck.exitCode === 0 ? "mismatched" : "missing";
+  }
+
+  const remote = await sandbox.run({
+    command: `git -C ${sh(repository.sandboxPath)} remote get-url origin`,
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (remote.exitCode !== 0) {
+    return "mismatched";
+  }
+
+  return normalizeRepositoryUrl(remote.stdout.trim()) === normalizeRepositoryUrl(repository.source.url)
+    ? "matching"
+    : "mismatched";
+}
+
+async function refreshWorkingRepositoryCheckout(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+  actionProvenance: RepositoryActionRecord[],
+): Promise<void> {
+  const sandbox = await ctx.getSandbox();
+  const refresh = await sandbox.run({
+    command: [
+      "git",
+      "-C",
+      sh(repository.sandboxPath),
+      "fetch",
+      "--depth=1",
+      "origin",
+      sh(repository.ref),
+      "&&",
+      "git",
+      "-C",
+      sh(repository.sandboxPath),
+      "reset",
+      "--hard",
+      "FETCH_HEAD",
+      "&&",
+      "git",
+      "-C",
+      sh(repository.sandboxPath),
+      "clean",
+      "-fd",
+    ].join(" "),
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (refresh.exitCode === 0) {
+    actionProvenance.push(recordAction(repository, "refresh", "success", { target: repository.sandboxPath }));
+    return;
+  }
+
+  const reason = summarizeCommandFailure(refresh);
+  actionProvenance.push(recordAction(repository, "refresh", "failure", { reason }));
+  await cloneWorkingRepository(ctx, repository, actionProvenance);
+}
+
+async function restoreCachedWorkingRepository(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+  actionProvenance: RepositoryActionRecord[],
+): Promise<boolean> {
+  const marker = await readRepositoryCacheMarker(ctx, repository);
+  if (marker === null) return false;
+
+  const sourceMatches =
+    normalizeRepositoryUrl(marker.repositoryUrl) === normalizeRepositoryUrl(repository.source.url) &&
+    marker.requestedRef === repository.ref &&
+    marker.docsRoot === repository.docsRoot &&
+    marker.status === "ready";
+
+  if (!sourceMatches) return false;
+
+  const sandbox = await ctx.getSandbox();
+  const restore = await sandbox.run({
+    command: [
+      "set -eu",
+      `test -d ${sh(joinSandboxPath(marker.sourcePath, ".git"))}`,
+      `rm -rf ${sh(repository.sandboxPath)}`,
+      `ln -s ${sh(marker.sourcePath)} ${sh(repository.sandboxPath)}`,
+      `cd ${sh(repository.sandboxPath)}`,
+      "git reset --hard HEAD",
+      "git clean -fd",
+    ].join("\n"),
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (restore.exitCode !== 0) {
+    const reason = summarizeCommandFailure(restore);
+    actionProvenance.push(
+      recordAction(repository, "reuse", "failure", { target: marker.sourcePath, reason }),
+    );
+    return false;
+  }
+
+  actionProvenance.push(recordAction(repository, "reuse", "success", { target: marker.sourcePath }));
+  return true;
+}
+
+async function cloneWorkingRepository(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+  actionProvenance: RepositoryActionRecord[],
+): Promise<void> {
+  const sandbox = await ctx.getSandbox();
   await sandbox.removePath({
     path: repository.sandboxPath,
     recursive: true,
@@ -260,7 +497,13 @@ export async function materializeWorkingRepository(
   }
 
   actionProvenance.push(recordAction(repository, "clone", "success", { target: repository.sandboxPath }));
+}
 
+async function resolveMaterialization(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+): Promise<DocsMaintenanceWorkflowResult["materialization"]> {
+  const sandbox = await ctx.getSandbox();
   const docsRootPath = joinSandboxPath(repository.sandboxPath, repository.docsRoot);
   const docsRootCheck = await sandbox.run({
     command: `test -d ${sh(docsRootPath)}`,
@@ -269,7 +512,6 @@ export async function materializeWorkingRepository(
 
   if (docsRootCheck.exitCode !== 0) {
     const reason = `Docs root does not exist: ${repository.docsRoot}`;
-    actionProvenance.push(recordAction(repository, "clone", "failure", { reason }));
     throw new Error(reason);
   }
 
@@ -278,7 +520,7 @@ export async function materializeWorkingRepository(
     abortSignal: ctx.abortSignal,
   });
 
-  const materialization = {
+  return {
     repositoryUrl: repository.source.url,
     requestedRef: repository.ref,
     resolvedCommit:
@@ -287,47 +529,6 @@ export async function materializeWorkingRepository(
     sandboxPath: repository.sandboxPath,
     status: "materialized" as const,
   };
-
-  const state: WorkflowState = {
-    repositoryInput,
-    materialization,
-    actionProvenance,
-  };
-
-  await sandbox.writeTextFile({
-    path: statePath,
-    content: `${JSON.stringify(state, null, 2)}\n`,
-  });
-
-  return materialization;
-}
-
-export async function loadRepositoryWorkflowState(ctx: ToolContext): Promise<WorkflowState> {
-  const sandbox = await ctx.getSandbox();
-  const content = await sandbox.readTextFile({ path: statePath, abortSignal: ctx.abortSignal });
-
-  if (content === null) {
-    throw new Error("Working repository has not been materialized in this session.");
-  }
-
-  const parsed = JSON.parse(content) as WorkflowState;
-  return {
-    repositoryInput: repositoryInputSchema.parse(parsed.repositoryInput),
-    materialization: repositoryMaterializationSchema.parse(parsed.materialization),
-    actionProvenance: z.array(repositoryActionRecordSchema).parse(parsed.actionProvenance),
-  };
-}
-
-export async function saveRepositoryWorkflowState(
-  ctx: ToolContext,
-  state: WorkflowState,
-): Promise<void> {
-  const sandbox = await ctx.getSandbox();
-  await sandbox.writeTextFile({
-    path: statePath,
-    content: `${JSON.stringify(state, null, 2)}\n`,
-    abortSignal: ctx.abortSignal,
-  });
 }
 
 export async function readRepositoryFile(
@@ -409,6 +610,79 @@ export async function runRepositoryCheck(
   actionProvenance: RepositoryActionRecord[],
 ): Promise<RepositoryCheckResult> {
   assertActionAllowed(repository, "run-checks");
+  if (name === "install") {
+    return runInstallRepositoryCheck(ctx, repository, actionProvenance);
+  }
+
+  return runRepositoryCommandCheck(ctx, repository, name, actionProvenance);
+}
+
+async function runInstallRepositoryCheck(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+  actionProvenance: RepositoryActionRecord[],
+): Promise<RepositoryCheckResult> {
+  const command = commandForCheck("install");
+  const sandbox = await ctx.getSandbox();
+  const lockfileHash = await readLockfileHash(ctx, repository);
+  const marker = await readInstallCacheMarker(ctx, repository);
+  const nodeModules = await sandbox.run({
+    command: "test -d node_modules",
+    workingDirectory: repository.sandboxPath,
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (
+    lockfileHash !== null &&
+    nodeModules.exitCode === 0 &&
+    marker !== null &&
+    marker.repositoryUrl === repository.source.url &&
+    marker.requestedRef === repository.ref &&
+    marker.lockfileHash === lockfileHash &&
+    marker.command === command &&
+    marker.status === "passed"
+  ) {
+    const corepack = await sandbox.run({
+      command: "corepack enable",
+      workingDirectory: repository.sandboxPath,
+      abortSignal: ctx.abortSignal,
+    });
+
+    const check = {
+      name: "install" as const,
+      command: `${command} (cached)`,
+      exitCode: corepack.exitCode,
+      status: corepack.exitCode === 0 ? ("passed" as const) : ("failed" as const),
+      stdout: corepack.exitCode === 0
+        ? `Reused cached install for pnpm-lock.yaml ${lockfileHash}.\n`
+        : truncate(corepack.stdout, 4_000),
+      stderr: truncate(corepack.stderr, 4_000),
+    };
+
+    actionProvenance.push(
+      recordAction(repository, "run-checks", check.status === "passed" ? "success" : "failure", {
+        commandCategory: "install",
+        reason: check.status === "passed" ? undefined : summarizeCommandFailure(corepack),
+      }),
+    );
+
+    return check;
+  }
+
+  const check = await runRepositoryCommandCheck(ctx, repository, "install", actionProvenance);
+  if (check.status === "passed" && lockfileHash !== null) {
+    await writeInstallCacheMarker(ctx, repository, lockfileHash, command);
+  }
+
+  return check;
+}
+
+async function runRepositoryCommandCheck(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+  name: RepositoryCheckName,
+  actionProvenance: RepositoryActionRecord[],
+): Promise<RepositoryCheckResult> {
   const sandbox = await ctx.getSandbox();
   const command = commandForCheck(name);
   const result = await sandbox.run({
@@ -484,20 +758,6 @@ export async function listChangedFiles(
     .filter(Boolean);
 }
 
-async function resolveRepositoryInput(): Promise<RepositoryInput> {
-  const configuredRepositoryInput = await readConfiguredRepositoryInput();
-  if (configuredRepositoryInput !== null) {
-    return configuredRepositoryInput;
-  }
-
-  throw new Error(
-    [
-      "No working documentation repository is configured.",
-      "Run configure_working_repository with the repository URL, ref, and docs root before docs maintenance.",
-    ].join(" "),
-  );
-}
-
 function detectScenarioKind(scenarioText: string, externalContext: ExternalContext[]): ScenarioKind {
   const haystack = [
     scenarioText,
@@ -549,11 +809,7 @@ async function runPrivateMetadataFilteringScenario(
     throw new Error(`Could not find the expected metadata filtering text in ${targetPath}.`);
   }
 
-  const checks = [
-    await runRepositoryCheck(ctx, repository, "install", actionProvenance),
-    await runRepositoryCheck(ctx, repository, "build", actionProvenance),
-    await runRepositoryCheck(ctx, repository, "diff-check", actionProvenance),
-  ];
+  const checks = [await runRepositoryCheck(ctx, repository, "diff-check", actionProvenance)];
 
   return {
     decision: "docs-patch",
@@ -656,6 +912,126 @@ function resolveRepositoryPath(repository: WorkingDocumentationRepository, path:
 function joinSandboxPath(root: string, path: string): string {
   if (path === ".") return root;
   return `${root.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+
+async function readLockfileHash(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+): Promise<string | null> {
+  const sandbox = await ctx.getSandbox();
+  const result = await sandbox.run({
+    command:
+      "node -e \"const { createHash } = require('node:crypto'); const { readFileSync } = require('node:fs'); process.stdout.write(createHash('sha256').update(readFileSync('pnpm-lock.yaml')).digest('hex'));\"",
+    workingDirectory: repository.sandboxPath,
+    abortSignal: ctx.abortSignal,
+  });
+
+  return result.exitCode === 0 ? result.stdout.trim() : null;
+}
+
+async function readInstallCacheMarker(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+): Promise<z.infer<typeof installCacheMarkerSchema> | null> {
+  const sandbox = await ctx.getSandbox();
+  const content = await sandbox.readTextFile({
+    path: installCacheMarkerPath(repository),
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (content === null) return null;
+
+  try {
+    const parsed = installCacheMarkerSchema.safeParse(JSON.parse(content));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+async function readRepositoryCacheMarker(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+): Promise<z.infer<typeof repositoryCacheMarkerSchema> | null> {
+  const sandbox = await ctx.getSandbox();
+  const content = await sandbox.readTextFile({
+    path: repositoryCacheMarkerPath(repository),
+    abortSignal: ctx.abortSignal,
+  });
+
+  if (content === null) return null;
+
+  try {
+    const parsed = repositoryCacheMarkerSchema.safeParse(JSON.parse(content));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeInstallCacheMarker(
+  ctx: ToolContext,
+  repository: WorkingDocumentationRepository,
+  lockfileHash: string,
+  command: string,
+): Promise<void> {
+  const sandbox = await ctx.getSandbox();
+  await sandbox.run({
+    command: `mkdir -p ${sh(installCacheDirectory())}`,
+    abortSignal: ctx.abortSignal,
+  });
+  await sandbox.writeTextFile({
+    path: installCacheMarkerPath(repository),
+    content: `${JSON.stringify(
+      {
+        version: 1,
+        repositoryUrl: repository.source.url,
+        requestedRef: repository.ref,
+        lockfileHash,
+        command,
+        status: "passed",
+      },
+      null,
+      2,
+    )}\n`,
+    abortSignal: ctx.abortSignal,
+  });
+}
+
+function installCacheDirectory(): string {
+  return "/workspace/.docs-maintainer-cache/install";
+}
+
+function installCacheMarkerPath(repository: WorkingDocumentationRepository): string {
+  return `${installCacheDirectory()}/${hashText(
+    [
+      normalizeRepositoryUrl(repository.source.url),
+      repository.ref,
+      repository.sandboxPath,
+    ].join("\n"),
+  )}.json`;
+}
+
+function repositoryCacheMarkerPath(repository: WorkingDocumentationRepository): string {
+  return `${repositoryCacheDirectory(repository)}/marker.json`;
+}
+
+function repositoryCacheDirectory(repository: WorkingDocumentationRepository): string {
+  return `/workspace/.docs-maintainer-cache/repositories/${hashText(
+    [
+      normalizeRepositoryUrl(repository.source.url),
+      repository.ref,
+      repository.docsRoot,
+    ].join("\n"),
+  )}`;
+}
+
+function normalizeRepositoryUrl(value: string): string {
+  return value.trim().replace(/\.git$/, "").replace(/\/$/, "").toLowerCase();
+}
+
+function hashText(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function commandForCheck(name: RepositoryCheckName): string {

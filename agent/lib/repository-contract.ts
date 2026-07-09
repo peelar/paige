@@ -11,6 +11,16 @@ export const GITHUB_SANDBOX_NETWORK_ALLOWLIST = [
   "*.githubusercontent.com",
 ] as const;
 
+export const PACKAGE_MANAGER_SANDBOX_NETWORK_ALLOWLIST = [
+  "registry.npmjs.org",
+  "*.npmjs.org",
+] as const;
+
+export const WORKING_REPOSITORY_SANDBOX_NETWORK_ALLOWLIST = [
+  ...GITHUB_SANDBOX_NETWORK_ALLOWLIST,
+  ...PACKAGE_MANAGER_SANDBOX_NETWORK_ALLOWLIST,
+] as const;
+
 const githubRepositoryUrlSchema = z
   .string()
   .trim()

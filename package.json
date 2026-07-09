@@ -11,6 +11,7 @@
     "build": "eve build",
     "check": "pnpm typecheck && pnpm build",
     "dev": "eve dev",
+    "eval": "DOCS_MAINTAINER_EVAL_REPOSITORY_CACHE=1 eve eval",
     "start": "eve start",
     "typecheck": "tsc"
   },
@@ -22,10 +23,10 @@
   },
   "devDependencies": {
     "@types/node": "24.x",
+    "microsandbox": "^0.5.10",
     "typescript": "7.0.1-rc"
   },
   "engines": {
-    "node": "24.x"
+    "node": "24.18.0"
   }
-
 }

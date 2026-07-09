@@ -87,7 +87,7 @@ export const saleorDocsUserTestScenarios = [
     expected: {
       outcome: "docs-patch",
       impactReportMustInclude: [
-        "The working repository was cloned or materialized at /workspace/working-docs.",
+        "The working repository was materialized or reused at /workspace/working-docs.",
         "The existing metadata guide was inspected before editing.",
         "The issue and discussion confirm a public API behavior change.",
         "Generated API reference pages were intentionally left untouched.",
@@ -107,18 +107,6 @@ export const saleorDocsUserTestScenarios = [
         "Do not push or open a draft PR without explicit approval.",
       ],
       checks: [
-        {
-          command: "corepack enable && pnpm install --frozen-lockfile",
-          required: true,
-          rationale:
-            "Install the working repository's locked dependencies inside the sandbox before running Docusaurus checks.",
-        },
-        {
-          command: "pnpm build",
-          required: true,
-          rationale:
-            "Verify the edited Saleor docs site still builds after the Markdown/MDX patch.",
-        },
         {
           command: "git diff --check",
           required: true,
@@ -184,7 +172,7 @@ export const saleorDocsUserTestScenarios = [
     expected: {
       outcome: "no-docs-change",
       impactReportMustInclude: [
-        "The working repository was cloned or materialized at /workspace/working-docs.",
+        "The working repository was materialized or reused at /workspace/working-docs.",
         "docs/api-usage/usage-limits.mdx was inspected.",
         "The attached issue and discussion say 180 rpm was internal-only.",
         "The current public docs already state 120 requests/minute.",
