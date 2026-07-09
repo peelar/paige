@@ -15,9 +15,10 @@ When a patch is warranted, it prepares the smallest reviewable Markdown or MDX
 diff, runs checks, and waits for approval before opening a draft PR.
 
 The current slice proves the GitHub docs-repository loop, watched-release
-intake, explicit Slack thread intake, Linear Agent Session issue intake, and
-provider-neutral signal-to-patch handoff. Broader signal safety coverage is
-tracked in `docs/ROADMAP.md` and GitHub issues.
+intake, explicit Slack thread intake, Linear Agent Session issue intake,
+provider-neutral signal-to-patch handoff, and signal workflow safety coverage.
+Broader context memory and future channel expansion are tracked in
+`docs/ROADMAP.md` and GitHub issues.
 
 ## Run Locally
 

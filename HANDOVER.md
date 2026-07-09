@@ -184,3 +184,31 @@ source-evidence-blocked signals should be refused, verified signals can enter
 patch or no-patch handoff, failed checks move to `patch-failed`, successful
 patches move to `patch-prepared`, and approved publish with `signalId` records
 `draft-pr-opened` with the draft PR artifact.
+
+## #27 Add evals and safety coverage for Slack and Linear docs-signal workflows
+
+Decision: signal workflow coverage lives in two layers: model-facing Eve evals
+for the channel tool sequence, and deterministic runtime checks for exact
+lifecycle and safety boundaries.
+
+Design: add `evals/docs-signal-workflows.eval.ts` with one Slack case that
+captures a source-backed Slack signal, asserts current-docs verification is
+required, and verifies missing setup blocks repository verification before any
+patch or PR tools are called; and one Linear case that captures an issue
+missing source evidence and asserts no repository setup, verification, patch, or
+publish tools run. Add
+`scripts/check-docs-signal-workflow-safety.ts` to join Slack/Linear intake,
+shared decision policy, setup-gated verification, source-evidence refusal, and
+patch-handoff eligibility in `pnpm test`.
+
+User effect: maintainers can regression-test the M3 Slack and Linear promise:
+substantive source-backed signals verify current docs, internal-only signals
+skip with a concrete reason, discussion-only public claims request source
+evidence, and neither channel flow writes docs or opens a PR without the later
+approved handoff.
+
+Behavior verification: run `pnpm check`. To exercise the live model-facing
+flow, run `pnpm eval docs-signal-workflows --skip-report --verbose`. The
+expected behavior is Slack capture plus setup-gated current-docs verification
+blocking with no patch or PR, and Linear source-evidence blocking with no
+sandbox verification or writeback.

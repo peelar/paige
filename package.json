@@ -15,7 +15,7 @@
     "dev": "eve dev",
     "eval": "eve eval",
     "start": "eve start",
-    "test": "tsx scripts/check-setup-state-db.ts && tsx scripts/check-docs-signal-queue.ts && tsx scripts/check-docs-impact-decision.ts && tsx scripts/check-workflow-model.ts && tsx scripts/check-slack-docs-signal.ts && tsx scripts/check-linear-docs-signal.ts && tsx scripts/check-docs-signal-patch-handoff.ts",
+    "test": "tsx scripts/check-setup-state-db.ts && tsx scripts/check-docs-signal-queue.ts && tsx scripts/check-docs-impact-decision.ts && tsx scripts/check-workflow-model.ts && tsx scripts/check-slack-docs-signal.ts && tsx scripts/check-linear-docs-signal.ts && tsx scripts/check-docs-signal-patch-handoff.ts && tsx scripts/check-docs-signal-workflow-safety.ts",
     "typecheck": "tsc"
   },
   "dependencies": {

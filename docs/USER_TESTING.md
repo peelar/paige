@@ -99,9 +99,17 @@ watched evidence. The scan may use either GitHub App access when the watched
 repository is granted to the connector, or public GitHub access when the watched
 repository is public and not granted.
 
+`evals/docs-signal-workflows.eval.ts` registers Slack and Linear docs-signal
+workflow evals. The Slack case captures a source-backed Slack thread, asserts
+that current-docs verification is required, and verifies that missing setup
+blocks repository verification before any patch or PR tool is called. The Linear
+case captures an issue that lacks source evidence and asserts that current-docs
+verification, patch handoff, and writeback are not called.
+
 ```sh
 pnpm eval saleor-docs-user-tests --skip-report --verbose
 pnpm eval watched-repositories --skip-report --verbose
+pnpm eval docs-signal-workflows --skip-report --verbose
 ```
 
 That command validates:
@@ -118,6 +126,11 @@ That command validates:
 - keep watched repository scans read-only and report-only.
 - support watched repository release scans with either GitHub App access or
   explicit public GitHub access.
+- capture Slack and Linear docs signals through provider-specific intake tools.
+- fail closed for source-backed Slack signals when setup is missing instead of
+  verifying, preparing a patch, or opening a PR.
+- block Linear issue-tracker signals that lack source evidence before sandbox
+  verification or writeback.
 
 The live eval runs git diff checks, but it intentionally does not install
 dependencies or run the full Docusaurus production build because those checks
@@ -171,4 +184,9 @@ an explicit reason, and the no Linear mutation or writeback boundary. The docs
 signal patch handoff check covers `patch-failed` status support, refusal before
 current-docs verification, refusal when source evidence is missing, patch and
 no-patch input contracts, optional `signalId` publish input, and PR body
-provenance for originating signals.
+provenance for originating signals. The docs signal workflow safety check joins
+the Slack, Linear, decision, and patch-handoff boundaries: source-backed Slack
+signals require current-docs verification and fail closed when setup is missing,
+internal-only signals skip verification with a concrete reason, Linear signals
+without source evidence cannot enter patch handoff, and only already verified
+patch-recommended signals can proceed to patch preparation.
