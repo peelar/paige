@@ -59,9 +59,10 @@ docs under `node_modules/eve/docs/` are the source of truth for those slots.
 
 ## Run Locally
 
-Use Node 24.18.0. The repository pins the version in `.node-version` and
-enforces it through `package.json` engines plus `.npmrc`. If your shell does not
-switch automatically when you enter the directory, run `fnm use` once.
+Use Node 24.18.0. The repository pins the local version in `.node-version`, and
+`package.json` engines tell Vercel which runtime to use. If your shell does not
+switch automatically when you enter the directory, run `fnm use` before
+`pnpm install` or `pnpm dev`.
 
 ```sh
 pnpm install
