@@ -70,7 +70,7 @@ export function renderScenarioPrompt(scenario: UserTestScenario): string {
   return [
     scenario.userPrompt,
     "Work only from the working documentation repository and attached context below.",
-    "First call configure_working_repository with the working repository details below. Do not start docs maintenance until that setup step succeeds.",
+    "First call configure_working_repository with prepareNow false and the working repository details below. Do not start docs maintenance until that setup step succeeds.",
     "Then call run_docs_maintenance_scenario with the full scenario and attached context. Do not answer from attached context alone.",
     "After run_docs_maintenance_scenario succeeds, answer from that workflow result. Do not call lower-level repo_* tools for additional verification in this user test.",
     "Produce a documentation impact report first. Prepare a patch only if the evidence supports it.",
