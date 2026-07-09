@@ -212,3 +212,32 @@ flow, run `pnpm eval docs-signal-workflows --skip-report --verbose`. The
 expected behavior is Slack capture plus setup-gated current-docs verification
 blocking with no patch or PR, and Linear source-evidence blocking with no
 sandbox verification or writeback.
+
+## #29 Add workspace knowledge records for docs context memory
+
+Decision: reusable docs context memory is app-owned workspace knowledge, not
+docs signals, setup state, Eve `defineState`, Eve skills, or generated docs.
+Stored knowledge is routing and triage context only; it is not proof for public
+documentation claims.
+
+Design: add Drizzle/libSQL tables for workspace knowledge records, provenance
+sources, and lifecycle events. Add `agent/lib/workspace-knowledge.ts` with
+strict model inputs, runtime-owned workspace scoping, proposal, exact/tag
+search, read, promote, stale, and retire APIs. Add model-facing
+`knowledge_*` tools and dynamic instructions that inject a compact active
+knowledge slice with explicit trust-boundary wording. Source text stays on
+provenance rows, separate from model-generated statements and summaries.
+
+User effect: maintainers can capture compact reusable docs concepts, surfaces,
+style rules, workflow rules, ownership, and decisions without turning Slack or
+Linear discussion into unsupported docs truth. Records must be promoted before
+active use, can become stale or retired, and can be searched or inspected with
+provenance.
+
+Behavior verification: run `pnpm check`. Behaviorally, model-supplied workspace
+ids should be rejected, proposed records should not appear in default active
+search, promoted records should search by exact text or tag, expired/stale
+records should be filtered unless requested, retired records should disappear
+from default search, dynamic instructions should label knowledge as untrusted
+context, and deployed runtime without `DOCS_AGENT_DATABASE_URL` should fail
+knowledge workflows visibly.

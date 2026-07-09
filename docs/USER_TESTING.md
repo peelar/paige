@@ -189,4 +189,9 @@ the Slack, Linear, decision, and patch-handoff boundaries: source-backed Slack
 signals require current-docs verification and fail closed when setup is missing,
 internal-only signals skip verification with a concrete reason, Linear signals
 without source evidence cannot enter patch handoff, and only already verified
-patch-recommended signals can proceed to patch preparation.
+patch-recommended signals can proceed to patch preparation. The workspace
+knowledge check covers proposal, explicit promotion, exact/tag search, full
+record reads with source text provenance, stale and retired lifecycle behavior,
+freshness filtering, strict rejection of model-supplied workspace ids, deployed
+database failure behavior, and prompt-injection trust boundaries in dynamic
+instructions.

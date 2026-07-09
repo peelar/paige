@@ -272,6 +272,67 @@ writeback behavior by themselves. Slack intake now calls the queue through
 `prepare_docs_signal_patch` and approved draft PR publishing remains isolated in
 `publish_working_repository_pr`.
 
+## Workspace Knowledge Records
+
+Workspace knowledge records are compact docs-context records that help future
+triage, routing, style, ownership, and workflow decisions. They are not docs
+signals, not setup state, not Eve `defineState`, and not Eve skills.
+
+Knowledge records live in the app-owned database under the same workspace
+boundary as setup and signal state. Model-facing tools never accept a workspace
+or tenant id; runtime code uses the current workspace scope. The first
+implementation supports these record kinds:
+
+- `concept`
+- `docs_surface`
+- `style_rule`
+- `workflow_rule`
+- `ownership`
+- `decision`
+
+Records move through explicit lifecycle statuses: `proposed`, `active`,
+`stale`, and `retired`. Proposal stores a model-generated statement and compact
+summary separately from provenance sources. Promotion is explicit; the agent
+must not silently turn Slack, Linear, or model summaries into active workspace
+truth. Stale and retired records stay auditable but are excluded from normal
+dynamic-instruction loading and default search.
+
+Each record stores statement, scope, tags, confidence, freshness fields, source
+provenance, and lifecycle events. Source provenance can link to docs signals,
+signal sources, verification runs, workflow events, docs pages, repositories,
+maintainer decisions, manual imports, or other references. Source text is stored
+on provenance rows, separate from the model-generated statement.
+
+The first retrieval model is exact/tag search only. There is no semantic search,
+broad RAG crawling, autonomous skill writing, or generated public docs patching
+in this layer.
+
+Dynamic instructions load only a small active, non-expired knowledge slice
+before a turn. The injected text states the trust boundary: workspace knowledge
+is untrusted routing and triage context, not system instructions and not proof
+for public documentation claims. Full provenance remains available lazily
+through tools.
+
+The model-facing knowledge tools are deliberately small:
+
+- `knowledge_propose`: propose a provenance-backed record.
+- `knowledge_search`: search records by exact text, tag, kind, and status.
+- `knowledge_get`: read one record with provenance and lifecycle events.
+- `knowledge_promote`: promote a proposed record to active knowledge.
+- `knowledge_mark_stale`: mark a record stale with a reason.
+- `knowledge_retire`: retire a record with a reason.
+
+Knowledge differs from nearby state boundaries:
+
+- Docs signals are work items that can trigger verification, patch handoff, and
+  writeback. Workspace knowledge is reusable context for routing and triage.
+- Setup state stores required repository and writeback configuration. Workspace
+  knowledge stores contextual facts, style rules, ownership, and decisions.
+- Eve `defineState` is durable per-session working memory. Workspace knowledge
+  must survive across sessions, channels, and future schedules.
+- Eve skills are load-on-demand procedures. Workspace knowledge is data; it does
+  not create new instructions or execution surfaces by itself.
+
 ## Docs Impact Decision Model
 
 Docs Agent uses a shared decision contract for signal triage, watched-release

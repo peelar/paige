@@ -17,8 +17,9 @@ diff, runs checks, and waits for approval before opening a draft PR.
 The current slice proves the GitHub docs-repository loop, watched-release
 intake, explicit Slack thread intake, Linear Agent Session issue intake,
 provider-neutral signal-to-patch handoff, and signal workflow safety coverage.
-Broader context memory and future channel expansion are tracked in
-`docs/ROADMAP.md` and GitHub issues.
+It also includes the first app-owned workspace knowledge records for reusable
+docs context memory. Future channel expansion is tracked in `docs/ROADMAP.md`
+and GitHub issues.
 
 ## Run Locally
 

@@ -166,11 +166,105 @@ export const docsSignalEvents = sqliteTable(
   ],
 );
 
+export const workspaceKnowledgeRecords = sqliteTable(
+  "workspace_knowledge_records",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    kind: text("kind").notNull(),
+    status: text("status").notNull(),
+    statement: text("statement").notNull(),
+    scope: text("scope"),
+    summary: text("summary"),
+    tags: text("tags", { mode: "json" }).$type<unknown>().notNull(),
+    confidence: text("confidence").notNull(),
+    freshUntil: text("fresh_until"),
+    lastValidatedAt: text("last_validated_at"),
+    staleReason: text("stale_reason"),
+    proposedBy: text("proposed_by").notNull(),
+    promotedAt: text("promoted_at"),
+    retiredAt: text("retired_at"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("workspace_knowledge_status_idx").on(
+      table.workspaceId,
+      table.status,
+      table.updatedAt,
+    ),
+    index("workspace_knowledge_kind_idx").on(
+      table.workspaceId,
+      table.kind,
+      table.updatedAt,
+    ),
+    index("workspace_knowledge_fresh_until_idx").on(
+      table.workspaceId,
+      table.freshUntil,
+    ),
+  ],
+);
+
+export const workspaceKnowledgeSources = sqliteTable(
+  "workspace_knowledge_sources",
+  {
+    id: text("id").primaryKey(),
+    recordId: text("record_id")
+      .notNull()
+      .references(() => workspaceKnowledgeRecords.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id").notNull(),
+    kind: text("kind").notNull(),
+    label: text("label"),
+    url: text("url"),
+    externalId: text("external_id"),
+    sourceText: text("source_text"),
+    metadata: text("metadata", { mode: "json" }).$type<unknown>().notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("workspace_knowledge_sources_record_idx").on(table.recordId),
+    index("workspace_knowledge_sources_kind_idx").on(table.workspaceId, table.kind),
+    index("workspace_knowledge_sources_external_idx").on(
+      table.workspaceId,
+      table.kind,
+      table.externalId,
+    ),
+  ],
+);
+
+export const workspaceKnowledgeEvents = sqliteTable(
+  "workspace_knowledge_events",
+  {
+    id: text("id").primaryKey(),
+    recordId: text("record_id")
+      .notNull()
+      .references(() => workspaceKnowledgeRecords.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id").notNull(),
+    eventType: text("event_type").notNull(),
+    fromStatus: text("from_status"),
+    toStatus: text("to_status"),
+    reason: text("reason").notNull(),
+    actor: text("actor").notNull(),
+    metadata: text("metadata", { mode: "json" }).$type<unknown>().notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("workspace_knowledge_events_record_idx").on(table.recordId, table.createdAt),
+    index("workspace_knowledge_events_workspace_idx").on(
+      table.workspaceId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const schema = {
   docsSignalArtifacts,
   docsSignalEvents,
   docsSignalLinks,
   docsSignalSources,
   docsSignals,
+  workspaceKnowledgeEvents,
+  workspaceKnowledgeRecords,
+  workspaceKnowledgeSources,
   workspaceSetup,
 };
