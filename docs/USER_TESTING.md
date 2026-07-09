@@ -96,12 +96,9 @@ That command validates:
 - export diffs;
 - keep raw Eve sandbox/file tools disabled for the workflow.
 
-`pnpm eval` seeds a template-scoped checkout cache for the Saleor docs dogfood
-repository. That lets each eval session restore the same checked-out repo
-instead of cloning from GitHub from scratch. The live eval still runs git diff
-checks, but it intentionally does not install dependencies or run the full
-Docusaurus production build because those checks can dominate local microsandbox
-runtime and belong in narrower CI gates.
+The live eval runs git diff checks, but it intentionally does not install
+dependencies or run the full Docusaurus production build because those checks
+can dominate local microsandbox runtime and belong in narrower CI gates.
 
 By default, evals use the Vercel AI Gateway model configured in
 `EVE_GATEWAY_MODEL`, or `zai/glm-5.2` when unset. To test another Gateway model,

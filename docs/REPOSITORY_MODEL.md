@@ -75,12 +75,10 @@ the workflow clones a fresh copy.
 Dependency installation uses a sandbox-local cache marker outside the working
 repository. A cached install is valid only when `node_modules` exists, the
 `pnpm-lock.yaml` hash matches, and the prior install marker records a passed
-locked install for the same repository and ref. `pnpm eval` enables a
-template-scoped checkout cache for the Saleor docs dogfood repository so eval
-sessions can reuse the seeded checkout instead of cloning from GitHub every
-time. Normal runtime behavior stays repository-generic: it only restores a cache
-if a matching marker exists. Required checks such as git diff checks still run
-when the scenario requires them.
+locked install for the same repository and ref. Repository checkout behavior
+stays repository-generic: it only restores a cache if a matching marker exists.
+Required checks such as git diff checks still run when the scenario requires
+them.
 
 If the sandbox cannot be created, the repository cannot be cloned, refreshed, or
 materialized, or the input uses an unsupported source such as a host local path,

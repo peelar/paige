@@ -12,7 +12,7 @@
     "check": "pnpm typecheck && pnpm build && pnpm check:writeback",
     "check:writeback": "node scripts/check-writeback-policy.mjs",
     "dev": "eve dev",
-    "eval": "DOCS_MAINTAINER_EVAL_REPOSITORY_CACHE=1 eve eval",
+    "eval": "eve eval",
     "start": "eve start",
     "typecheck": "tsc"
   },
