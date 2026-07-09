@@ -77,7 +77,7 @@ For a passing run, the transcript should show:
 - check results or a visible check failure;
 - no writeback without explicit approval.
 
-To test first-run setup, delete `.docs-maintainer/`, start `pnpm dev`, and ask
+To test first-run setup, delete `.docs-agent/`, start `pnpm dev`, and ask
 for one of the docs-maintenance scenarios. The agent should ask for the working
 documentation repository GitHub URL before normal work. After
 `configure_working_repository` succeeds, the next session should reuse the

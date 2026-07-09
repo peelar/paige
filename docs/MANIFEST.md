@@ -2,19 +2,17 @@
 
 ## Product Stance
 
-This project is an open-source documentation maintainer agent for software teams
-that keep product documentation in Git. Its first job is not to broadly generate
-prose. Its job is to inspect engineering context, decide whether documentation
-is affected, and make the smallest reviewable docs change when the evidence
-supports it.
+Docs Agent is an open-source agent for software teams that keep product
+documentation in Git. Its first job is not to broadly generate prose. Its job is
+to inspect engineering context, decide whether documentation is affected, and
+make the smallest reviewable docs change when the evidence supports it.
 
-The agent should behave like a documentation maintainer who is present where
-work happens. Product decisions, release intent, support signals, and behavior
-clarifications often appear in Slack and Linear before they become a pull
-request or release artifact. The agent captures those signals with provenance,
-decides what kind of docs-maintainer work they imply, and verifies the current
-documentation state when the signal is substantive enough to justify repository
-inspection.
+The agent should be present where work happens. Product decisions, release
+intent, support signals, and behavior clarifications often appear in Slack and
+Linear before they become a pull request or release artifact. Docs Agent
+captures those signals with provenance, decides what kind of docs work they
+imply, and verifies the current documentation state when the signal is
+substantive enough to justify repository inspection.
 
 The agent is built around Eve as the durable runtime. Eve's filesystem-first
 project model is the organizing contract for instructions, tools, skills,
@@ -45,9 +43,8 @@ PR back to the same working repository.
 The next product expansion brings Slack and Linear into scope as explicit
 docs-signal intake surfaces. This does not make the agent a broad chat bot or a
 ticketing assistant. Slack threads and Linear issues become structured external
-context for docs-maintainer work; the configured working documentation
-repository remains the only mutable target, and writeback remains approval
-gated.
+context for Docs Agent work; the configured working documentation repository
+remains the only mutable target, and writeback remains approval gated.
 
 ## Repository Model
 
@@ -75,10 +72,10 @@ communication thread, issue-tracker item, decision record, release note, or
 customer report. It preserves provenance, source shape, timestamps, authors,
 links, and relationships instead of becoming a plain text blob.
 
-**Docs signals** are durable units of docs-maintainer work produced from
-external context, watched-repository evidence, or future scheduled scans. A
-signal records the claim or change being discussed, source provenance, suspected
-docs surfaces, uncertainty, related repository or release references, and current
+**Docs signals** are durable units of Docs Agent work produced from external
+context, watched-repository evidence, or future scheduled scans. A signal
+records the claim or change being discussed, source provenance, suspected docs
+surfaces, uncertainty, related repository or release references, and current
 workflow status. Signals let the agent join context that arrives over time
 instead of treating each Slack mention, Linear issue, release, or repository scan
 as an isolated prompt.
@@ -165,13 +162,13 @@ into the place where work is being discussed:
 - by asking it to scan configured release or source signals.
 
 The agent captures structured external context, records provenance, identifies
-the likely docs-maintainer task, and decides whether current docs verification is
-needed. For substantive product, API, release, or behavior signals, the normal
-path is to materialize the configured working documentation repository, inspect
-relevant docs, and return a documentation impact report. The agent may skip
-sandboxed repository inspection only when it gives a concrete reason, such as
-internal-only discussion, duplicate noise, insufficient information to identify a
-docs concern, or an explicit need to wait for source or release evidence.
+the likely docs task, and decides whether current docs verification is needed.
+For substantive product, API, release, or behavior signals, the normal path is
+to materialize the configured working documentation repository, inspect relevant
+docs, and return a documentation impact report. The agent may skip sandboxed
+repository inspection only when it gives a concrete reason, such as internal-only
+discussion, duplicate noise, insufficient information to identify a docs concern,
+or an explicit need to wait for source or release evidence.
 
 If a docs patch is warranted, patch preparation and draft PR publishing continue
 through the same sandboxed working-repository workflow and approval-gated
@@ -220,9 +217,9 @@ writeback boundary.
   Eve skill?
 - Which docs check should be mandatory for the first working docs repository
   scenario: build, typecheck, link check, or a lighter smoke check?
-- What persistence layer should store docs signals, workflow status, and
-  cross-channel provenance once `.docs-maintainer/config.json` is no longer
-  enough?
+- What is the smallest Drizzle/libSQL schema that can support docs signals,
+  workflow status, and cross-channel provenance without overbuilding the first
+  queue implementation?
 - What is the smallest stable runtime envelope for a docs signal consumed by
   Slack intake, Linear intake, watched-repository scans, scheduled scans, and
   eval scenarios?

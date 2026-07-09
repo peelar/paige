@@ -28,7 +28,7 @@ The repository input contract captures:
 - `provenanceLabel`: `working-documentation-repository`.
 
 The active working repository configuration is persisted as versioned setup
-state in `.docs-maintainer/config.json`. Calling `configure_working_repository`
+state in `.docs-agent/config.json`. Calling `configure_working_repository`
 validates the repository input through the configured app-scoped GitHub connector
 and saves only the reusable repository setup. It also records the full
 per-session repository input in Eve state so the next workflow call can use
@@ -194,10 +194,47 @@ intent, a Linear issue may clarify scope, a watched release may provide source
 evidence, and the working documentation repository verification may decide
 whether the current docs are already covered or stale.
 
-The persistence mechanism for signals and workflow state is intentionally not
-chosen in this model. `.docs-maintainer/config.json` remains setup state for the
-configured workspace, but signal persistence needs a separate design decision
-before implementation.
+Signal and workflow state is persisted in an app-owned database, not in the
+working documentation repository, watched repositories, Slack, Linear, GitHub
+issues/comments, Eve session state, or repo-local JSON. ADR-0001 chooses a
+Drizzle-backed SQLite-compatible storage boundary: local development can use a
+SQLite file through `@libsql/client`, while deployed runtimes can use the same
+Drizzle schema against libSQL, with Turso Cloud as the likely first managed
+backend when hosted persistence is needed.
+
+`.docs-agent/config.json` remains setup state for the configured workspace. It
+stores reusable repository setup and writeback configuration; it does not store
+mutable signal queue state. A later migration may move workspace setup into the
+same database boundary, but that should preserve the distinction between global
+workspace configuration and per-signal workflow state.
+
+The signal database should start small but support the near-term M3 workflows:
+
+- workspaces for the future tenant or workspace boundary;
+- docs signals with status, extracted claim, uncertainty, priority, timestamps,
+  and optional next action time;
+- signal sources with provider ids, source kind, authors, timestamps, and
+  permalinks;
+- signal links for related repositories, releases, PRs, Linear issues, Slack
+  threads, and other cross-source references;
+- verification runs with sandbox refs, considered docs pages, outcome, report
+  summary, and check status;
+- workflow events as an append-only audit trail for status transitions,
+  skipped-verification reasons, maintainer questions, patch preparation, draft
+  PR handoff, and closure reasons;
+- artifact references to diff, report, and check artifacts rather than large
+  blobs stored directly on the signal row.
+
+The minimum query model should support provider dedupe, claim or release
+dedupe, status-based work queue lookup, scheduled follow-up lookup, and audit or
+run lookup by signal id.
+
+Persistence failures must fail visibly. If the database is missing, unavailable,
+corrupt, or behind the expected schema, the app should refuse signal capture,
+queue processing, verification handoff, and status mutation instead of dropping
+or partially recording work. A one-off answer can still be given from provided
+context when useful, but the agent must say that durable signal capture is not
+available.
 
 ## Example Input
 

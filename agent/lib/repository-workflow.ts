@@ -149,11 +149,11 @@ export interface WorkflowState {
 }
 
 const repositoryWorkflowState = defineState<WorkflowState | null>(
-  "docs-maintainer.repository-workflow-state",
+  "docs-agent.repository-workflow-state",
   () => null,
 );
 const configuredRepositoryInputState = defineState<RepositoryInput | null>(
-  "docs-maintainer.configured-repository-input",
+  "docs-agent.configured-repository-input",
   () => null,
 );
 
@@ -220,7 +220,7 @@ export async function runDocsMaintenanceScenario(
     };
 
     await sandbox.writeTextFile({
-      path: ".docs-maintainer/last-result.json",
+      path: ".docs-agent/last-result.json",
       content: `${JSON.stringify(result, null, 2)}\n`,
     });
     await saveRepositoryWorkflowState({
@@ -1504,7 +1504,7 @@ async function writeInstallCacheMarker(
 }
 
 function installCacheDirectory(): string {
-  return "/workspace/.docs-maintainer-cache/install";
+  return "/workspace/.docs-agent-cache/install";
 }
 
 function installCacheMarkerPath(repository: WorkingDocumentationRepository): string {
@@ -1522,7 +1522,7 @@ function repositoryCacheMarkerPath(repository: ResolvedWorkingDocumentationRepos
 }
 
 function repositoryCacheParentDirectory(): string {
-  return "/workspace/.docs-maintainer-cache/repositories";
+  return "/workspace/.docs-agent-cache/repositories";
 }
 
 function repositoryCacheDirectory(repository: ResolvedWorkingDocumentationRepository): string {

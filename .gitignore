@@ -3,7 +3,7 @@ node_modules
 .eve
 .vercel
 .workflow-data
-.docs-maintainer
+.docs-agent
 .next
 .output
 .nitro

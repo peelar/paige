@@ -55,7 +55,7 @@ Relevance: Confirms a public API behavior change that should be reflected in con
 
 ```text
 Looks good. Publish the prepared diff as a draft PR against main.
-Use branch docs-maintainer/private-metadata-user-test-2026-07-09
+Use branch docs-agent/private-metadata-user-test-2026-07-09
 and title "Docs update: private metadata filtering test".
 ```
 

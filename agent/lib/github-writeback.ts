@@ -53,7 +53,7 @@ export const publishWorkingRepositoryPrInputSchema = z.object({
     .describe("The GitHub branch to target. Defaults to the configured repository ref."),
   branchName: branchNameSchema
     .optional()
-    .describe("Optional branch name to create. Defaults to a deterministic docs-maintainer branch."),
+    .describe("Optional branch name to create. Defaults to a deterministic docs-agent branch."),
   title: generatedTextSchema
     .optional()
     .describe("Optional PR title override. Omit it unless the user supplied one."),
@@ -715,7 +715,7 @@ export function buildDefaultBranchName(
 ): string {
   const baseSlug = slugifyBranchSegment(baseBranch);
   return branchNameSchema.parse(
-    `docs-maintainer/${baseSlug}/${baseSha.slice(0, 8)}-${diffHash.slice(0, 12)}`,
+    `docs-agent/${baseSlug}/${baseSha.slice(0, 8)}-${diffHash.slice(0, 12)}`,
   );
 }
 

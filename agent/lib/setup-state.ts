@@ -24,7 +24,7 @@ import {
 
 export const SETUP_STATE_VERSION = 1;
 export const SETUP_STATE_PATH =
-  process.env.DOCS_MAINTAINER_SETUP_STATE_PATH ?? ".docs-maintainer/config.json";
+  process.env.DOCS_AGENT_SETUP_STATE_PATH ?? ".docs-agent/config.json";
 export { GITHUB_CONNECTOR_ENV, resolveGitHubConnector };
 export { resolveGitHubAppInstallationToken as resolveGitHubWritebackToken };
 

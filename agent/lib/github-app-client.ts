@@ -2,7 +2,7 @@ import { getTokenResponse, type ConnectTokenResponse } from "@vercel/connect";
 
 export type { ConnectTokenResponse };
 
-export const GITHUB_CONNECTOR_ENV = "DOCS_MAINTAINER_GITHUB_CONNECTOR";
+export const GITHUB_CONNECTOR_ENV = "DOCS_AGENT_GITHUB_CONNECTOR";
 export const GITHUB_API_VERSION = "2022-11-28";
 
 export interface GitHubRepositorySlug {
@@ -66,7 +66,7 @@ export async function githubApiRequest<T>(input: {
     headers: {
       Accept: "application/vnd.github+json",
       "Content-Type": "application/json",
-      "User-Agent": "docs-maintainer-agent",
+      "User-Agent": "docs-agent",
       "X-GitHub-Api-Version": GITHUB_API_VERSION,
       ...(input.token === undefined ? {} : { Authorization: `Bearer ${input.token}` }),
     },

@@ -12,10 +12,10 @@ GitHub, and scan configured watched repositories for read-only release signals.
 
 The next product appetite is one focused expansion: Slack and Linear docs-signal
 intake with on-demand verification against the configured working documentation
-repository. The agent should mimic practical docs-maintainer loops: being
-mentioned in conversations, participating in Linear issues or initiatives,
-checking release/project signals, deciding whether docs verification is needed,
-and escalating to patch/writeback only through the existing approval boundary.
+repository. Docs Agent should mimic practical docs loops: being mentioned in
+conversations, participating in Linear issues or initiatives, checking
+release/project signals, deciding whether docs verification is needed, and
+escalating to patch/writeback only through the existing approval boundary.
 
 This appetite still rules out broad multi-surface chat routing, ambient scraping
 of all company context, autonomous publishing, broad source-repository
@@ -26,7 +26,7 @@ platform support.
 
 | Milestone | Goal | Done When | Issues |
 | --- | --- | --- | --- |
-| M0 | Project setup and operating rules | README, root instructions, and planning docs establish the Eve-first docs maintainer contract. | #5 |
+| M0 | Project setup and operating rules | README, root instructions, and planning docs establish the Eve-first Docs Agent contract. | #5 |
 | M1 | Sandboxed GitHub working-repository loop | The agent materializes one GitHub working repository in the Eve Vercel sandbox, enforces allowed repository actions, prepares and checks minimal patches, exports diffs, can push approved changes to a draft PR, and detects missing setup automatically before normal work. | #6, #1, #2, #4, #7, #11 |
 | M2 | Safety and read-only source evidence | The sandboxed repository workflow is covered for successful paths and fail-closed behavior, and configured watched repositories can be scanned as read-only evidence sources. | #3, #8 |
 | M3 | Slack and Linear docs-signal intake | Slack threads and Linear issues can become durable docs signals, the agent decides whether docs verification is needed, substantive signals are checked against the configured working docs repository, and patch/writeback remains gated. | #20, #21, #22, #23, #24, #25, #26, #27 |
@@ -84,7 +84,7 @@ ordering cannot be read.
 
 | Order | Issue | Why Now | Depends On |
 | --- | --- | --- | --- |
-| 0 | #5 Establish project setup and docs-maintainer operating rules | Gives contributors and agents the stable Eve-first setup needed before the workflow implementation. | None |
+| 0 | #5 Establish project setup and Docs Agent operating rules | Gives contributors and agents the stable Eve-first setup needed before the workflow implementation. | None |
 | 1 | #6 Define working docs and context repository model | Makes the central mutable docs repository and sandbox boundary explicit before workflow schemas harden. | #5 |
 | 2 | #1 Materialize a GitHub working repository in the sandbox | Proves the first real repository boundary before inspection, patching, or writeback. | #6 |
 | 3 | #2 Add a policy-aware repository action runner | Makes `allowedActions` enforceable before patches and checks can use the repository. | #1, #6 |
@@ -96,9 +96,9 @@ ordering cannot be read.
 | 9 | #20 Decide persistence for docs signals and workflow state | Chooses durable storage before the signal queue bakes in the wrong state boundary. | #8 |
 | 10 | #21 Add a docs signal work queue | Gives Slack, Linear, watched scans, and future schedules one provider-neutral work item model. | #20 |
 | 11 | #22 Generalize the docs-impact decision model across signals and evidence | Prevents Slack, Linear, watched scans, and scenarios from inventing separate outcome vocabularies. | #21 |
-| 12 | #23 Model docs maintainer workflows for signals, scans, initiatives, release readiness, and patch handoff | Names the real maintainer loops before channel intake maps everything onto one scenario runner. | #21, #22 |
+| 12 | #23 Model Docs Agent workflows for signals, scans, initiatives, release readiness, and patch handoff | Names the real docs loops before channel intake maps everything onto one scenario runner. | #21, #22 |
 | 13 | #24 Add Slack docs-signal intake with on-demand docs verification | Captures explicit Slack thread context where product and support information moves. | #21, #22, #23 |
-| 14 | #25 Add Linear docs-signal intake with on-demand docs verification | Captures Linear issue and Agent Session context as docs-maintainer work. | #21, #22, #23 |
+| 14 | #25 Add Linear docs-signal intake with on-demand docs verification | Captures Linear issue and Agent Session context as Docs Agent work. | #21, #22, #23 |
 | 15 | #26 Connect docs-signal verification to patch and writeback handoff | Lets verified stale-docs signals reuse the existing patch/check/diff and approved PR path. | #21, #22, #23 |
 | 16 | #27 Add evals and safety coverage for Slack and Linear docs-signal workflows | Locks down provenance, skipped-verification reasons, verification behavior, and approval boundaries. | #21, #22, #23, #24, #25, #26 |
 
@@ -130,7 +130,7 @@ ordering cannot be read.
    repository scenarios, and future scheduled scans share the same vocabulary and
    escalation logic.
 
-3. Model docs-maintainer workflows explicitly. (#23)
+3. Model Docs Agent workflows explicitly. (#23)
    Represent the everyday loops: mentioned in context, periodic scans, initiative
    or project participation, release readiness, current-docs verification, and
    patch handoff.
