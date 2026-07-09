@@ -96,3 +96,33 @@ Behavior verification: run `pnpm check`. Behaviorally, a Slack mention with
 source evidence should become a signal and then request current-docs
 verification; a Linear issue without source evidence should become a signal but
 skip sandbox verification until evidence exists.
+
+## #24 Add Slack docs-signal intake with on-demand docs verification
+
+Decision: Slack support starts with explicit app mentions and DMs only. Slack
+threads become structured `communication-thread` external context and durable
+docs signals; Slack is not an ambient ingestion source or a writeback target.
+
+Design: add an Eve Slack channel using Vercel Connect credentials and thread
+context since the last agent reply. Add `capture_slack_docs_signal` to preserve
+channel/thread ids, permalinks, authors, timestamps, captured-at time, and raw
+source text in signal provenance while returning only structured summaries and
+decision state to the model. Add `verify_docs_signal_current_docs` to
+materialize the configured working documentation repository, read likely docs
+pages, search likely docs terms, record `docs-verified`, and return evidence
+without patching or publishing. The tools use the shared decision model and
+setup gate: substantive source-backed signals require current-docs verification,
+setup gaps block verification visibly, and skipped verification needs an
+explicit reason.
+
+User effect: mentioning Docs Agent in Slack can create or dedupe a work queue
+item and produce an in-thread answer with captured summary, evidence, decision,
+verification status, uncertainty, and next action. It still does not prepare a
+patch, publish, or open a draft PR without a later approved handoff.
+
+Behavior verification: run `pnpm check`. Behaviorally, a source-backed Slack
+thread should capture provenance and request setup-gated docs verification, a
+ready setup should let `verify_docs_signal_current_docs` inspect current docs
+without producing a patch, a thread with supplied working-docs evidence should
+record completed verification, and an internal-only thread should skip
+verification with the stated reason.

@@ -243,6 +243,13 @@ summaries and extracted claims.
 
 The model-facing queue tools are deliberately small:
 
+- `capture_slack_docs_signal`: map an explicit Slack mention or DM thread into
+  `communication-thread` external context, capture or dedupe the signal, run
+  shared decision/triage, and return Slack reply guidance without exposing raw
+  source text in model output.
+- `verify_docs_signal_current_docs`: inspect the configured working
+  documentation repository for one signal, record verification evidence, and
+  leave patch/writeback to later approved handoff.
 - `create_docs_signal`: capture or dedupe a structured signal.
 - `list_docs_signals`: list open or filtered signals by status/source kind.
 - `get_docs_signal`: read one signal with provenance, links, artifacts, and
@@ -250,9 +257,11 @@ The model-facing queue tools are deliberately small:
 - `update_docs_signal_lifecycle`: update status with a reason and optional
   workflow links or artifacts.
 
-These tools do not add Slack, Linear, scheduled scan, patch, or writeback
-behavior by themselves. Channel intake and patch handoff must call the queue
-through provider-specific workflows later.
+The generic queue tools do not add Slack, Linear, scheduled scan, patch, or
+writeback behavior by themselves. Slack intake now calls the queue through
+`capture_slack_docs_signal`, and signal verification uses
+`verify_docs_signal_current_docs`; Linear intake and patch handoff must call the
+queue through provider-specific workflows later.
 
 ## Docs Impact Decision Model
 

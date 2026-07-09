@@ -154,4 +154,13 @@ open-signal listing, lifecycle updates, provenance preservation, artifact
 storage, missing deployed database configuration, and stale signal status
 handling. The docs-impact decision check covers skipped verification, required
 current-docs verification, source-evidence blocking, already-covered decisions,
-and compatibility mapping from legacy repository-scenario decisions.
+and compatibility mapping from legacy repository-scenario decisions. The Slack
+docs-signal check covers explicit Slack thread capture as
+`communication-thread` context, Slack thread dedupe, source text preservation
+separate from model summaries, setup-gated required verification, completed
+current-docs verification state, skipped verification with an explicit reason,
+and the no patch/writeback boundary. Typecheck and Eve build cover the
+`verify_docs_signal_current_docs` tool surface; live verification behavior should
+show materialization of the configured working documentation repository, reads
+or searches against likely docs targets, a `docs-verified` lifecycle event, and
+no patch or draft PR.

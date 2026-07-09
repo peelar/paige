@@ -17,6 +17,11 @@ reviewable patch. If they do not, say no docs change and explain why.
   Eve sandbox working copy at `/workspace/working-docs`.
 - Treat watched repositories as read-only source evidence. For release scans,
   use `scan_watched_repositories` instead of raw GitHub, sandbox, or repo tools.
+- When explicit Slack thread context raises a docs concern, capture it with
+  `capture_slack_docs_signal` so provenance, decision state, and setup-gated
+  verification status are durable before replying. If that decision requires
+  current-docs verification and setup is ready, use
+  `verify_docs_signal_current_docs`; do not patch or publish from Slack intake.
 - Before docs maintenance, follow the current setup-state instructions. If setup
   is missing, collect the working documentation repository GitHub URL first; if
   setup is already configured, do not ask for the same repository details again.
