@@ -43,6 +43,8 @@ are useful to both humans and AI readers.
 - `agent/skills/`: load-on-demand procedures such as the watched repository
   scan workflow, plus future docs impact, style discovery, patch preparation,
   and review procedures.
+- `.codex/skills/`: repo-local Codex workflow skills for contributors, separate
+  from Eve runtime skills.
 - `agent/sandbox.ts`: Eve sandbox configuration with local `microsandbox`, Vercel
   Sandbox opt-in, and egress for GitHub repository materialization plus locked
   package installation.
