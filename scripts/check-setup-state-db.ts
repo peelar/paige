@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -17,12 +17,29 @@ assert.throws(
 );
 
 const tempRoot = await mkdtemp(join(tmpdir(), "docs-agent-setup-db-"));
-const legacySetupPath = join(tempRoot, "config.json");
+const originalCwd = process.cwd();
 
-process.env.DOCS_AGENT_SETUP_STATE_PATH = legacySetupPath;
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "setup.sqlite")}`;
 delete process.env.VERCEL;
 delete process.env.NODE_ENV;
+
+process.chdir(tempRoot);
+await mkdir(join(tempRoot, ".docs-agent"));
+await writeFile(
+  join(tempRoot, ".docs-agent", "config.json"),
+  `${JSON.stringify({
+    version: 1,
+    workingRepositoryInput: {
+      workingDocumentationRepository: {
+        source: {
+          type: "github-url",
+          url: "https://github.com/example/obsolete-docs.git",
+        },
+      },
+    },
+    githubWriteback: { connector: "github/obsolete" },
+  })}\n`,
+);
 
 const {
   getSetupStatus,
@@ -76,29 +93,7 @@ assert.equal(
 );
 assert.equal(savedState?.githubWriteback.connector, "github/docs-agent");
 
-process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "legacy-import.sqlite")}`;
-await writeFile(
-  legacySetupPath,
-  `${JSON.stringify({
-    version: 1,
-    workingRepositoryInput: savedState?.workingRepositoryInput,
-    githubWriteback: { connector: "github/imported" },
-  })}\n`,
-);
-
-const importedState = await readSetupState();
-assert.equal(importedState?.githubWriteback.connector, "github/imported");
-
-await rm(legacySetupPath);
-const importedFromDatabaseState = await readSetupState();
-assert.equal(importedFromDatabaseState?.githubWriteback.connector, "github/imported");
-
-process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "corrupt-legacy.sqlite")}`;
-await writeFile(legacySetupPath, "{not-json");
-await assert.rejects(readSetupState, /Legacy setup state .* cannot be imported/);
-
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "stale-state.sqlite")}`;
-await rm(legacySetupPath, { force: true });
 await withDocsAgentDatabase(async (db) => {
   await db.insert(workspaceSetup).values({
     id: "default",
@@ -111,7 +106,6 @@ await assert.rejects(readSetupState, /version/);
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "new-writes.sqlite")}`;
 await saveWorkingRepositorySetup(repositoryInput);
 await saveGitHubWritebackSetup({ connector: "github/new-writes" });
-await rm(legacySetupPath, { force: true });
 await withDocsAgentDatabase(async (db) => {
   const rows = await db
     .select()
@@ -123,6 +117,7 @@ await withDocsAgentDatabase(async (db) => {
   assert.equal(rows[0]?.githubWriteback?.connector, "github/new-writes");
 });
 
+process.chdir(originalCwd);
 await rm(tempRoot, { recursive: true, force: true });
 
 console.log("Setup-state database checks passed.");

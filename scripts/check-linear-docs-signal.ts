@@ -5,7 +5,6 @@ import { tmpdir } from "node:os";
 
 const tempRoot = await mkdtemp(join(tmpdir(), "docs-agent-linear-signal-"));
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "linear-signals.sqlite")}`;
-process.env.DOCS_AGENT_SETUP_STATE_PATH = join(tempRoot, "missing-setup.json");
 delete process.env.VERCEL;
 delete process.env.NODE_ENV;
 

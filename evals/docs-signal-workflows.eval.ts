@@ -7,7 +7,6 @@ import { satisfies } from "eve/evals/expect";
 
 const evalDataDir = mkdtempSync(join(tmpdir(), "docs-agent-signal-evals-"));
 process.env.DOCS_AGENT_DATABASE_URL ??= `file:${join(evalDataDir, "docs-agent.sqlite")}`;
-process.env.DOCS_AGENT_SETUP_STATE_PATH ??= join(evalDataDir, "missing-setup.json");
 
 export default [
   defineEval({

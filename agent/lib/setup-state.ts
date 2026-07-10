@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-
 import { eq } from "drizzle-orm";
 import type { ToolContext } from "eve/tools";
 import { z } from "zod";
@@ -30,9 +28,6 @@ import {
 
 export const SETUP_STATE_VERSION = 1;
 export const DEFAULT_WORKSPACE_ID = "default";
-export const LEGACY_SETUP_STATE_PATH =
-  process.env.DOCS_AGENT_SETUP_STATE_PATH ?? ".docs-agent/config.json";
-export const SETUP_STATE_PATH = LEGACY_SETUP_STATE_PATH;
 export { GITHUB_CONNECTOR_ENV, resolveGitHubConnector };
 export { resolveGitHubAppInstallationToken as resolveGitHubWritebackToken };
 
@@ -167,7 +162,7 @@ export async function readSetupState(): Promise<SetupState | null> {
     const row = rows[0];
     if (row !== undefined) return parseSetupStateRow(row);
 
-    return importLegacySetupStateIfPresent(db);
+    return null;
   });
 }
 
@@ -175,30 +170,6 @@ export async function saveSetupState(state: SetupState): Promise<SetupState> {
   const parsed = setupStateSchema.parse(state);
   await writeSetupStateRow(parsed);
   return parsed;
-}
-
-async function importLegacySetupStateIfPresent(
-  db: DocsAgentDatabase,
-): Promise<SetupState | null> {
-  const legacy = await readLegacySetupState();
-  if (legacy === null) return null;
-
-  await upsertSetupStateRow(db, legacy);
-  return legacy;
-}
-
-async function readLegacySetupState(): Promise<SetupState | null> {
-  try {
-    const content = await readFile(LEGACY_SETUP_STATE_PATH, "utf8");
-    return setupStateSchema.parse(JSON.parse(content));
-  } catch (error) {
-    if (isMissingFileError(error)) return null;
-    throw new Error(
-      `Legacy setup state at ${LEGACY_SETUP_STATE_PATH} is invalid and cannot be imported: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    );
-  }
 }
 
 async function writeSetupStateRow(state: SetupState): Promise<void> {
@@ -804,12 +775,3 @@ type GitHubInstallationRepositoriesResponse = {
 type GitHubRepositoryResponse = {
   full_name: string;
 };
-
-function isMissingFileError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === "ENOENT"
-  );
-}

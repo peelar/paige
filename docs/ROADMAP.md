@@ -122,9 +122,8 @@ ordering cannot be read.
    status, and verification results live before adding a signal work queue.
 
 1. Add database foundation and migrate setup persistence. (#28)
-   Add the Drizzle/libSQL database foundation and move current non-session setup
-   persistence out of `.docs-agent/config.json` before product workflow state
-   lands.
+   Add the Drizzle/libSQL database foundation and make non-session setup
+   persistence database-only before product workflow state lands.
 
 2. Add a docs signal work queue. (#21)
    Store provider-neutral docs signals from Slack, Linear, watched repositories,

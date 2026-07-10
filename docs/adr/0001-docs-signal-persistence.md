@@ -14,10 +14,10 @@ patch handoff. That state has to survive restarts and deployments, be queryable
 across sessions, support dedupe, and keep provider provenance separate from the
 working documentation repository.
 
-The existing `.docs-agent/config.json` setup state is intentionally narrow. It
-stores reusable workspace setup such as the configured working documentation
-repository and watched repositories. It is not the right boundary for
-multi-channel mutable workflow state.
+The previous `.docs-agent/config.json` setup state was intentionally narrow. It
+stored reusable workspace setup such as the configured working documentation
+repository and watched repositories. It was not the right boundary for
+multi-channel mutable workflow state or ongoing setup persistence.
 
 Eve session state is also not the right boundary. Eve `defineState` is durable
 per-session working memory, while docs signals must be available across
