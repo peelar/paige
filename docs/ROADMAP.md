@@ -2,158 +2,110 @@
 
 ## Current Appetite
 
-The current repository foundation should remain narrow enough to validate with
-one configured GitHub working documentation repository cloned or materialized
-into the Eve Vercel sandbox. That foundation proves that the agent can
-materialize the repository, enforce allowed repository actions, reason about a
-change, prepare a minimal patch when warranted, run checks, export a diff,
-automatically collect required workspace setup, publish approved changes back to
-GitHub, and scan configured watched repositories for read-only release signals.
+The sandboxed working-repository loop, watched-repository evidence, durable docs
+signals, Slack and Linear intake, patch handoff, and workspace memories are now
+implemented. The product has useful state, but operators cannot see it without
+asking the agent or inspecting runtime and database internals.
 
-The next product appetite is one focused expansion: Slack and Linear docs-signal
-intake with on-demand verification against the configured working documentation
-repository. Docs Agent should mimic practical docs loops: being mentioned in
-conversations, participating in Linear issues or initiatives, checking
-release/project signals, deciding whether docs verification is needed, and
-escalating to patch/writeback only through the existing approval boundary.
+The current appetite is the first web control-plane delivery:
 
-This appetite still rules out broad multi-surface chat routing, ambient scraping
-of all company context, autonomous publishing, broad source-repository
-integration, broad context-repository integration, and broad documentation
-platform support.
+1. establish a Turborepo boundary with separate Eve and Next.js apps;
+2. add the operator shell and production authentication;
+3. share the smallest app-owned database and read-service boundary;
+4. show setup and runtime readiness;
+5. show the docs-signal queue and full signal detail.
+
+The first delivery is read-only after authentication. Guided setup, connector
+handoffs, workspace-memory review, run history, personality and participation
+settings, approvals, and eval reporting stay below it in the backlog.
+
+The operator surface builds on the existing agent workflow contract in
+`docs/WORKFLOWS.md`; it does not replace or redefine those runtime boundaries.
+
+This appetite still rules out multi-workspace accounts and roles, silent
+provider installation, a raw database or workflow-state editor, a custom
+tracing backend, broad context ingestion, and autonomous publishing.
 
 ## Milestones
 
 | Milestone | Goal | Done When | Issues |
 | --- | --- | --- | --- |
 | M0 | Project setup and operating rules | README, root instructions, and planning docs establish the Eve-first Docs Agent contract. | #5 |
-| M1 | Sandboxed GitHub working-repository loop | The agent materializes one GitHub working repository in the Eve Vercel sandbox, enforces allowed repository actions, prepares and checks minimal patches, exports diffs, can push approved changes to a draft PR, and detects missing setup automatically before normal work. | #6, #1, #2, #4, #7, #11 |
-| M2 | Safety and read-only source evidence | The sandboxed repository workflow is covered for successful paths and fail-closed behavior, and configured watched repositories can be scanned as read-only evidence sources. | #3, #8 |
-| M3 | Slack and Linear docs-signal intake | Slack threads and Linear issues can become durable docs signals, the agent decides whether docs verification is needed, substantive signals are checked against the configured working docs repository, and patch/writeback remains gated. | #20, #28, #21, #22, #23, #24, #25, #26, #27 |
+| M1 | Sandboxed GitHub working-repository loop | The agent materializes one working docs repository, enforces repository policy, prepares and checks minimal patches, exports diffs, publishes approved draft PRs, and detects missing setup. | #6, #1, #2, #4, #7, #11 |
+| M2 | Safety and read-only source evidence | The repository workflow is covered for successful and fail-closed paths, and watched repositories can provide read-only release evidence. | #3, #8 |
+| M3 | Durable docs-signal workflows | Slack, Linear, watched scans, patch handoff, safety evals, and workspace memories use the app-owned database and shared docs-impact model. | #20, #28, #21, #22, #23, #24, #25, #26, #27, #29 |
+| M4 | Operator control plane first delivery | An authenticated operator can see whether Docs Agent is ready, browse the durable work queue, and inspect signal provenance, lifecycle, and artifacts. | #35, #36, #37, #38, #39, #40, #41 |
 
-## M1 Slice Plan
+## M4 Slice Plan
 
-0. Establish project setup and operating rules.
-   Capture the README, root instructions, validation commands, and documentation
-   repository rules needed before implementing the scenario-backed workflow.
+0. Convert the repository to a Turborepo. (#35)
+   Move the Eve runtime into `apps/agent`, add a minimal Next.js app under
+   `apps/web`, and keep `pnpm check` authoritative.
 
-1. Define repository model.
-   Capture the working documentation repository as the primary mutable target
-   inside the Eve Vercel sandbox, plus the typed input contract and explicit
-   no-fallback behavior.
+1. Add the operator app shell. (#36)
+   Establish navigation and UI conventions without fake product data.
 
-2. Materialize the GitHub working repository.
-   Parse the repository input, reject unsupported sources, default the ref when
-   omitted, clone or materialize into `/workspace/working-docs`, detect the docs
-   root when omitted, and record provenance.
+2. Add production authentication. (#37)
+   Protect the single-workspace operator surface and its server-side actions.
 
-3. Add a policy-aware repository action runner.
-   Gate clone, read, search, patch, run-checks, and export-diff actions against
-   the repository contract and fail closed for unsupported actions or paths.
+3. Extract shared database and read services. (#38)
+   Give the agent and web app one typed app-owned boundary without exposing raw
+   tables to the browser.
 
-4. Patch, check, and export inside the sandbox.
-   Emit the impact report, prepare minimal Markdown or MDX patches, run checks,
-   and export a reviewable diff artifact through the action runner.
+4. Show readiness. (#39)
+   Report whether the database, runtime, repositories, writeback, and channels
+   are configured, reachable, and verified.
 
-5. Add automatic setup gate.
-   Check required workspace configuration at the start of each turn, guide the
-   model into setup mode when fields are missing or stale, and enforce the same
-   setup boundary inside docs-maintenance and writeback tools. Persist reusable
-   repository setup separately from one-off scenario context.
+5. Show the work queue. (#40)
+   List existing docs signals with useful status, source, priority, uncertainty,
+   and next-action context.
 
-6. Push approved changes to GitHub.
-   After explicit approval, create a branch, push the sandboxed diff, and open a
-   draft PR in the working repository with report, evidence, checks, and
-   uncertainty.
-
-7. Add safety and regression coverage.
-   Cover successful materialization, denied actions, unsupported sources,
-   patch/check/diff behavior, approval-required writeback, and primary report
-   decisions.
-
-8. Add watched repository release scans.
-   Persist configured watched repositories as read-only source evidence, inspect
-   recent release signals, verify candidates in sandboxed read-only checkouts,
-   compare them with the working docs repository, and emit a report without
-   writing to watched repositories.
+6. Show signal detail. (#41)
+   Present provenance, claims, missing evidence, lifecycle events, reports,
+   checks, diffs, and draft PR artifacts.
 
 ## Ordered Backlog
 
-Use this table as the agreed fallback order when GitHub Projects or custom issue
-ordering cannot be read.
+Use these tables as the agreed fallback order when GitHub Projects or custom
+issue ordering cannot be read.
+
+### First Delivery
 
 | Order | Issue | Why Now | Depends On |
 | --- | --- | --- | --- |
-| 0 | #5 Establish project setup and Docs Agent operating rules | Gives contributors and agents the stable Eve-first setup needed before the workflow implementation. | None |
-| 1 | #6 Define working docs and context repository model | Makes the central mutable docs repository and sandbox boundary explicit before workflow schemas harden. | #5 |
-| 2 | #1 Materialize a GitHub working repository in the sandbox | Proves the first real repository boundary before inspection, patching, or writeback. | #6 |
-| 3 | #2 Add a policy-aware repository action runner | Makes `allowedActions` enforceable before patches and checks can use the repository. | #1, #6 |
-| 4 | #4 Patch, check, and export diffs inside the sandbox | Turns repository access into useful docs work without granting push authority yet. | #1, #2, #6 |
-| 5 | #11 Add automatic setup gate for required workspace configuration | Makes setup drift visible and collectible on every turn before docs work or writeback run in any channel. | #1, #2, #4, #6, #7 |
-| 6 | #7 Push approved sandbox changes to a draft GitHub PR | Adds controlled writeback after sandbox-local behavior is proven. | #1, #2, #4, #6 |
-| 7 | #3 Add safety evals for the sandboxed GitHub repository workflow | Locks in successful paths and fail-closed behavior after the full working-repository loop exists. | #1, #2, #4, #7, #11, #6 |
-| 8 | #8 Add watched repository support for read-only source evidence | Adds narrow release-signal source evidence without granting write authority outside the working docs repository. | #7, #11 |
-| 9 | #20 Decide persistence for docs signals and workflow state | Chooses durable storage before the signal queue bakes in the wrong state boundary. | #8 |
-| 10 | #28 Add database foundation and migrate setup persistence | Puts the Drizzle/libSQL storage boundary and existing setup persistence migration in place before product workflow state lands. | #20 |
-| 11 | #21 Add a docs signal work queue | Gives Slack, Linear, watched scans, and future schedules one provider-neutral work item model. | #20, #28 |
-| 12 | #22 Generalize the docs-impact decision model across signals and evidence | Prevents Slack, Linear, watched scans, and scenarios from inventing separate outcome vocabularies. | #21 |
-| 13 | #23 Model Docs Agent workflows for signals, scans, initiatives, release readiness, and patch handoff | Names the real docs loops before channel intake maps everything onto one scenario runner. | #21, #22 |
-| 14 | #24 Add Slack docs-signal intake with on-demand docs verification | Captures explicit Slack thread context where product and support information moves. | #21, #22, #23 |
-| 15 | #25 Add Linear docs-signal intake with on-demand docs verification | Captures Linear issue and Agent Session context as Docs Agent work. | #21, #22, #23 |
-| 16 | #26 Connect docs-signal verification to patch and writeback handoff | Lets verified stale-docs signals reuse the existing patch/check/diff and approved PR path. | #21, #22, #23 |
-| 17 | #27 Add evals and safety coverage for Slack and Linear docs-signal workflows | Locks down provenance, skipped-verification reasons, verification behavior, and approval boundaries. | #21, #22, #23, #24, #25, #26 |
+| 0 | #35 Convert the repository to a Turborepo with agent and web apps | Establishes the deployable app boundary before web work starts. | None |
+| 1 | #36 Add the Next.js operator app shell | Gives later screens one real UI structure without inventing data. | #35 |
+| 2 | #37 Protect the web app with single-workspace operator authentication | Makes every later product read and action fail closed in production. | #36 |
+| 3 | #38 Extract shared database and control-plane services | Prevents the web app from duplicating agent persistence or importing raw tools. | #35 |
+| 4 | #39 Show Docs Agent setup and runtime readiness | Delivers the first useful onboarding surface: is everything ready, and if not, why? | #37, #38 |
+| 5 | #40 Show the docs-signal work queue | Exposes the existing durable work product with very little new domain behavior. | #37, #38 |
+| 6 | #41 Show docs-signal provenance, lifecycle, and artifacts | Makes the queue trustworthy by showing the complete evidence and workflow record. | #40 |
+
+### Later Backlog
+
+| Order | Issue | Why Later | Depends On |
+| --- | --- | --- | --- |
+| 7 | #42 Add guided workspace onboarding from the Status page | Adds setup mutations after the readiness model proves what users need. | #39 |
+| 8 | #43 Add connector installation handoffs and verification | Improves installation without pretending provider consent can be silent. | #39 |
+| 9 | #44 Add workspace-memory review to the web app | Exposes an existing human-governed lifecycle after the core signal UI. | #37, #38 |
+| 10 | #45 Add product-level run history and trace links | Connects product work to Eve and Vercel traces without building a second runtime. | #37, #38 |
+| 11 | #32 Reduce always-on instruction bloat without changing agent behavior | Establishes the instruction boundary required by the identity work. | None |
+| 12 | #31 Define and express Docs Agent's technical-editor identity | Sets the product default before personality becomes configurable. | #32 |
+| 13 | #33 Persist Chat SDK state in the existing libSQL/Turso database | Provides durable subscription and debounce state before changing Slack transport. | None |
+| 14 | #34 Replace Eve's native Slack channel with Chat SDK Slack integration | Establishes the transport and privacy boundary needed for continued participation. | #33 |
+| 15 | #30 Let Docs Agent keep participating after it is mentioned in a Slack thread | Defines the default participation lifecycle before exposing settings. | #33, #34 |
+| 16 | #46 Add structured personality and participation settings | Tunes tested defaults without exposing raw prompts or widening authority. | #30, #31, #32, #37, #38 |
+| 17 | #47 Add a centralized approval inbox | Aggregates pending side effects after signal detail and identity are established. | #37, #38, #41 |
+| 18 | #48 Show eval results and behavioral regressions | Adds a contributor and operator assurance surface after the core product UI. | #36, #37 |
 
 ## Later
 
-- Broader source/context repository access beyond watched release scans.
-- Discord, Notion, support system, or other team surfaces after Slack and Linear
-  prove the signal intake model.
-- Vercel Connect-backed access to private team context.
+- Multi-workspace accounts, invitations, and roles.
+- Operator mutations for signal priority, lifecycle, and next action.
+- Schedules, notifications, usage, retention, and data-management controls.
+- Broader source and context repository access beyond watched release scans.
+- Discord, Notion, support systems, or other team surfaces.
 - Scheduled stale-doc detection beyond explicitly configured scans.
-- Persistent style and information-architecture maps.
 - Multi-docs-platform support.
 - AI-readable docs outputs such as `llms.txt`, structured Markdown bundles, MCP
   documentation endpoints, or task-specific knowledge packs.
-
-## M3 Slice Plan
-
-0. Decide persistence for docs signals and workflow state. (#20)
-   Choose where durable signal records, cross-channel provenance, lifecycle
-   status, and verification results live before adding a signal work queue.
-
-1. Add database foundation and migrate setup persistence. (#28)
-   Add the Drizzle/libSQL database foundation and make non-session setup
-   persistence database-only before product workflow state lands.
-
-2. Add a docs signal work queue. (#21)
-   Store provider-neutral docs signals from Slack, Linear, watched repositories,
-   and future schedules with provenance, relationships, uncertainty, and
-   lifecycle status.
-
-3. Generalize the docs-impact decision model. (#22)
-   Extract the existing report-first decisions so Slack, Linear, release scans,
-   repository scenarios, and future scheduled scans share the same vocabulary and
-   escalation logic.
-
-4. Model Docs Agent workflows explicitly. (#23)
-   Represent the everyday loops: mentioned in context, periodic scans, initiative
-   or project participation, release readiness, current-docs verification, and
-   patch handoff. The durable contract lives in `docs/WORKFLOWS.md`.
-
-5. Add Slack intake. (#24)
-   Capture explicit Slack thread mentions as communication-thread signals, run
-   the shared decision workflow, and verify current docs when warranted.
-
-6. Add Linear intake. (#25)
-   Capture delegated or mentioned Linear issues as issue-tracker-item signals,
-   run the shared decision workflow, and verify current docs when warranted.
-
-7. Connect signal verification to patch/writeback handoff. (#26)
-   When verification produces a warranted docs patch, reuse the sandboxed
-   working-repository patch/check/diff path and keep draft PR publishing behind
-   explicit approval.
-
-8. Add signal-workflow evals and safety coverage. (#27)
-   Cover Slack intake, Linear intake, skipped-verification reasons,
-   on-demand sandbox verification, provenance joining, and no unapproved
-   writeback.

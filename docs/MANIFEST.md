@@ -40,11 +40,15 @@ documentation impact report, prepares a minimal Markdown or MDX patch when
 warranted, runs checks, exports a diff, and can push an approved branch or draft
 PR back to the same working repository.
 
-The next product expansion brings Slack and Linear into scope as explicit
-docs-signal intake surfaces. This does not make the agent a broad chat bot or a
-ticketing assistant. Slack threads and Linear issues become structured external
-context for Docs Agent work; the configured working documentation repository
-remains the only mutable target, and writeback remains approval gated.
+The current product also captures explicit Slack threads and Linear Agent
+Sessions as durable docs signals. This does not make the agent a broad chat bot
+or ticketing assistant. The configured working documentation repository remains
+the only mutable target, and writeback remains approval gated.
+
+The next product expansion is an authenticated web control plane for the state
+the agent already owns. Its first job is to show setup readiness, the docs-signal
+work queue, and the provenance and lifecycle of each signal. Slack and Linear
+remain the places where documentation work starts.
 
 ## Repository Model
 
@@ -136,6 +140,9 @@ docs change.
 - Build policy and safety evals before expanding Slack, Linear,
   source-repository, context-repository, or proactive integrations so behavior
   can be regression tested as tools and channels become more capable.
+- Keep the web control plane on the same typed setup, signal, memory, and
+  workflow services as the agent. Do not turn it into a raw database or runtime
+  state editor.
 
 ## Repository Workflow
 
@@ -203,6 +210,9 @@ writeback boundary.
 - Signals from Slack, Linear, watched repositories, and release context can be
   joined so the agent does not lose context between discovery, verification,
   patch preparation, and final writeback.
+- An authenticated operator can tell whether Docs Agent is ready, browse the
+  durable docs-signal queue, and inspect signal evidence and lifecycle without
+  reading SQLite or runtime logs.
 
 ## Open Questions
 
@@ -234,6 +244,8 @@ writeback boundary.
   eval readiness notes.
 - `docs/WORKFLOWS.md`: docs-signal workflow model, runtime boundaries, and tool
   mapping for channel, scan, verification, patch, and writeback work.
+- `docs/ADMIN_UI.md`: operator control-plane scope, onboarding boundary, and
+  delivery order.
 - `evals/scenarios/`: typed user-test fixture data used by manual tests and
   future executable evals.
 - `docs/adr/`: durable decision records, created through `$to-adr`.
