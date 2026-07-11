@@ -18,6 +18,18 @@ const SUPPORTED_MESSAGE_SUBTYPES = new Set([
  * never parsed or passed to Chat SDK when the thread is not enrolled.
  */
 export class SubscriptionFilteredSlackAdapter extends SlackAdapter {
+  private readonly admitOrdinaryMessage?: (threadId: string) => Promise<boolean>;
+
+  constructor(
+    config: SlackAdapterConfig,
+    options: {
+      admitOrdinaryMessage?: (threadId: string) => Promise<boolean>;
+    } = {},
+  ) {
+    super(config);
+    this.admitOrdinaryMessage = options.admitOrdinaryMessage;
+  }
+
   protected override handleMessageEvent(
     event: SlackEvent,
     options?: WebhookOptions,
@@ -58,7 +70,15 @@ export class SubscriptionFilteredSlackAdapter extends SlackAdapter {
         "Slack subscription prefilter cannot run before Chat SDK initialization.",
       );
     }
-    return this.chat.getState().isSubscribed(threadId);
+    const state = this.chat.getState();
+    if (
+      this.admitOrdinaryMessage !== undefined &&
+      !(await this.admitOrdinaryMessage(threadId))
+    ) {
+      await state.unsubscribe(threadId);
+      return false;
+    }
+    return state.isSubscribed(threadId);
   }
 
   private async forwardIfSubscribed(
@@ -73,8 +93,11 @@ export class SubscriptionFilteredSlackAdapter extends SlackAdapter {
 
 export function createSubscriptionFilteredSlackAdapter(
   config: SlackAdapterConfig,
+  options: {
+    admitOrdinaryMessage?: (threadId: string) => Promise<boolean>;
+  } = {},
 ): SubscriptionFilteredSlackAdapter {
-  return new SubscriptionFilteredSlackAdapter(config);
+  return new SubscriptionFilteredSlackAdapter(config, options);
 }
 
 export function shouldIgnoreSlackMessage(event: SlackEvent): boolean {

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { resolveSlackThreadPresenceForSignal } from "@docs-agent/control-plane/agent";
+
 import {
   docsImpactDecisionRecordSchema,
   docsImpactEvidenceSchema,
@@ -144,6 +146,14 @@ export async function captureSlackDocsSignal(
     actor: "docs-agent:slack-intake",
     externalContext,
   });
+
+  if (intake.signal.status.startsWith("closed-")) {
+    await resolveSlackThreadPresenceForSignal({
+      channelId: parsed.channelId,
+      threadTs: parsed.threadTs,
+      signalId: intake.signal.id,
+    });
+  }
 
   return captureSlackDocsSignalResultSchema.parse({
     created: intake.created,

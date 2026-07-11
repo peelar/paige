@@ -221,18 +221,41 @@ connector. The Slack app must deliver `app_mention`, `message.im`,
    there is no reply, Eve run, or new `chat_sdk_*` content for that thread.
 2. Mention Paige in a thread that already has human replies. Confirm she sees
    only context after her previous reply, replies in the same thread, and the
-   connector token and Vercel OIDC verification path are used.
-3. Send Paige a DM and confirm the response remains in that DM conversation.
-4. Exercise a tool that requests human input. Confirm the Slack card resumes the
+   connector token and Vercel OIDC verification path are used. Confirm one
+   active `slack_thread_presence` row and one Chat SDK subscription exist for
+   the thread.
+3. Reply normally without mentioning Paige. Ask a direct follow-up, then ask an
+   answerable documentation question to the room. Confirm both continue the
+   same Eve thread and receive useful replies.
+4. Send two short replies within one second. Confirm they produce one debounced
+   observer turn containing both messages rather than overlapping runs.
+5. Add unrelated lunch or scheduling chatter. Confirm there is no Slack reply
+   and no new or updated docs signal. Then add plausible product, API, release,
+   support, or documentation context and confirm Paige may call
+   `capture_slack_docs_signal` without treating the conversation itself as
+   implementation evidence.
+6. Say `Paige, stop following this thread.` Confirm the acknowledgement,
+   dismissed presence, and removed subscription. Post another ordinary reply
+   and confirm there is no reply, Eve run, or persisted Chat SDK message.
+7. Re-enroll a non-production thread if needed and verify that presence older
+   than seven days of inactivity is rejected and marked expired on the next
+   ordinary message.
+8. Send Paige a DM and confirm the response remains in that DM conversation.
+9. Exercise a tool that requests human input. Confirm the Slack card resumes the
    same Eve session as the user who clicked it.
-5. Send a bot message, edit, delete, and unsupported subtype. Confirm none starts
+10. Send a bot message, edit, delete, and unsupported subtype. Confirm none starts
    an Eve run. A followed message must also remain ordinary conversation unless
    Paige explicitly calls `capture_slack_docs_signal` for relevant evidence.
 
-Issue #34 does not enroll threads. Until #30 adds the participation lifecycle,
-the subscribed-message case can be exercised by inserting a test subscription
-through the Chat SDK state adapter in a non-production database, then removing
-it after the scenario.
+The executable participation eval covers direct continuation, an unaddressed
+answerable docs question, unrelated chatter that stays silent, and relevant
+context that calls the existing Slack intake tool. It was run for #30 with:
+
+```sh
+pnpm eval slack-participation --skip-report --verbose
+```
+
+Result on 2026-07-11: four cases passed and all twelve eval gates passed.
 
 ## Deterministic Runtime Checks
 

@@ -220,10 +220,23 @@ mentions and DMs, but ordinary public or private channel messages receive only a
 thread-id subscription lookup first. An unenrolled message is discarded before
 Chat SDK parses its content or can run dedupe, history, queue, or Eve/model
 processing. Bot and self-authored messages, edits, deletes, and unsupported
-subtypes are discarded even earlier. Accepted turns retain Slack actor auth,
-incremental context since Paige's last reply, thread delivery, and HITL user
-identity. Merely following a thread does not create a docs signal; the existing
-`capture_slack_docs_signal` workflow remains an explicit model decision.
+subtypes are discarded even earlier. Accepted mentions create a separate
+`slack_thread_presence` record and Chat SDK subscription for that thread. The
+record preserves the Slack workspace, channel, root timestamp, continuation
+token, inviter, activity, status, and expiry without becoming a docs signal.
+Ordinary admitted messages refresh a seven-day inactivity window and resume the
+same Eve thread; one-second durable burst debouncing combines short reply bursts
+into one observer turn.
+
+Accepted turns retain Slack actor auth, incremental context since Paige's last
+reply, thread delivery, and HITL user identity. Followed-thread observer turns
+answer direct continuations and useful documentation questions, may call
+`capture_slack_docs_signal` for plausible documentation context, and emit an
+internal `[[SILENT]]` marker for unrelated conversation. The Slack delivery
+handler suppresses that marker. Exact dismissal phrases end presence and remove
+the subscription; terminal docs-signal transitions resolve matching presence;
+expired presence is rejected and its stale subscription removed before content
+reaches Chat SDK. Merely following a thread does not create a docs signal.
 
 Workspace setup state now lives in the same app-owned database boundary as the
 future signal queue, but it remains a separate record from mutable signal

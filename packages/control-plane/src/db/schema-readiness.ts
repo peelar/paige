@@ -4,8 +4,8 @@ import { getTableConfig, type AnySQLiteTable } from "drizzle-orm/sqlite-core";
 import type { DocsAgentDatabase } from "./client.js";
 import { schema } from "./schema.js";
 
-export const DOCS_AGENT_SCHEMA_MIGRATION_COUNT = 7;
-export const DOCS_AGENT_SCHEMA_LATEST_MIGRATION_AT = 1783807051887;
+export const DOCS_AGENT_SCHEMA_MIGRATION_COUNT = 8;
+export const DOCS_AGENT_SCHEMA_LATEST_MIGRATION_AT = 1783808446286;
 
 const tableConfigs = Object.values(schema).map((table) =>
   getTableConfig(table as AnySQLiteTable),

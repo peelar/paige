@@ -202,9 +202,9 @@ The following work stays below the first delivery chain:
 
 Chat SDK persistence ([#33](https://github.com/peelar/docs-agent/issues/33)) and
 Slack transport migration ([#34](https://github.com/peelar/docs-agent/issues/34))
-are complete runtime foundations. Continued thread participation
-([#30](https://github.com/peelar/docs-agent/issues/30)),
-instruction-boundary cleanup ([#32](https://github.com/peelar/docs-agent/issues/32)),
+and continued thread participation
+([#30](https://github.com/peelar/docs-agent/issues/30)) are complete runtime
+foundations. Instruction-boundary cleanup ([#32](https://github.com/peelar/docs-agent/issues/32)),
 and technical-editor identity ([#31](https://github.com/peelar/docs-agent/issues/31))
 are related agent-runtime work. They remain separate issues and should not be
 folded into the web foundation.

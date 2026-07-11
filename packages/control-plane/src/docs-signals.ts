@@ -11,6 +11,7 @@ import {
   docsSignalOwnedWork,
   docsSignalSources,
   docsSignals,
+  slackThreadPresences,
 } from "./db/schema.js";
 import { DEFAULT_WORKSPACE_ID } from "./setup-state.js";
 import {
@@ -515,10 +516,64 @@ export async function transitionDocsSignalLifecycle(
         actor: parsed.actor,
         metadata: parsed.metadata,
       });
+
+      if (!isOpenDocsSignalStatus(parsed.status)) {
+        await resolveSlackPresenceForSignal(tx, parsed.id, updatedAt);
+      }
     });
 
     return readDocsSignalDetail(db, parsed.id);
   });
+}
+
+function isOpenDocsSignalStatus(status: DocsSignalStatus): boolean {
+  return (openDocsSignalStatuses as readonly string[]).includes(status);
+}
+
+async function resolveSlackPresenceForSignal(
+  db: DocsAgentDatabaseExecutor,
+  signalId: string,
+  updatedAt: string,
+): Promise<void> {
+  const sources = await db
+    .select({ metadata: docsSignalSources.metadata })
+    .from(docsSignalSources)
+    .where(
+      and(
+        eq(docsSignalSources.signalId, signalId),
+        eq(docsSignalSources.provider, "slack"),
+      ),
+    );
+  const endedAt = Date.parse(updatedAt);
+  for (const { metadata } of sources) {
+    const channelId = metadataValue(metadata, "channelId");
+    const threadTs = metadataValue(metadata, "threadTs");
+    if (!channelId || !threadTs) continue;
+    await db
+      .update(slackThreadPresences)
+      .set({
+        status: "resolved",
+        endedAt,
+        endReason: `docs-signal-resolved:${signalId}`,
+      })
+      .where(
+        and(
+          eq(slackThreadPresences.workspaceId, DEFAULT_WORKSPACE_ID),
+          eq(slackThreadPresences.channelId, channelId),
+          eq(slackThreadPresences.threadTs, threadTs),
+          eq(slackThreadPresences.status, "active"),
+        ),
+      );
+  }
+}
+
+function metadataValue(
+  metadata: unknown,
+  key: string,
+): string | undefined {
+  if (typeof metadata !== "object" || metadata === null) return undefined;
+  const value = (metadata as Record<string, unknown>)[key];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 async function findSignalByDedupeKey(

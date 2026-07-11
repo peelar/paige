@@ -111,10 +111,14 @@ Connect. Set
 `DOCS_AGENT_SLACK_CONNECTOR`, or create the default `slack/docs-agent`
 connector and attach its trigger to `/eve/v1/slack`. Paige handles explicit app
 mentions and DMs, fetches new thread context, and records substantive threads as
-documentation signals. The Slack app must subscribe to `app_mention`,
+documentation signals. An accepted mention also enrolls that thread for scoped
+participation: Paige answers useful follow-ups, observes unrelated conversation
+silently, and stops after dismissal, signal resolution, or seven days of
+inactivity. The Slack app must subscribe to `app_mention`,
 `message.im`, `message.channels`, and `message.groups`, with matching history,
 write, and user-read scopes. Ordinary channel messages are discarded at the
-adapter boundary unless their thread is already subscribed.
+adapter boundary unless their thread has active presence and a Chat SDK
+subscription.
 
 Linear uses Eve's Linear Agent Session channel and Vercel Connect. Set
 `DOCS_AGENT_LINEAR_CONNECTOR`, or create the default `linear/docs-agent`

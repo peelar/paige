@@ -319,6 +319,42 @@ export const chatSdkQueueEntries = sqliteTable(
   ],
 );
 
+export const slackThreadPresences = sqliteTable(
+  "slack_thread_presence",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    teamId: text("team_id"),
+    channelId: text("channel_id").notNull(),
+    threadTs: text("thread_ts").notNull(),
+    chatThreadId: text("chat_thread_id").notNull(),
+    continuationToken: text("continuation_token").notNull(),
+    inviterUserId: text("inviter_user_id").notNull(),
+    status: text("status").notNull(),
+    enrolledAt: integer("enrolled_at").notNull(),
+    lastActivityAt: integer("last_activity_at").notNull(),
+    expiresAt: integer("expires_at").notNull(),
+    endedAt: integer("ended_at"),
+    endReason: text("end_reason"),
+  },
+  (table) => [
+    uniqueIndex("slack_thread_presence_thread_idx").on(
+      table.workspaceId,
+      table.channelId,
+      table.threadTs,
+    ),
+    uniqueIndex("slack_thread_presence_chat_thread_idx").on(
+      table.workspaceId,
+      table.chatThreadId,
+    ),
+    index("slack_thread_presence_expiry_idx").on(
+      table.workspaceId,
+      table.status,
+      table.expiresAt,
+    ),
+  ],
+);
+
 export const workspaceMemoryRecords = sqliteTable(
   "workspace_knowledge_records",
   {
@@ -425,6 +461,7 @@ export const schema = {
   docsSignalOwnedWork,
   docsSignalSources,
   docsSignals,
+  slackThreadPresences,
   workspaceMemoryEvents,
   workspaceMemoryRecords,
   workspaceMemorySources,

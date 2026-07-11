@@ -12,6 +12,11 @@ const { migrateDocsAgentDatabase } = await import("../agent/lib/db/client.js");
 await migrateDocsAgentDatabase();
 
 const { captureSlackDocsSignal } = await import("../agent/lib/slack-docs-signal.js");
+const {
+  continueSlackThreadPresence,
+  enrollSlackThreadPresence,
+  transitionDocsSignalLifecycle,
+} = await import("@docs-agent/control-plane/agent");
 
 const sourceBacked = await captureSlackDocsSignal({
   teamId: "T123",
@@ -101,6 +106,33 @@ const duplicate = await captureSlackDocsSignal({
 assert.equal(duplicate.created, false);
 assert.equal(duplicate.signal.id, sourceBacked.signal.id);
 
+await enrollSlackThreadPresence({
+  channelId: "C123",
+  threadTs: "1783612800.000100",
+  chatThreadId: "slack:C123:1783612800.000100",
+  continuationToken: "slack:C123:1783612800.000100",
+  inviterUserId: "U_DOCS",
+});
+await transitionDocsSignalLifecycle({
+  id: sourceBacked.signal.id,
+  status: "closed-not-docs-relevant",
+  actor: "docs-agent:test",
+  reason: "The later lifecycle decision resolved this signal.",
+}, "intake");
+assert.equal(
+  (await continueSlackThreadPresence({ chatThreadId: "slack:C123:1783612800.000100" })).admitted,
+  false,
+  "a later terminal lifecycle transition ends matching Slack presence",
+);
+
+await enrollSlackThreadPresence({
+  channelId: "C456",
+  threadTs: "1783616400.000100",
+  chatThreadId: "slack:C456:1783616400.000100",
+  continuationToken: "slack:C456:1783616400.000100",
+  inviterUserId: "U_DOCS",
+});
+
 const alreadyCovered = await captureSlackDocsSignal({
   channelId: "C456",
   channelName: "release-readiness",
@@ -141,6 +173,11 @@ assert.equal(alreadyCovered.decision.decision, "already-covered");
 assert.equal(alreadyCovered.verificationStatus.state, "completed");
 assert.equal(alreadyCovered.signal.status, "closed-already-covered");
 assert.equal(alreadyCovered.signal.events[0]?.actor, "docs-agent:slack-intake");
+assert.equal(
+  (await continueSlackThreadPresence({ chatThreadId: "slack:C456:1783616400.000100" })).admitted,
+  false,
+  "resolving the Slack docs signal ends conversation presence",
+);
 
 const skipped = await captureSlackDocsSignal({
   channelId: "C789",

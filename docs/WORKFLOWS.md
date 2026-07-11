@@ -14,6 +14,14 @@ a docs signal, and runs decision/triage. The agent replies with what it captured
 what evidence is missing, whether current docs were verified, and the next
 action.
 
+An accepted Slack mention also establishes scoped thread presence independently
+of signal state. Later human replies in that thread continue the same Eve
+session without another mention. Paige responds to direct continuations and
+answerable documentation questions, captures plausible docs context through the
+normal Slack intake tool, and stays silent for unrelated conversation. Presence
+ends on an explicit dismissal, a terminal lifecycle transition for the matching
+docs signal, or seven days of inactivity.
+
 ### Periodic Scan
 
 A user or future schedule asks the agent to check configured sources such as
@@ -50,6 +58,7 @@ publishing remains a separate explicit approval through
 
 | Boundary | Owns | Current implementation | Must not do |
 | --- | --- | --- | --- |
+| Slack thread presence | Admit only invited thread replies and preserve conversational continuity. | Separate `slack_thread_presence` state plus Chat SDK subscriptions, one-second burst debounce, silent observer turns, dismissal, signal-resolution cleanup, and seven-day inactivity expiry. | Persist or model-process unenrolled channel traffic, create signals from ordinary chatter, or widen participation beyond the invited thread. |
 | Signal intake | Convert provider context into a docs signal with provenance. | `capture_slack_docs_signal`, `capture_linear_docs_signal`; `create_docs_signal`, `list_docs_signals`, `get_docs_signal`, `update_docs_signal_lifecycle`; watched scans also create source evidence. | Inspect or patch docs directly. |
 | Owned execution | Keep one substantial task on its originating signal and Eve session through reversible work, human pauses, corrections, approval, and outcome. | `owned_docs_work`, the one-to-one `docs_signal_owned_work` projection, existing signal events/artifacts, and Eve's durable session/turn runtime. | Create a second workflow engine, duplicate work on resume, narrate routine activity, or bypass approval. |
 | Scheduled follow-up | Revisit a bounded checklist of due signal work once per UTC daily occurrence. | `docs_follow_up`, `process_due_docs_followups`, `daily-docs-follow-ups`, and app-owned follow-up/run tables. | Scan broadly, process an occurrence twice, hide failures, or publish. |
