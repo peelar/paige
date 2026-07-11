@@ -17,7 +17,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate-db.ts",
     "db:migrate:deployment": "tsx scripts/migrate-db-for-build.ts",
-    "test": "tsx scripts/check-db-migration-parity.ts && tsx scripts/check-db-schema-lifecycle.ts && tsx scripts/check-control-plane-boundary.ts && tsx scripts/check-readiness.ts",
+    "test": "tsx scripts/check-db-migration-parity.ts && tsx scripts/check-db-schema-lifecycle.ts && tsx scripts/check-control-plane-boundary.ts && tsx scripts/check-readiness.ts && tsx scripts/check-signal-queue.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

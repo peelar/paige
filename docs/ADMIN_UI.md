@@ -152,9 +152,16 @@ rendered item includes its source, last check time, and next action.
 
 Tracked by [#40](https://github.com/peelar/docs-agent/issues/40).
 
-Show the existing docs signals as the core operational queue. The list should
-support the current status and source vocabularies, priority, updated time, next
-action, uncertainty, and useful empty or failure states.
+The Signals page now shows existing docs signals as the core operational queue.
+It uses a dedicated shared-service projection that includes only the signal id,
+current status, source kind, operator-safe summary, priority, uncertainty, next
+action time, and updated time. Raw source records, provider identity and
+metadata, workspace ids, and dedupe keys stay outside the browser contract.
+
+Open work is the default. Operators can filter by the existing status and
+source vocabularies or explicitly include closed work. Results sort by priority,
+then updated time, then stable id. Loading, empty, database failure, and invalid
+persisted-record states remain visible and read-only.
 
 ### 6. Signal detail
 

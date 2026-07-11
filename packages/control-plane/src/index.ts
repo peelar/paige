@@ -3,14 +3,25 @@ import "server-only";
 export {
   getDocsSignal,
   getDocsSignalInputSchema,
+  listDocsSignalQueue,
+  listDocsSignalQueueResultSchema,
   listDocsSignals,
   listDocsSignalsInputSchema,
   listDocsSignalsResultSchema,
+  docsSignalSourceKindSchema,
+  openDocsSignalStatuses,
   docsSignalDetailSchema,
+  type DocsSignalRecord,
+  type DocsSignalQueueItem,
   type DocsSignalDetail,
   type DocsSignalSourceKind,
   type ListDocsSignalsInput,
 } from "./docs-signals.js";
+export {
+  docsSignalStatuses,
+  docsSignalStatusSchema,
+  type DocsSignalStatus,
+} from "./docs-signal-lifecycle.js";
 export {
   getSetupStatus,
   setupStatusSchema,

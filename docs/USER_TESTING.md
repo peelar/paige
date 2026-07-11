@@ -239,3 +239,30 @@ instructions. The table-driven readiness check covers every readiness state for
 all six items plus probe failures and overall aggregation. Browser checks cover
 ready, partial, unknown, blocked, database-down, and provider-down reports on
 desktop and mobile.
+
+## Docs-signal Queue
+
+Open `/signals` after the app-owned database contains docs signals. The default
+view shows open work only. Each row should show the existing status and source
+kind, an operator-safe source summary, priority, uncertainty, next action time,
+and updated time. Priority sorts high to low; updated time and stable id break
+ties deterministically.
+
+Verify the read-only controls:
+
+1. Filter by one current signal status and confirm only that status remains.
+2. Filter by one source kind and confirm only that source remains.
+3. Enable **Include closed** and confirm closed signals appear without changing
+   any record.
+4. Choose filters with no matches and use **Reset filters** to return to open
+   work.
+
+The queue payload intentionally excludes raw source text, source authors,
+provider ids and metadata, workspace ids, dedupe keys, extracted claims, and
+artifacts. Those belong to signal detail or server-side persistence. A database
+failure must show migration guidance; an invalid persisted row must stop the
+list with a distinct contract error instead of disappearing.
+
+`pnpm check` covers shared-service ordering, filtering, open/closed behavior,
+payload redaction, and invalid rows, plus ready, empty, filtered-empty,
+database-error, and invalid-record browser states on desktop and mobile.

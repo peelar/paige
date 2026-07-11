@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { and, desc, eq, inArray, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { z } from "zod";
 
 import { withDocsAgentDatabase, type DocsAgentDatabase } from "./db/client.js";
@@ -249,7 +249,24 @@ export const listDocsSignalsResultSchema = z.object({
   signals: z.array(docsSignalRecordSchema),
 });
 
+export const docsSignalQueueItemSchema = docsSignalRecordSchema.pick({
+  id: true,
+  status: true,
+  sourceKind: true,
+  sourceSummary: true,
+  uncertainty: true,
+  priority: true,
+  nextActionAt: true,
+  updatedAt: true,
+});
+
+export const listDocsSignalQueueResultSchema = z.object({
+  signals: z.array(docsSignalQueueItemSchema),
+});
+
 export type DocsSignalSourceKind = z.infer<typeof docsSignalSourceKindSchema>;
+export type DocsSignalRecord = z.infer<typeof docsSignalRecordSchema>;
+export type DocsSignalQueueItem = z.infer<typeof docsSignalQueueItemSchema>;
 export type DocsSignalDetail = z.infer<typeof docsSignalDetailSchema>;
 export type CreateDocsSignalInput = z.infer<typeof createDocsSignalInputSchema>;
 export type UpdateDocsSignalLifecycleInput = z.infer<
@@ -380,12 +397,35 @@ export async function listDocsSignals(
       .select()
       .from(docsSignals)
       .where(and(...conditions))
-      .orderBy(desc(docsSignals.updatedAt))
+      .orderBy(
+        desc(docsSignals.priority),
+        desc(docsSignals.updatedAt),
+        asc(docsSignals.id),
+      )
       .limit(parsed.limit);
 
     return listDocsSignalsResultSchema.parse({
       signals: rows.map(parseSignalRow),
     });
+  });
+}
+
+export async function listDocsSignalQueue(
+  input: Partial<ListDocsSignalsInput> = {},
+): Promise<z.infer<typeof listDocsSignalQueueResultSchema>> {
+  const result = await listDocsSignals(input);
+
+  return listDocsSignalQueueResultSchema.parse({
+    signals: result.signals.map((signal) => ({
+      id: signal.id,
+      status: signal.status,
+      sourceKind: signal.sourceKind,
+      sourceSummary: signal.sourceSummary,
+      uncertainty: signal.uncertainty,
+      priority: signal.priority,
+      nextActionAt: signal.nextActionAt,
+      updatedAt: signal.updatedAt,
+    })),
   });
 }
 

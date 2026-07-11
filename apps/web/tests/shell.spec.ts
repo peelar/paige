@@ -33,7 +33,7 @@ test("the shell navigates and adapts to the viewport", async ({ page }, testInfo
 
   if (testInfo.project.name === "desktop") {
     expect(sidebarBox!.x + sidebarBox!.width).toBeLessThanOrEqual(mainBox!.x);
-    expect(sidebarBox!.height).toBeGreaterThan(mainBox!.height);
+    expect(sidebarBox!.height).toBeGreaterThanOrEqual(page.viewportSize()?.height ?? 0);
   } else {
     expect(sidebarBox!.y + sidebarBox!.height).toBeLessThanOrEqual(mainBox!.y);
     expect(sidebarBox!.width).toBeGreaterThanOrEqual(380);
