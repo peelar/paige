@@ -14,7 +14,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: `pnpm dev --port ${port}`,
+    command: `pnpm start --port ${port}`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
     timeout: 120_000,

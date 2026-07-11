@@ -25,7 +25,7 @@ for (const name of ["docs-agent-workspace", "docs-agent", "@docs-agent/web"]) {
   }
 }
 
-run("root build orchestration", ["build"]);
+run("Eve discovery", ["--filter", "docs-agent", "exec", "eve", "info"]);
 
 const discoveryManifestPath = join(
   agentRoot,

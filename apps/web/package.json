@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "check": "pnpm typecheck && pnpm build && pnpm test",
+    "check": "pnpm typecheck && pnpm test",
     "dev": "next dev --hostname 127.0.0.1",
     "start": "next start --hostname 127.0.0.1",
-    "test": "playwright test",
+    "test": "pnpm build && playwright test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
