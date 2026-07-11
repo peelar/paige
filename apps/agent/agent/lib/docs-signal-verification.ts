@@ -9,14 +9,16 @@ import {
 import {
   exportRepositoryDiff,
   listChangedFiles,
-  loadOrMaterializeRepositoryWorkflowState,
   readRepositoryFile,
-  repositoryActionRecordSchema,
-  repositoryCheckResultSchema,
-  repositoryMaterializationSchema,
   runRepositoryCheck,
   searchRepository,
-} from "./repository-workflow.js";
+} from "./repository-operations.js";
+import { repositoryActionRecordSchema } from "./repository-materialization.js";
+import {
+  repositoryCheckResultSchema,
+  repositoryMaterializationSchema,
+} from "./repository-workflow-contract.js";
+import { loadOrMaterializeRepositoryWorkflowState } from "./working-repository-lifecycle.js";
 
 const currentDocsPageVerificationSchema = z.object({
   path: z.string(),

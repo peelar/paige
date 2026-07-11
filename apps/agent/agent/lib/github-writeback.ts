@@ -7,12 +7,16 @@ import type { WorkingDocumentationRepository } from "./repository-contract.js";
 import {
   exportRepositoryDiff,
   listChangedFiles,
-  loadRepositoryWorkflowState,
+} from "./repository-operations.js";
+import type { RepositoryActionRecord } from "./repository-materialization.js";
+import {
   repositoryCheckResultSchema,
-  saveRepositoryWorkflowState,
   type DocsMaintenanceWorkflowResult,
-  type RepositoryActionRecord,
-} from "./repository-workflow.js";
+} from "./repository-workflow-contract.js";
+import {
+  loadRepositoryWorkflowState,
+  saveRepositoryWorkflowState,
+} from "./repository-workflow-state.js";
 import {
   preflightGitHubWritebackSetup,
   requireSetupReady,

@@ -3,12 +3,12 @@ import { z } from "zod";
 
 import { repositoryInputSchema } from "../lib/repository-contract.js";
 import {
-  materializeWorkingRepository,
-  saveConfiguredRepositoryInput,
-  type RepositoryActionRecord,
   repositoryActionRecordSchema,
-  repositoryMaterializationSchema,
-} from "../lib/repository-workflow.js";
+  type RepositoryActionRecord,
+} from "../lib/repository-materialization.js";
+import { repositoryMaterializationSchema } from "../lib/repository-workflow-contract.js";
+import { saveConfiguredRepositoryInput } from "../lib/repository-workflow-state.js";
+import { materializeWorkingRepository } from "../lib/working-repository-lifecycle.js";
 import { saveWorkingRepositorySetup } from "../lib/setup-state.js";
 
 const outputSchema = z.object({

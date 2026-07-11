@@ -219,6 +219,15 @@ export function quoteShellArgument(value: string): string {
   return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
+export function joinSandboxPath(root: string, path: string): string {
+  if (path === ".") return root;
+  return `${root.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+
+export function normalizeRepositoryUrl(value: string): string {
+  return value.trim().replace(/\.git$/, "").replace(/\/$/, "").toLowerCase();
+}
+
 async function configureWatchedRepositoryAccess(
   ctx: ToolContext,
   policy: WatchedRepositoryMaterializationPolicy,

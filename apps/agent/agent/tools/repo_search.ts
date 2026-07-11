@@ -1,11 +1,9 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
-import {
-  loadOrMaterializeRepositoryWorkflowState,
-  saveRepositoryWorkflowState,
-  searchRepository,
-} from "../lib/repository-workflow.js";
+import { searchRepository } from "../lib/repository-operations.js";
+import { saveRepositoryWorkflowState } from "../lib/repository-workflow-state.js";
+import { loadOrMaterializeRepositoryWorkflowState } from "../lib/working-repository-lifecycle.js";
 
 export default defineTool({
   description:

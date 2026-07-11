@@ -2,11 +2,11 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 
 import {
-  loadOrMaterializeRepositoryWorkflowState,
-  type RepositoryActionRecord,
   repositoryActionRecordSchema,
-  repositoryMaterializationSchema,
-} from "../lib/repository-workflow.js";
+  type RepositoryActionRecord,
+} from "../lib/repository-materialization.js";
+import { repositoryMaterializationSchema } from "../lib/repository-workflow-contract.js";
+import { loadOrMaterializeRepositoryWorkflowState } from "../lib/working-repository-lifecycle.js";
 
 const outputSchema = z.object({
   materialization: repositoryMaterializationSchema,

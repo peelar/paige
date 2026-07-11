@@ -2,15 +2,17 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 
 import { repositoryInputSchema } from "../lib/repository-contract.js";
+import { repositoryMaterializationSchema } from "../lib/repository-workflow-contract.js";
+import { saveConfiguredRepositoryInput } from "../lib/repository-workflow-state.js";
+import {
+  repositoryActionRecordSchema,
+  type RepositoryActionRecord,
+} from "../lib/repository-materialization.js";
+import { saveWorkingRepositorySetup } from "../lib/setup-state.js";
 import {
   materializeWorkingRepository,
-  saveConfiguredRepositoryInput,
-  type RepositoryActionRecord,
-  repositoryActionRecordSchema,
-  repositoryMaterializationSchema,
   validateWorkingRepositorySetup,
-} from "../lib/repository-workflow.js";
-import { saveWorkingRepositorySetup } from "../lib/setup-state.js";
+} from "../lib/working-repository-lifecycle.js";
 
 const outputSchema = z.object({
   configured: z.literal(true),

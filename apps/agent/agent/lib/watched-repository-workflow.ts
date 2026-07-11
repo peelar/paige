@@ -7,13 +7,7 @@ import {
   parseGitHubRepositoryUrl,
   resolveGitHubAppInstallationToken,
 } from "./github-app-client.js";
-import {
-  impactDecisionSchema,
-  loadOrMaterializeRepositoryWorkflowState,
-  repositoryActionRecordSchema,
-  searchRepository,
-  type RepositoryActionRecord,
-} from "./repository-workflow.js";
+import { searchRepository } from "./repository-operations.js";
 import {
   type WatchedRepository,
   type WorkingDocumentationRepository,
@@ -22,12 +16,16 @@ import {
   cloneRepositoryCheckout,
   quoteShellArgument as sh,
   recordRepositoryAction,
+  repositoryActionRecordSchema,
   resolveRepositoryCommit,
   summarizeCommandFailure,
+  type RepositoryActionRecord,
   type WatchedRepositoryCheckoutAccess,
   watchedRepositoryMaterializationPolicy,
 } from "./repository-materialization.js";
+import { impactDecisionSchema } from "./repository-workflow-contract.js";
 import { requireSetupReady, resolveGitHubConnector } from "./setup-state.js";
+import { loadOrMaterializeRepositoryWorkflowState } from "./working-repository-lifecycle.js";
 
 const watchedRepositoryMaterializationSchema = z.object({
   repositoryId: z.string(),

@@ -10,18 +10,22 @@ import {
 import {
   documentationImpactReportSchema,
   docsMaintenanceWorkflowResultSchema,
+  repositoryCheckNameSchema,
+  type DocsMaintenanceWorkflowResult,
+  type RepositoryCheckName,
+} from "./repository-workflow-contract.js";
+import {
   exportRepositoryDiff,
   listChangedFiles,
-  loadOrMaterializeRepositoryWorkflowState,
   replaceRepositoryText,
-  repositoryCheckNameSchema,
-  reuseMaterializedWorkingRepository,
   runRepositoryCheck,
-  saveRepositoryWorkflowState,
-  type DocsMaintenanceWorkflowResult,
-  type RepositoryActionRecord,
-  type RepositoryCheckName,
-} from "./repository-workflow.js";
+} from "./repository-operations.js";
+import type { RepositoryActionRecord } from "./repository-materialization.js";
+import { saveRepositoryWorkflowState } from "./repository-workflow-state.js";
+import {
+  loadOrMaterializeRepositoryWorkflowState,
+  reuseMaterializedWorkingRepository,
+} from "./working-repository-lifecycle.js";
 
 const patchHandoffBaseSchema = z.object({
   signalId: z.string().trim().min(1),

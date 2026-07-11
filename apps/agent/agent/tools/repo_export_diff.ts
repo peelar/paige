@@ -4,9 +4,9 @@ import { z } from "zod";
 import {
   exportRepositoryDiff,
   listChangedFiles,
-  loadOrMaterializeRepositoryWorkflowState,
-  saveRepositoryWorkflowState,
-} from "../lib/repository-workflow.js";
+} from "../lib/repository-operations.js";
+import { saveRepositoryWorkflowState } from "../lib/repository-workflow-state.js";
+import { loadOrMaterializeRepositoryWorkflowState } from "../lib/working-repository-lifecycle.js";
 
 export default defineTool({
   description:
