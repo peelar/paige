@@ -4,6 +4,7 @@ export * from "./docs-profile.js";
 export * from "./docs-follow-ups.js";
 export * from "./owned-docs-work.js";
 export * from "./owned-docs-work-contract.js";
+export * from "./libsql-chat-state.js";
 export * from "./repository-contract.js";
 export * from "./setup-state.js";
 export { docsAgentDatabaseLocation } from "./db/client.js";

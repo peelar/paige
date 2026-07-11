@@ -272,6 +272,53 @@ export const docsFollowUpRuns = sqliteTable(
   ],
 );
 
+export const chatSdkSubscriptions = sqliteTable("chat_sdk_subscriptions", {
+  threadId: text("thread_id").primaryKey(),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const chatSdkLocks = sqliteTable("chat_sdk_locks", {
+  threadId: text("thread_id").primaryKey(),
+  token: text("token").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+});
+
+export const chatSdkKeyValues = sqliteTable("chat_sdk_key_values", {
+  key: text("key").primaryKey(),
+  value: text("value", { mode: "json" }).$type<unknown>().notNull(),
+  expiresAt: integer("expires_at"),
+});
+
+export const chatSdkListEntries = sqliteTable(
+  "chat_sdk_list_entries",
+  {
+    id: text("id").primaryKey(),
+    key: text("key").notNull(),
+    sequence: integer("sequence").notNull(),
+    value: text("value", { mode: "json" }).$type<unknown>().notNull(),
+    expiresAt: integer("expires_at"),
+  },
+  (table) => [
+    uniqueIndex("chat_sdk_list_entries_sequence_idx").on(table.key, table.sequence),
+    index("chat_sdk_list_entries_expiry_idx").on(table.expiresAt),
+  ],
+);
+
+export const chatSdkQueueEntries = sqliteTable(
+  "chat_sdk_queue_entries",
+  {
+    id: text("id").primaryKey(),
+    threadId: text("thread_id").notNull(),
+    sequence: integer("sequence").notNull(),
+    entry: text("entry", { mode: "json" }).$type<unknown>().notNull(),
+    expiresAt: integer("expires_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("chat_sdk_queue_entries_sequence_idx").on(table.threadId, table.sequence),
+    index("chat_sdk_queue_entries_expiry_idx").on(table.expiresAt),
+  ],
+);
+
 export const workspaceMemoryRecords = sqliteTable(
   "workspace_knowledge_records",
   {
@@ -364,6 +411,11 @@ export const workspaceMemoryEvents = sqliteTable(
 );
 
 export const schema = {
+  chatSdkKeyValues,
+  chatSdkListEntries,
+  chatSdkLocks,
+  chatSdkQueueEntries,
+  chatSdkSubscriptions,
   docsProfiles,
   docsFollowUpRuns,
   docsFollowUps,

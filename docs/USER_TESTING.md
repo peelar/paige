@@ -152,6 +152,22 @@ List the scenarios with:
 pnpm eval --list
 ```
 
+## Chat SDK State
+
+The repository gate includes deterministic local conformance and concurrency
+coverage for the libSQL Chat SDK state adapter. To exercise the same adapter
+against an already migrated hosted Turso database, run:
+
+```sh
+DOCS_AGENT_DATABASE_URL=libsql://... \
+DOCS_AGENT_DATABASE_AUTH_TOKEN=... \
+pnpm --filter @docs-agent/control-plane test:chat-state:remote
+```
+
+The smoke uses unique temporary keys and thread ids, verifies subscriptions,
+locks, TTL-backed values, and NX behavior, and cleans up its state. Missing
+remote configuration fails visibly instead of using the local database.
+
 ## Operator Readiness
 
 The Status page is a read-only report over six server-side checks: database and

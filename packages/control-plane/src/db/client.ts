@@ -15,6 +15,10 @@ export const DOCS_AGENT_DATABASE_AUTH_TOKEN_ENV = "DOCS_AGENT_DATABASE_AUTH_TOKE
 export const DEFAULT_LOCAL_DATABASE_URL = "file:.docs-agent/docs-agent.sqlite";
 
 export type DocsAgentDatabase = LibSQLDatabase<typeof dbSchema>;
+type DocsAgentConnection = Awaited<ReturnType<typeof openDocsAgentDatabase>>;
+let sharedConnection: DocsAgentConnection | null = null;
+let sharedConnectionPromise: Promise<DocsAgentConnection> | null = null;
+let sharedConnectionUsers = 0;
 
 export class DatabaseConfigurationError extends Error {
   constructor(message: string) {
@@ -102,6 +106,32 @@ export async function withDocsAgentDatabase<T>(
     return await fn(connection.db);
   } finally {
     connection.client.close();
+  }
+}
+
+export async function acquireSharedDocsAgentDatabase(): Promise<DocsAgentDatabase> {
+  if (sharedConnection === null) {
+    sharedConnectionPromise ??= openDocsAgentDatabase();
+    try {
+      sharedConnection = await sharedConnectionPromise;
+      await assertDocsAgentDatabaseReady(sharedConnection.db);
+    } catch (error) {
+      sharedConnection?.client.close();
+      sharedConnection = null;
+      throw error;
+    } finally {
+      sharedConnectionPromise = null;
+    }
+  }
+  sharedConnectionUsers += 1;
+  return sharedConnection.db;
+}
+
+export function releaseSharedDocsAgentDatabase(): void {
+  if (sharedConnectionUsers > 0) sharedConnectionUsers -= 1;
+  if (sharedConnectionUsers === 0 && sharedConnection !== null) {
+    sharedConnection.client.close();
+    sharedConnection = null;
   }
 }
 

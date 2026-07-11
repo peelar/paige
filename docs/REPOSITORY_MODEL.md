@@ -204,6 +204,15 @@ SQLite file through `@libsql/client`, while deployed runtimes can use the same
 Drizzle schema against libSQL, with Turso Cloud as the likely first managed
 backend when hosted persistence is needed.
 
+Chat SDK operational state uses that same database client and deployment
+configuration, but remains isolated in `chat_sdk_*` tables. The app-owned state
+adapter persists thread subscriptions, token-owned leases, TTL-backed key-value
+and list state, and FIFO debounce queues. Local and hosted runtimes use the same
+contract. A missing or unhealthy required database is an explicit failure; the
+adapter never substitutes process memory. SQLite write operations are ordered
+within a process and retry only bounded `SQLITE_BUSY` contention, while database
+constraints and short transactions preserve correctness across instances.
+
 Workspace setup state now lives in the same app-owned database boundary as the
 future signal queue, but it remains a separate record from mutable signal
 workflow state. It stores reusable repository setup and writeback configuration;

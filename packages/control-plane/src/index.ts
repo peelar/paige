@@ -1,6 +1,7 @@
 import "server-only";
 
 export * from "./docs-follow-ups.js";
+export * from "./libsql-chat-state.js";
 
 export {
   DOCS_PROFILE_FORMAT_VERSION,
