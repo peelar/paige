@@ -36,6 +36,8 @@ Slack · Linear · Releases · Repositories
 | Concern | Implementation |
 | --- | --- |
 | Agent runtime | [Eve](https://eve.dev) |
+| Operator app | Next.js, deployed separately from the Eve runtime |
+| Workspace | pnpm and Turborepo with `apps/agent` and `apps/web` |
 | Team context | Explicit Slack mentions and Linear Agent Sessions |
 | Repository evidence | GitHub working repository plus optional read-only watched repositories |
 | Isolation | Eve sandbox with the working documentation repository at `/workspace/working-docs` |
@@ -49,15 +51,39 @@ Use Node 24.18.0.
 
 ```sh
 pnpm install
-pnpm eval
-pnpm dev
+pnpm check
+pnpm eval --list
+pnpm dev --no-ui
 ```
 
-Local state uses `.docs-agent/docs-agent.sqlite` when
+The root commands keep the repository workflow stable while routing work to the
+right application. `pnpm dev --no-ui`, `pnpm eval`, and `pnpm db:migrate` target
+the Eve app in `apps/agent`. Use `pnpm dev:web` for the minimal Next.js app. The
+package-qualified forms are `pnpm --filter docs-agent <command>` and
+`pnpm --filter @docs-agent/web <command>`.
+
+Put local agent variables in `apps/agent/.env.local` and web-only variables in
+`apps/web/.env.local`. Local state still uses `.docs-agent/docs-agent.sqlite` at
+the repository root when
 `DOCS_AGENT_DATABASE_URL` is not set. A deployed runtime must set
 `DOCS_AGENT_DATABASE_URL` and, when required by the provider,
 `DOCS_AGENT_DATABASE_AUTH_TOKEN`. Missing required persistence fails visibly
 before documentation work continues.
+
+## Deploy On Vercel
+
+The repository root owns workspace orchestration and is not a deployable app.
+Create two Vercel projects from the same repository:
+
+- set the agent project's Root Directory to `apps/agent`; it owns Eve routes,
+  channels, tools, sandboxes, workflow state, and agent runtime variables;
+- set the web project's Root Directory to `apps/web`; it owns the Next.js
+  operator pages and web-only variables.
+
+Keep the two projects independently linked and configured. The web app does not
+mount Eve with `withEve`, proxy agent routes, or inherit the agent project's
+environment. Cross-app authentication and service calls are intentionally left
+for their dedicated issues.
 
 ## Connect Team Context
 

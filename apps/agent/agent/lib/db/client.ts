@@ -10,7 +10,7 @@ import * as dbSchema from "./schema.js";
 
 export const DOCS_AGENT_DATABASE_URL_ENV = "DOCS_AGENT_DATABASE_URL";
 export const DOCS_AGENT_DATABASE_AUTH_TOKEN_ENV = "DOCS_AGENT_DATABASE_AUTH_TOKEN";
-export const DEFAULT_LOCAL_DATABASE_URL = "file:.docs-agent/docs-agent.sqlite";
+export const DEFAULT_LOCAL_DATABASE_URL = "file:../../.docs-agent/docs-agent.sqlite";
 
 const docsAgentMigrations = [
   {
@@ -340,13 +340,14 @@ function resolveLocalFilePath(url: string): string | undefined {
 
   if (url === "file::memory:") return undefined;
 
-  try {
-    return fileURLToPath(url);
-  } catch {
-    const rawPath = url.slice("file:".length);
-    if (rawPath === "" || rawPath === ":memory:") return undefined;
-    return isAbsolute(rawPath) ? rawPath : resolve(process.cwd(), rawPath);
+  const rawPath = url.slice("file:".length);
+  if (rawPath === "" || rawPath === ":memory:") return undefined;
+
+  if (!isAbsolute(rawPath) && !rawPath.startsWith("//")) {
+    return resolve(process.cwd(), rawPath);
   }
+
+  return fileURLToPath(url);
 }
 
 function formatUnknownError(error: unknown): string {

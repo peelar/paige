@@ -190,13 +190,13 @@ Decision: signal workflow coverage lives in two layers: model-facing Eve evals
 for the channel tool sequence, and deterministic runtime checks for exact
 lifecycle and safety boundaries.
 
-Design: add `evals/docs-signal-workflows.eval.ts` with one Slack case that
+Design: add `apps/agent/evals/docs-signal-workflows.eval.ts` with one Slack case that
 captures a source-backed Slack signal, asserts current-docs verification is
 required, and verifies missing setup blocks repository verification before any
 patch or PR tools are called; and one Linear case that captures an issue
 missing source evidence and asserts no repository setup, verification, patch, or
 publish tools run. Add
-`scripts/check-docs-signal-workflow-safety.ts` to join Slack/Linear intake,
+`apps/agent/scripts/check-docs-signal-workflow-safety.ts` to join Slack/Linear intake,
 shared decision policy, setup-gated verification, source-evidence refusal, and
 patch-handoff eligibility in `pnpm test`.
 
@@ -220,7 +220,7 @@ Stored memory is routing and triage context only; it is not proof for public
 documentation claims.
 
 Design: add Drizzle/libSQL tables for workspace memories, provenance sources,
-and lifecycle events. Add `agent/lib/workspace-memory.ts` with
+and lifecycle events. Add `apps/agent/agent/lib/workspace-memory.ts` with
 strict model inputs, runtime-owned workspace scoping, proposal, exact/tag
 search, read, promote, stale, and retire APIs. Add model-facing
 `memory_*` tools and dynamic instructions that inject a compact active memory

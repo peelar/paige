@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 import { eq } from "drizzle-orm";
@@ -10,6 +10,11 @@ import {
   withDocsAgentDatabase,
 } from "../agent/lib/db/client.js";
 import { workspaceSetup } from "../agent/lib/db/schema.js";
+
+assert.equal(
+  resolveDocsAgentDatabaseConfig({}).localFilePath,
+  resolve(process.cwd(), "../../.docs-agent/docs-agent.sqlite"),
+);
 
 assert.throws(
   () => resolveDocsAgentDatabaseConfig({ VERCEL: "1" }),

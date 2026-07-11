@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const workflows = await readFile("docs/WORKFLOWS.md", "utf8");
-const repositoryModel = await readFile("docs/REPOSITORY_MODEL.md", "utf8");
-const manifest = await readFile("docs/MANIFEST.md", "utf8");
-const roadmap = await readFile("docs/ROADMAP.md", "utf8");
+const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
+const workflows = await readFile(join(repositoryRoot, "docs/WORKFLOWS.md"), "utf8");
+const repositoryModel = await readFile(join(repositoryRoot, "docs/REPOSITORY_MODEL.md"), "utf8");
+const manifest = await readFile(join(repositoryRoot, "docs/MANIFEST.md"), "utf8");
+const roadmap = await readFile(join(repositoryRoot, "docs/ROADMAP.md"), "utf8");
 
 for (const heading of [
   "Mentioned In Context",

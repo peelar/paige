@@ -8,8 +8,8 @@ https://github.com/peelar/saleor-docs.git
 ```
 
 The canonical fixtures live in
-`evals/scenarios/saleor-docs-user-test-scenarios.ts`. Copy-paste prompt files
-for manual `/goal` runs live in `evals/scenarios/manual/`. Each fixture contains
+`apps/agent/evals/scenarios/saleor-docs-user-test-scenarios.ts`. Copy-paste prompt files
+for manual `/goal` runs live in `apps/agent/evals/scenarios/manual/`. Each fixture contains
 the user prompt, working documentation repository input, attached issue/thread
 context, expected outcome, expected touched files, forbidden touched files, and
 checks.
@@ -62,8 +62,8 @@ expected outcome only as the human review guide after the run completes.
 
 Manual prompt files:
 
-- `evals/scenarios/manual/saleor-docs-private-metadata-filtering.goal.md`
-- `evals/scenarios/manual/saleor-docs-sandbox-rate-limit-false-alarm.goal.md`
+- `apps/agent/evals/scenarios/manual/saleor-docs-private-metadata-filtering.goal.md`
+- `apps/agent/evals/scenarios/manual/saleor-docs-sandbox-rate-limit-false-alarm.goal.md`
 
 For a passing run, the transcript should show:
 
@@ -87,10 +87,10 @@ can happen later when the docs workflow needs the checkout.
 
 ## Eve Evals
 
-`evals/saleor-docs-user-tests.eval.ts` registers both scenarios with hard
+`apps/agent/evals/saleor-docs-user-tests.eval.ts` registers both scenarios with hard
 assertions for the live agent behavior and repository workflow.
 
-`evals/watched-repositories.eval.ts` registers the first watched-repository
+`apps/agent/evals/watched-repositories.eval.ts` registers the first watched-repository
 scan scenario. It configures `peelar/saleor-docs` as the working documentation
 repository and `saleor/saleor` as a read-only watched repository, then asserts
 the agent loads the `watched-repository-scan` skill, uses
@@ -99,7 +99,7 @@ watched evidence. The scan may use either GitHub App access when the watched
 repository is granted to the connector, or public GitHub access when the watched
 repository is public and not granted.
 
-`evals/docs-signal-workflows.eval.ts` registers Slack and Linear docs-signal
+`apps/agent/evals/docs-signal-workflows.eval.ts` registers Slack and Linear docs-signal
 workflow evals. The Slack case captures a source-backed Slack thread, asserts
 that current-docs verification is required, and verifies that missing setup
 blocks repository verification before any patch or PR tool is called. The Linear

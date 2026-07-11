@@ -1,5 +1,6 @@
 packages:
-  - "."
+  - "apps/*"
+  - "packages/*"
 
 minimumReleaseAgeExclude:
   - "@ai-sdk/*"
@@ -9,8 +10,12 @@ minimumReleaseAgeExclude:
   - ai
   - experimental-ai-sdk-code-mode
   - eve
+  - next
   - nitro
+  - react
+  - react-dom
   - rolldown
+  - turbo
   - workflow
 allowBuilds:
   sharp: false

@@ -24,7 +24,7 @@ package docs are unavailable, use <https://eve.dev/docs> as a fallback.
 
 ## Identity Instructions
 
-- Keep `agent/instructions/identity.md` deliberately small.
+- Keep `apps/agent/agent/instructions/identity.md` deliberately small.
 - Use short, plain sentences for permanent identity, tone, and cross-channel behavior only.
 - Before changing it, search the other model-visible instructions, skills, tool descriptions, and channel context. Do not duplicate guidance from those surfaces.
 - Do not put workflows, tool routing, examples, temporary requirements, or provider-specific behavior in `identity.md`.

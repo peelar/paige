@@ -96,7 +96,7 @@ Watched repositories are the narrow source-evidence path for the current
 backlog.
 
 The first user-test fixtures target `https://github.com/peelar/saleor-docs.git`
-and live in `evals/scenarios/saleor-docs-user-test-scenarios.ts`. They cover one
+and live in `apps/agent/evals/scenarios/saleor-docs-user-test-scenarios.ts`. They cover one
 evidence-backed docs patch and one false alarm where the correct outcome is no
 docs change.
 
@@ -216,7 +216,7 @@ writeback boundary.
 
 ## Open Questions
 
-- Should the typed user-test scenario format in `evals/scenarios/` become the
+- Should the typed user-test scenario format in `apps/agent/evals/scenarios/` become the
   durable eval format, or should runtime scenarios use a separate API-facing
   envelope?
 - Should the first patch output be a git diff file, a working-tree edit inside
@@ -246,7 +246,7 @@ writeback boundary.
   mapping for channel, scan, verification, patch, and writeback work.
 - `docs/ADMIN_UI.md`: operator control-plane scope, onboarding boundary, and
   delivery order.
-- `evals/scenarios/`: typed user-test fixture data used by manual tests and
+- `apps/agent/evals/scenarios/`: typed user-test fixture data used by manual tests and
   future executable evals.
 - `docs/adr/`: durable decision records, created through `$to-adr`.
 - `AGENTS.md`: agent rules and source-of-truth pointers only.

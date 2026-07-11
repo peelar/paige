@@ -81,7 +81,7 @@ Connect flow instead of being replaced by a fake URL.
 
 ## Sandbox Boundary
 
-`agent/sandbox.ts` uses `microsandbox()` by default for local development and
+`apps/agent/agent/sandbox.ts` uses `microsandbox()` by default for local development and
 uses `vercel()` when deployed on Vercel. Set `EVE_SANDBOX_BACKEND=vercel` during
 local development to test against hosted Vercel Sandbox explicitly.
 
@@ -415,4 +415,4 @@ available.
 }
 ```
 
-The TypeScript and Zod contract lives in `agent/lib/repository-contract.ts`.
+The TypeScript and Zod contract lives in `apps/agent/agent/lib/repository-contract.ts`.
