@@ -106,11 +106,15 @@ lands.
 
 ## Connect Team Context
 
-Slack uses Eve's Slack channel and Vercel Connect. Set
+Slack uses Eve's Chat SDK channel, the Chat SDK Slack adapter, and Vercel
+Connect. Set
 `DOCS_AGENT_SLACK_CONNECTOR`, or create the default `slack/docs-agent`
 connector and attach its trigger to `/eve/v1/slack`. Paige handles explicit app
 mentions and DMs, fetches new thread context, and records substantive threads as
-documentation signals.
+documentation signals. The Slack app must subscribe to `app_mention`,
+`message.im`, `message.channels`, and `message.groups`, with matching history,
+write, and user-read scopes. Ordinary channel messages are discarded at the
+adapter boundary unless their thread is already subscribed.
 
 Linear uses Eve's Linear Agent Session channel and Vercel Connect. Set
 `DOCS_AGENT_LINEAR_CONNECTOR`, or create the default `linear/docs-agent`

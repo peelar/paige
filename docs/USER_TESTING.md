@@ -209,6 +209,31 @@ look successful. The page may name server-side variable keys and supported
 routes, but it must never render credential values, tokens, or raw connector
 responses.
 
+### Slack Chat SDK End-to-End
+
+Use a non-production Slack channel and the installed `slack/docs-agent`
+connector. The Slack app must deliver `app_mention`, `message.im`,
+`message.channels`, and `message.groups` events to the unchanged
+`/eve/v1/slack` trigger, and must have the matching history scopes plus
+`chat:write` and `users:read`.
+
+1. Post an ordinary top-level channel message without mentioning Paige. Confirm
+   there is no reply, Eve run, or new `chat_sdk_*` content for that thread.
+2. Mention Paige in a thread that already has human replies. Confirm she sees
+   only context after her previous reply, replies in the same thread, and the
+   connector token and Vercel OIDC verification path are used.
+3. Send Paige a DM and confirm the response remains in that DM conversation.
+4. Exercise a tool that requests human input. Confirm the Slack card resumes the
+   same Eve session as the user who clicked it.
+5. Send a bot message, edit, delete, and unsupported subtype. Confirm none starts
+   an Eve run. A followed message must also remain ordinary conversation unless
+   Paige explicitly calls `capture_slack_docs_signal` for relevant evidence.
+
+Issue #34 does not enroll threads. Until #30 adds the participation lifecycle,
+the subscribed-message case can be exercised by inserting a test subscription
+through the Chat SDK state adapter in a non-production database, then removing
+it after the scenario.
+
 ## Deterministic Runtime Checks
 
 `pnpm check` also runs deterministic storage and readiness checks:

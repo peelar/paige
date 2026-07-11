@@ -213,6 +213,18 @@ adapter never substitutes process memory. SQLite write operations are ordered
 within a process and retry only bounded `SQLITE_BUSY` contention, while database
 constraints and short transactions preserve correctness across instances.
 
+Slack enters Eve through `chatSdkChannel` and the Chat SDK Slack adapter at the
+existing `/eve/v1/slack` route. Vercel Connect still resolves the app-scoped bot
+token and verifies trigger-forwarded requests. The adapter admits explicit app
+mentions and DMs, but ordinary public or private channel messages receive only a
+thread-id subscription lookup first. An unenrolled message is discarded before
+Chat SDK parses its content or can run dedupe, history, queue, or Eve/model
+processing. Bot and self-authored messages, edits, deletes, and unsupported
+subtypes are discarded even earlier. Accepted turns retain Slack actor auth,
+incremental context since Paige's last reply, thread delivery, and HITL user
+identity. Merely following a thread does not create a docs signal; the existing
+`capture_slack_docs_signal` workflow remains an explicit model decision.
+
 Workspace setup state now lives in the same app-owned database boundary as the
 future signal queue, but it remains a separate record from mutable signal
 workflow state. It stores reusable repository setup and writeback configuration;
