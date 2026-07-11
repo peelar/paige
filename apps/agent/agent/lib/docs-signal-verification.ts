@@ -4,8 +4,9 @@ import { z } from "zod";
 import {
   docsSignalDetailSchema,
   getDocsSignal,
-  updateDocsSignalLifecycle,
+  transitionDocsSignalLifecycle,
 } from "./docs-signals.js";
+import { assertDocsSignalTransitionReady } from "./docs-signal-lifecycle.js";
 import {
   exportRepositoryDiff,
   listChangedFiles,
@@ -66,6 +67,12 @@ export async function verifyDocsSignalCurrentDocs(
 ): Promise<VerifyDocsSignalCurrentDocsResult> {
   const parsed = verifyDocsSignalCurrentDocsInputSchema.parse(input);
   const signal = await getDocsSignal({ id: parsed.signalId });
+  assertDocsSignalTransitionReady({
+    authority: "verification",
+    from: signal.status,
+    to: "docs-verified",
+    missingEvidence: signal.missingEvidence,
+  });
   const state = await loadOrMaterializeRepositoryWorkflowState(ctx);
   const repository = state.repositoryInput.workingDocumentationRepository;
   const actionProvenance = [...state.actionProvenance];
@@ -136,7 +143,7 @@ export async function verifyDocsSignalCurrentDocs(
       : `Verification observed existing working-tree changes: ${changedFiles.join(", ")}.`,
   ].join(" ");
 
-  const updatedSignal = await updateDocsSignalLifecycle({
+  const updatedSignal = await transitionDocsSignalLifecycle({
     id: signal.id,
     status: "docs-verified",
     reason: verificationSummary,
@@ -175,7 +182,7 @@ export async function verifyDocsSignalCurrentDocs(
       docsRoot: repository.docsRoot,
       noDiff: diff.trim().length === 0 && changedFiles.length === 0,
     },
-  });
+  }, "verification");
 
   return verifyDocsSignalCurrentDocsResultSchema.parse({
     signal: updatedSignal,

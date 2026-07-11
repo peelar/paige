@@ -7,6 +7,7 @@ import {
   createDocsSignal,
   getDocsSignal,
   listDocsSignals,
+  transitionDocsSignalLifecycle,
   updateDocsSignalLifecycle,
 } from "../agent/lib/docs-signals.js";
 import {
@@ -110,14 +111,32 @@ const fetched = await getDocsSignal({ id: created.signal.id });
 assert.equal(fetched.sources[0]?.sourceText?.includes("Staff users"), true);
 assert.equal(fetched.missingEvidence[0]?.includes("Source commit"), true);
 
-await updateDocsSignalLifecycle({
-  id: created.signal.id,
-  status: "closed-not-docs-relevant",
-  reason: "Test close.",
+await assert.rejects(
+  () => updateDocsSignalLifecycle({
+    id: created.signal.id,
+    status: "closed-not-docs-relevant" as "captured",
+    reason: "Generic lifecycle updates cannot close signals.",
+  }),
+  /Invalid option|Invalid input/,
+);
+
+const closeTarget = await createDocsSignal({
+  source: {
+    kind: "manual-scenario",
+    providerId: "close-target",
+  },
+  sourceSummary: "Signal that the intake decision closes as not docs relevant.",
 });
+await transitionDocsSignalLifecycle({
+  id: closeTarget.signal.id,
+  status: "closed-not-docs-relevant",
+  reason: "The intake decision found no public docs impact.",
+  actor: "docs-agent:test-intake",
+}, "intake");
 
 const openSignals = await listDocsSignals();
-assert.equal(openSignals.signals.some((signal) => signal.id === created.signal.id), false);
+assert.equal(openSignals.signals.some((signal) => signal.id === created.signal.id), true);
+assert.equal(openSignals.signals.some((signal) => signal.id === closeTarget.signal.id), false);
 
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "permalink.sqlite")}`;
 await migrateDocsAgentDatabase();

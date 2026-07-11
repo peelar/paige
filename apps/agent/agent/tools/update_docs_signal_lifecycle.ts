@@ -8,7 +8,7 @@ import {
 
 export default defineTool({
   description:
-    "Update a docs signal lifecycle status with a reason, optional missing evidence, links, or artifacts. Use this for workflow state changes, not arbitrary data edits.",
+    "Record a non-privileged docs-signal triage change: captured, needs a maintainer answer, or needs source evidence. Verification, patch, draft-PR, skipped, and closed states are owned by their dedicated workflow tools.",
   inputSchema: updateDocsSignalLifecycleInputSchema,
   outputSchema: docsSignalDetailSchema,
   execute: updateDocsSignalLifecycle,

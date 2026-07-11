@@ -12,21 +12,21 @@ import {
   docsSignals,
 } from "./db/schema.js";
 import { DEFAULT_WORKSPACE_ID } from "./setup-state.js";
+import {
+  assertDocsSignalTransitionReady,
+  DocsSignalTransitionError,
+  docsSignalStatusSchema,
+  type DocsSignalStatus,
+  type DocsSignalTransitionAuthority,
+} from "./docs-signal-lifecycle.js";
+
+export { docsSignalStatusSchema, type DocsSignalStatus } from "./docs-signal-lifecycle.js";
 
 const nowIso = () => new Date().toISOString();
-
-export const docsSignalStatusSchema = z.enum([
-  "captured",
-  "needs-maintainer-answer",
-  "needs-source-evidence",
-  "verification-skipped",
-  "docs-verified",
-  "patch-failed",
-  "patch-prepared",
-  "draft-pr-opened",
-  "closed-already-covered",
-  "closed-not-docs-relevant",
-]);
+type DocsAgentDatabaseExecutor = Pick<
+  DocsAgentDatabase,
+  "select" | "insert" | "update"
+>;
 
 export const openDocsSignalStatuses = [
   "captured",
@@ -98,7 +98,6 @@ export const docsSignalArtifactInputSchema = z.object({
 });
 
 export const createDocsSignalInputSchema = z.object({
-  status: docsSignalStatusSchema.default("captured"),
   source: docsSignalSourceInputSchema,
   sourceSummary: z.string().trim().min(1),
   extractedClaims: z.array(z.string().trim().min(1)).default([]),
@@ -111,20 +110,35 @@ export const createDocsSignalInputSchema = z.object({
   nextActionAt: z.string().trim().min(1).optional(),
   links: z.array(docsSignalLinkInputSchema).default([]),
   artifacts: z.array(docsSignalArtifactInputSchema).default([]),
-});
+}).strict();
 
-export const updateDocsSignalLifecycleInputSchema = z.object({
+const docsSignalLifecycleUpdateFields = {
   id: z.string().trim().min(1),
-  status: docsSignalStatusSchema,
   reason: z.string().trim().min(1),
-  actor: z.string().trim().min(1).default("docs-agent"),
   missingEvidence: z.array(z.string().trim().min(1)).optional(),
   uncertainty: z.string().trim().min(1).optional(),
   nextActionAt: z.string().trim().min(1).nullable().optional(),
   links: z.array(docsSignalLinkInputSchema).default([]),
   artifacts: z.array(docsSignalArtifactInputSchema).default([]),
   metadata: z.record(z.string(), z.unknown()).default({}),
-});
+};
+
+const triageDocsSignalStatusSchema = z.enum([
+  "captured",
+  "needs-maintainer-answer",
+  "needs-source-evidence",
+]);
+
+export const updateDocsSignalLifecycleInputSchema = z.object({
+  ...docsSignalLifecycleUpdateFields,
+  status: triageDocsSignalStatusSchema,
+}).strict();
+
+const transitionDocsSignalLifecycleInputSchema = z.object({
+  ...docsSignalLifecycleUpdateFields,
+  status: docsSignalStatusSchema,
+  actor: z.string().trim().min(1),
+}).strict();
 
 export const listDocsSignalsInputSchema = z.object({
   statuses: z.array(docsSignalStatusSchema).default([]),
@@ -228,12 +242,14 @@ export const listDocsSignalsResultSchema = z.object({
   signals: z.array(docsSignalRecordSchema),
 });
 
-export type DocsSignalStatus = z.infer<typeof docsSignalStatusSchema>;
 export type DocsSignalSourceKind = z.infer<typeof docsSignalSourceKindSchema>;
 export type DocsSignalDetail = z.infer<typeof docsSignalDetailSchema>;
 export type CreateDocsSignalInput = z.infer<typeof createDocsSignalInputSchema>;
 export type UpdateDocsSignalLifecycleInput = z.infer<
   typeof updateDocsSignalLifecycleInputSchema
+>;
+export type TransitionDocsSignalLifecycleInput = z.infer<
+  typeof transitionDocsSignalLifecycleInputSchema
 >;
 export type ListDocsSignalsInput = z.infer<typeof listDocsSignalsInputSchema>;
 
@@ -261,7 +277,7 @@ export async function createDocsSignal(
     await db.insert(docsSignals).values({
       id: signalId,
       workspaceId: DEFAULT_WORKSPACE_ID,
-      status: parsed.status,
+      status: "captured",
       sourceKind: parsed.source.kind,
       dedupeKey,
       sourceSummary: parsed.sourceSummary,
@@ -285,7 +301,7 @@ export async function createDocsSignal(
       signalId,
       eventType: "signal-created",
       fromStatus: null,
-      toStatus: parsed.status,
+      toStatus: "captured",
       reason: "Docs signal captured.",
       actor: "docs-agent",
       metadata: { dedupeKey },
@@ -344,37 +360,69 @@ export async function updateDocsSignalLifecycle(
 ): Promise<DocsSignalDetail> {
   const parsed = updateDocsSignalLifecycleInputSchema.parse(input);
 
+  return transitionDocsSignalLifecycle(
+    {
+      ...parsed,
+      actor: "docs-agent:lifecycle-tool",
+    },
+    "triage",
+  );
+}
+
+export async function transitionDocsSignalLifecycle(
+  input: TransitionDocsSignalLifecycleInput,
+  authority: DocsSignalTransitionAuthority,
+): Promise<DocsSignalDetail> {
+  const parsed = transitionDocsSignalLifecycleInputSchema.parse(input);
+
   return withDocsAgentDatabase(async (db) => {
-    const current = await readDocsSignalRecord(db, parsed.id);
-    const updatedAt = nowIso();
+    await db.transaction(async (tx) => {
+      const current = await readDocsSignalRecord(tx, parsed.id);
+      const missingEvidence = parsed.missingEvidence ?? current.missingEvidence;
+      assertDocsSignalTransitionReady({
+        authority,
+        from: current.status,
+        to: parsed.status,
+        missingEvidence,
+      });
+      const updatedAt = nowIso();
 
-    await db
-      .update(docsSignals)
-      .set({
-        status: parsed.status,
-        missingEvidence: parsed.missingEvidence ?? current.missingEvidence,
-        uncertainty: parsed.uncertainty ?? current.uncertainty,
-        nextActionAt:
-          parsed.nextActionAt === undefined ? current.nextActionAt : parsed.nextActionAt,
-        updatedAt,
-      })
-      .where(
-        and(
-          eq(docsSignals.workspaceId, DEFAULT_WORKSPACE_ID),
-          eq(docsSignals.id, parsed.id),
-        ),
-      );
+      const updatedRows = await tx
+        .update(docsSignals)
+        .set({
+          status: parsed.status,
+          missingEvidence,
+          uncertainty: parsed.uncertainty ?? current.uncertainty,
+          nextActionAt:
+            parsed.nextActionAt === undefined ? current.nextActionAt : parsed.nextActionAt,
+          updatedAt,
+        })
+        .where(
+          and(
+            eq(docsSignals.workspaceId, DEFAULT_WORKSPACE_ID),
+            eq(docsSignals.id, parsed.id),
+            eq(docsSignals.status, current.status),
+          ),
+        )
+        .returning({ id: docsSignals.id });
 
-    await insertLinks(db, parsed.id, parsed.links);
-    await insertArtifacts(db, parsed.id, parsed.artifacts);
-    await insertEvent(db, {
-      signalId: parsed.id,
-      eventType: "lifecycle-updated",
-      fromStatus: current.status,
-      toStatus: parsed.status,
-      reason: parsed.reason,
-      actor: parsed.actor,
-      metadata: parsed.metadata,
+      if (updatedRows.length !== 1) {
+        throw new DocsSignalTransitionError(
+          `Docs signal ${parsed.id} changed while applying ${current.status} -> ${parsed.status}.`,
+        );
+      }
+
+      await insertLinks(tx, parsed.id, parsed.links);
+      await insertArtifacts(tx, parsed.id, parsed.artifacts);
+      await insertEvent(tx, {
+        signalId: parsed.id,
+        eventType: "lifecycle-updated",
+        fromStatus: current.status,
+        toStatus: parsed.status,
+        reason: parsed.reason,
+        actor: parsed.actor,
+        metadata: parsed.metadata,
+      });
     });
 
     return readDocsSignalDetail(db, parsed.id);
@@ -382,7 +430,7 @@ export async function updateDocsSignalLifecycle(
 }
 
 async function findSignalByDedupeKey(
-  db: DocsAgentDatabase,
+  db: DocsAgentDatabaseExecutor,
   dedupeKey: string,
 ): Promise<{ id: string } | null> {
   const rows = await db
@@ -400,7 +448,7 @@ async function findSignalByDedupeKey(
 }
 
 async function readDocsSignalDetail(
-  db: DocsAgentDatabase,
+  db: DocsAgentDatabaseExecutor,
   id: string,
 ): Promise<DocsSignalDetail> {
   const signal = await readDocsSignalRecord(db, id);
@@ -438,7 +486,7 @@ async function readDocsSignalDetail(
 }
 
 async function readDocsSignalRecord(
-  db: DocsAgentDatabase,
+  db: DocsAgentDatabaseExecutor,
   id: string,
 ): Promise<z.infer<typeof docsSignalRecordSchema>> {
   const rows = await db
@@ -459,7 +507,7 @@ async function readDocsSignalRecord(
 }
 
 async function insertSource(
-  db: DocsAgentDatabase,
+  db: DocsAgentDatabaseExecutor,
   signalId: string,
   source: z.infer<typeof docsSignalSourceInputSchema>,
   capturedAt: string,
@@ -484,7 +532,7 @@ async function insertSource(
 }
 
 async function insertLinks(
-  db: DocsAgentDatabase,
+  db: DocsAgentDatabaseExecutor,
   signalId: string,
   links: z.infer<typeof docsSignalLinkInputSchema>[],
 ): Promise<void> {
@@ -506,7 +554,7 @@ async function insertLinks(
 }
 
 async function insertArtifacts(
-  db: DocsAgentDatabase,
+  db: DocsAgentDatabaseExecutor,
   signalId: string,
   artifacts: z.infer<typeof docsSignalArtifactInputSchema>[],
 ): Promise<void> {
@@ -528,7 +576,7 @@ async function insertArtifacts(
 }
 
 async function insertEvent(
-  db: DocsAgentDatabase,
+  db: DocsAgentDatabaseExecutor,
   event: {
     signalId: string;
     eventType: string;

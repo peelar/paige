@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   docsSignalDetailSchema,
   getDocsSignal,
-  updateDocsSignalLifecycle,
+  transitionDocsSignalLifecycle,
   type DocsSignalDetail,
 } from "./docs-signals.js";
 import {
@@ -119,7 +119,7 @@ export async function prepareDocsSignalPatch(
       diff,
       actionProvenance,
     });
-    const updatedSignal = await updateDocsSignalLifecycle({
+    const updatedSignal = await transitionDocsSignalLifecycle({
       id: signal.id,
       status: "closed-already-covered",
       reason: parsed.reason,
@@ -139,7 +139,7 @@ export async function prepareDocsSignalPatch(
         outcome: "no-patch",
         workflowDecision: report.decision,
       },
-    });
+    }, "patch-handoff");
 
     return prepareDocsSignalPatchResultSchema.parse({
       ok: workflowResult.ok,
@@ -207,7 +207,7 @@ export async function prepareDocsSignalPatch(
     actionProvenance,
   });
   const outcome = patchPrepared ? "patch-prepared" : "patch-failed";
-  const updatedSignal = await updateDocsSignalLifecycle({
+  const updatedSignal = await transitionDocsSignalLifecycle({
     id: signal.id,
     status: outcome,
     reason: patchPrepared
@@ -237,7 +237,7 @@ export async function prepareDocsSignalPatch(
       workflowDecision: report.decision,
       approvalRequiredForPublish: true,
     },
-  });
+  }, "patch-handoff");
 
   return prepareDocsSignalPatchResultSchema.parse({
     ok: patchPrepared,

@@ -12,7 +12,7 @@ import {
   createDocsSignal,
   docsSignalDetailSchema,
   docsSignalLinkInputSchema,
-  updateDocsSignalLifecycle,
+  transitionDocsSignalLifecycle,
   type DocsSignalStatus,
 } from "./docs-signals.js";
 import { getSetupStatus } from "./setup-state.js";
@@ -127,7 +127,6 @@ export async function captureLinearDocsSignal(
   const desiredStatus = statusForDecision(decision);
 
   const created = await createDocsSignal({
-    status: "captured",
     source: {
       kind: "linear-issue",
       provider: "linear",
@@ -175,7 +174,7 @@ export async function captureLinearDocsSignal(
     artifacts: [],
   });
 
-  const updatedSignal = await updateDocsSignalLifecycle({
+  const updatedSignal = await transitionDocsSignalLifecycle({
     id: created.signal.id,
     status: desiredStatus,
     reason: decision.reason,
@@ -191,7 +190,7 @@ export async function captureLinearDocsSignal(
       shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),
       externalContext,
     },
-  });
+  }, "intake");
 
   const setupStatus = await getSetupStatus();
   const verificationStatus = buildVerificationStatus(

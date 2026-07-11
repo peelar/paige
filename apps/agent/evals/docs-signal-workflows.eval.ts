@@ -229,6 +229,7 @@ function assertNoRepositoryOrWriteTools(t: {
   t.notCalledTool("repo_run_checks");
   t.notCalledTool("repo_export_diff");
   t.notCalledTool("publish_working_repository_pr");
+  t.notCalledTool("update_docs_signal_lifecycle");
   t.notCalledTool("bash");
   t.notCalledTool("write_file");
 }

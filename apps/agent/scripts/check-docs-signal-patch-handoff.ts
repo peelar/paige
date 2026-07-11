@@ -11,7 +11,11 @@ delete process.env.NODE_ENV;
 const { migrateDocsAgentDatabase } = await import("../agent/lib/db/client.js");
 await migrateDocsAgentDatabase();
 
-const { createDocsSignal, docsSignalStatusSchema } = await import("../agent/lib/docs-signals.js");
+const {
+  createDocsSignal,
+  docsSignalStatusSchema,
+  transitionDocsSignalLifecycle,
+} = await import("../agent/lib/docs-signals.js");
 const {
   SignalPatchHandoffError,
   assertSignalCanEnterPatchHandoff,
@@ -23,7 +27,6 @@ const {
 } = await import("../agent/lib/github-writeback.js");
 
 const verified = await createDocsSignal({
-  status: "docs-verified",
   source: {
     kind: "linear-issue",
     provider: "linear",
@@ -39,6 +42,12 @@ const verified = await createDocsSignal({
   likelyDocsPages: ["docs/api-usage/metadata.mdx"],
   productSurfaces: ["GraphQL API"],
 });
+verified.signal = await transitionDocsSignalLifecycle({
+  id: verified.signal.id,
+  status: "docs-verified",
+  reason: "Current docs verification completed for the test signal.",
+  actor: "docs-agent:test-verification",
+}, "verification");
 
 assert.doesNotThrow(() =>
   assertSignalCanEnterPatchHandoff(verified.signal, "prepare-patch"),
@@ -66,7 +75,6 @@ const noPatchInput = prepareDocsSignalPatchInputSchema.parse({
 assert.equal(noPatchInput.mode, "no-patch");
 
 const unverified = await createDocsSignal({
-  status: "captured",
   source: {
     kind: "slack-thread",
     provider: "slack",
@@ -80,7 +88,6 @@ assert.throws(
 );
 
 const missingEvidence = await createDocsSignal({
-  status: "needs-source-evidence",
   source: {
     kind: "linear-issue",
     provider: "linear",
@@ -89,6 +96,12 @@ const missingEvidence = await createDocsSignal({
   sourceSummary: "Signal still needs source evidence.",
   missingEvidence: ["Release or source evidence confirming the behavior."],
 });
+missingEvidence.signal = await transitionDocsSignalLifecycle({
+  id: missingEvidence.signal.id,
+  status: "needs-source-evidence",
+  reason: "Source evidence is required before verification.",
+  actor: "docs-agent:test-triage",
+}, "triage");
 assert.throws(
   () => assertSignalCanEnterPatchHandoff(missingEvidence.signal, "prepare-patch"),
   /source evidence is still insufficient/,

@@ -29,7 +29,7 @@ export default defineTool({
           uncertainty: output.signal.uncertainty,
         },
         nextAction:
-          "Use this signal id for later docs-impact decisions, verification, or lifecycle updates. Stored source text is provenance, not proof for public docs claims.",
+          "Use this captured signal id with dedicated decision, verification, patch, writeback, or triage tools. Stored source text is provenance, not proof for public docs claims.",
       },
     };
   },

@@ -12,7 +12,7 @@ import {
   createDocsSignal,
   docsSignalDetailSchema,
   docsSignalLinkInputSchema,
-  updateDocsSignalLifecycle,
+  transitionDocsSignalLifecycle,
   type DocsSignalStatus,
 } from "./docs-signals.js";
 import { getSetupStatus } from "./setup-state.js";
@@ -113,7 +113,6 @@ export async function captureSlackDocsSignal(
   const desiredStatus = statusForDecision(decision);
 
   const created = await createDocsSignal({
-    status: "captured",
     source: {
       kind: "slack-thread",
       provider: "slack",
@@ -153,7 +152,7 @@ export async function captureSlackDocsSignal(
     artifacts: [],
   });
 
-  const updatedSignal = await updateDocsSignalLifecycle({
+  const updatedSignal = await transitionDocsSignalLifecycle({
     id: created.signal.id,
     status: desiredStatus,
     reason: decision.reason,
@@ -169,7 +168,7 @@ export async function captureSlackDocsSignal(
       shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),
       externalContext,
     },
-  });
+  }, "intake");
 
   const setupStatus = await getSetupStatus();
   const verificationStatus = buildVerificationStatus(

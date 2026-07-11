@@ -27,7 +27,7 @@ import {
 import {
   docsSignalDetailSchema,
   getDocsSignal,
-  updateDocsSignalLifecycle,
+  transitionDocsSignalLifecycle,
   type DocsSignalDetail,
 } from "./docs-signals.js";
 import {
@@ -232,7 +232,7 @@ export async function publishWorkingRepositoryPr(
 
     const updatedSignal = originatingSignal === undefined
       ? undefined
-      : await updateDocsSignalLifecycle({
+      : await transitionDocsSignalLifecycle({
           id: originatingSignal.id,
           status: "draft-pr-opened",
           reason: `Draft PR opened for prepared signal patch: ${published.pullRequest.url}`,
@@ -258,7 +258,7 @@ export async function publishWorkingRepositoryPr(
             baseBranch,
             diffHash,
           },
-        });
+        }, "writeback");
 
     return {
       published: true,
