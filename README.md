@@ -118,7 +118,12 @@ inactivity. The Slack app must subscribe to `app_mention`,
 `message.im`, `message.channels`, and `message.groups`, with matching history,
 write, and user-read scopes. Ordinary channel messages are discarded at the
 adapter boundary unless their thread has active presence and a Chat SDK
-subscription.
+subscription. During a fresh user-triggered Slack turn, Paige can use Slack
+Real-time Search once to fill a concrete context gap. Add `search:read.public`
+and any deliberately supported private, MPIM, or DM search scopes to the Slack
+app; those private surfaces still require the requesting user's Slack consent.
+Search uses the event's request-scoped `action_token`, returns only a derived
+summary and source permalinks to Eve, and never stores raw search results.
 
 Linear uses Eve's Linear Agent Session channel and Vercel Connect. Set
 `DOCS_AGENT_LINEAR_CONNECTOR`, or create the default `linear/docs-agent`

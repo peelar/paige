@@ -3,6 +3,11 @@ import { messageToUserContent } from "eve/channels/chat-sdk";
 import type { ActionEvent, Message, MessageContext, Thread } from "chat";
 import type { UserContent } from "ai";
 
+import {
+  discardStagedSlackSearchRequest,
+  runWithStagedSlackSearchRequest,
+} from "./slack-context-retrieval.js";
+
 export const SLACK_SILENT_REPLY = "[[SILENT]]";
 
 type SlackTurnHandler = (
@@ -72,6 +77,7 @@ export function registerSlackTurnHandlers(
   });
   bot.onSubscribedMessage(async (thread, message, context) => {
     if (isSlackThreadDismissal(message.text)) {
+      discardStagedSlackSearchRequest(message.id);
       await presence.end({
         chatThreadId: thread.id,
         status: "dismissed",
@@ -97,23 +103,30 @@ export async function sendSlackTurn(
     skipped?: Message[];
   } = {},
 ): Promise<void> {
-  await thread.startTyping("Thinking...");
-  const context = await loadSlackThreadContext(thread, message);
-  const current = formatSlackMessage(message);
-  const burst = formatBurstContext(options.skipped ?? [], context);
-  const text = [context, burst, current].filter(Boolean).join("\n\n");
-  const input = withAttributedText(messageToUserContent(message), text);
-  await send(
-    {
-      message: input,
-      ...(options.observingFollowedThread
-        ? { context: [SLACK_FOLLOWED_THREAD_POLICY] }
-        : {}),
-    },
-    {
-      auth: buildSlackChatAuth(message),
-      thread,
-      title: message.text,
+  const skipped = options.skipped ?? [];
+  return runWithStagedSlackSearchRequest(
+    [message.id, ...skipped.map(({ id }) => id).reverse()],
+    message.author.userId,
+    async () => {
+      await thread.startTyping("Thinking...");
+      const context = await loadSlackThreadContext(thread, message);
+      const current = formatSlackMessage(message);
+      const burst = formatBurstContext(skipped, context);
+      const text = [context, burst, current].filter(Boolean).join("\n\n");
+      const input = withAttributedText(messageToUserContent(message), text);
+      await send(
+        {
+          message: input,
+          ...(options.observingFollowedThread
+            ? { context: [SLACK_FOLLOWED_THREAD_POLICY] }
+            : {}),
+        },
+        {
+          auth: buildSlackChatAuth(message),
+          thread,
+          title: message.text,
+        },
+      );
     },
   );
 }

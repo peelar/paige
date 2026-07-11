@@ -238,6 +238,24 @@ the subscription; terminal docs-signal transitions resolve matching presence;
 expired presence is rejected and its stale subscription removed before content
 reaches Chat SDK. Merely following a thread does not create a docs signal.
 
+Missing Slack context uses a narrower request-lifetime boundary. The Slack
+adapter extracts an event's `action_token` into server-only memory for at most
+30 seconds, removes it before Chat SDK sees or durably debounces the message,
+and consumes it once for the matching Slack user. The model-facing
+`retrieve_slack_context` tool requires a concrete context gap, allows one
+`assistant.search.context` request with at most five results, and rejects
+public-to-private widening before the API call. Slack remains the authority for
+workspace membership, private-channel, MPIM, and DM consent and scopes.
+
+Raw search hits pass only to a telemetry-disabled one-shot summarization call.
+The Eve turn receives a short paraphrased summary, result count, and Slack
+permalinks; it never receives the token or raw messages. Exact copied passages
+are suppressed. The tool does not page, fetch ambient history, log results,
+create signals, or write workspace memory. Search-derived discussion may guide
+an answer or investigation but is not source, release, or repository evidence
+for a public documentation claim. Missing authorization, permission or consent,
+scopes, feature access, and rate limits return visible bounded failures.
+
 Workspace setup state now lives in the same app-owned database boundary as the
 future signal queue, but it remains a separate record from mutable signal
 workflow state. It stores reusable repository setup and writeback configuration;
@@ -279,6 +297,10 @@ summaries and extracted claims.
 
 The model-facing queue tools are deliberately small:
 
+- `retrieve_slack_context`: during the active user-triggered Slack request,
+  perform one bounded Real-time Search on the requesting user's effective
+  access and return only a derived summary plus source permalinks. Raw results
+  remain outside durable Eve, Chat SDK, signal, and memory state.
 - `capture_slack_docs_signal`: map an explicit Slack mention or DM thread into
   `communication-thread` external context, capture or dedupe the signal, run
   shared decision/triage, and return Slack reply guidance without exposing raw

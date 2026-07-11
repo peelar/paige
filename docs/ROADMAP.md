@@ -15,8 +15,9 @@ chooses the reader-solving intervention, plans substantial work, authors complet
 multi-file drafts, and owns that work durably to the next human boundary.
 Bounded scheduled follow-up and durable Chat SDK state on the shared database
 service, the privacy-filtered Chat SDK Slack transport, and scoped continued
-thread participation are also complete. The next appetite is bounded,
-user-authorized retrieval of missing Slack context.
+thread participation, and bounded user-authorized Slack context retrieval are
+also complete. The next appetite is authenticated production deployment of the
+operator app.
 
 The first delivery is read-only and bound to the local machine. Production
 deployment and authentication, guided setup, connector handoffs,
@@ -82,7 +83,7 @@ one coherent draft to the next human boundary.
 | Complete | #33 Persist Chat SDK state in libSQL/Turso | Adds durable subscription and debounce state through the shared database boundary. | #38 (complete) |
 | Complete | #34 Replace Eve's native Slack channel with Chat SDK | Establishes the transport and privacy boundary needed for continued participation. | #33 (complete) |
 | Complete | #30 Keep participating after a Slack mention | Makes Paige a scoped thread participant rather than a repeatedly invoked bot. | #33, #34 (complete) |
-| 10 | #49 Retrieve missing Slack context on demand | Adds bounded, user-authorized retrieval without ambient ingestion. | #34 |
+| Complete | #49 Retrieve missing Slack context on demand | Adds bounded, user-authorized retrieval without ambient ingestion. | #34 (complete) |
 | 11 | #37 Deploy and protect the operator app | Adds remote access only after the local control plane proves its value and boundaries. | #41 (complete) |
 | 12 | #42 Add guided workspace onboarding | Adds authenticated setup mutations after the readiness model proves what users need. | #37, #39 (complete) |
 | 13 | #43 Add connector installation handoffs | Improves installation without pretending provider consent can be silent. | #37, #39 (complete) |

@@ -257,6 +257,44 @@ pnpm eval slack-participation --skip-report --verbose
 
 Result on 2026-07-11: four cases passed and all twelve eval gates passed.
 
+### Slack Real-time Search End-to-End
+
+Use a Slack app that is internal or directory-published, follows Slack's
+[Real-time Search API requirements](https://docs.slack.dev/apis/web-api/real-time-search-api/), has
+`search:read.public`, and is subscribed to `app_mention` plus the supported
+message events. Add `search:read.private`, `search:read.mpim`, or
+`search:read.im` only for surfaces the workspace deliberately supports, and
+grant the corresponding per-user consent before testing them.
+
+1. In a public test channel, create a separate public thread containing a
+   distinctive documentation-related decision and a source link. Keep its raw
+   wording out of the thread where Paige will be invoked.
+2. In another public channel, mention Paige and ask a question that explicitly
+   references the missing discussion. Confirm `retrieve_slack_context` calls
+   `assistant.search.context` once with at most five results, answers with a
+   paraphrased summary, and cites the relevant Slack permalink.
+3. Confirm the answer says the Slack discussion is context rather than verified
+   evidence for a public documentation claim. Confirm no docs signal or
+   workspace memory is created merely because search returned a result.
+4. Search for a unique phrase that has no accessible result and confirm Paige
+   reports that no accessible messages were found instead of guessing.
+5. From a public channel, request private-channel or DM context and confirm the
+   request is rejected. Then test from an approved private surface with and
+   without user consent, confirming success only with the installed scopes and
+   consent and a visible permission failure otherwise.
+6. Reuse the turn after one search, remove a required scope, use an expired
+   interaction, and exercise Slack rate limiting. Confirm there is no automatic
+   pagination or retry and each condition is reported without showing a token.
+7. Inspect the app database, Eve run history, Chat SDK state, docs signals,
+   workspace memories, and application logs for a unique raw result phrase and
+   the event `action_token`. Confirm neither value is present; only the derived
+   summary and Slack permalink may appear in the Eve answer history.
+
+The deterministic coverage for successful retrieval, no results, requester and
+public/private permission boundaries, missing or expired authorization, missing
+scope or consent, one-call rate limiting, exact-copy suppression, Chat SDK event
+redaction, and database persistence redaction runs through `pnpm check`.
+
 ## Deterministic Runtime Checks
 
 `pnpm check` also runs deterministic storage and readiness checks:

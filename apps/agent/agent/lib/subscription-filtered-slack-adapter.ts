@@ -5,6 +5,11 @@ import {
 } from "@chat-adapter/slack";
 import type { WebhookOptions } from "chat";
 
+import {
+  redactSlackSearchSecrets,
+  stageSlackSearchRequest,
+} from "./slack-context-retrieval.js";
+
 const SUPPORTED_MESSAGE_SUBTYPES = new Set([
   "file_share",
   "reply_broadcast",
@@ -58,6 +63,20 @@ export class SubscriptionFilteredSlackAdapter extends SlackAdapter {
   }
 
   protected forwardAcceptedMessage(
+    event: SlackEvent,
+    options?: WebhookOptions,
+  ): void {
+    stageSlackSearchRequest(
+      event,
+      (method, body) => this.webClient.apiCall(method, body),
+    );
+    this.forwardAcceptedMessageToChatSdk(
+      redactSlackSearchSecrets(event),
+      options,
+    );
+  }
+
+  protected forwardAcceptedMessageToChatSdk(
     event: SlackEvent,
     options?: WebhookOptions,
   ): void {

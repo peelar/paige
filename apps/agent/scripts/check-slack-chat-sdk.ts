@@ -32,7 +32,7 @@ class TestSlackAdapter extends SubscriptionFilteredSlackAdapter {
     this._botUserId = userId;
   }
 
-  protected override forwardAcceptedMessage(event: SlackEvent): void {
+  protected override forwardAcceptedMessageToChatSdk(event: SlackEvent): void {
     this.forwarded.push(event);
   }
 
@@ -60,10 +60,19 @@ class PresenceAdmissionAdapter extends SubscriptionFilteredSlackAdapter {
 }
 
 const adapter = new TestSlackAdapter();
-await adapter.emit(event({ type: "app_mention", text: "@Paige help" }));
+await adapter.emit(event({
+  type: "app_mention",
+  text: "@Paige help",
+  action_token: "action-token-must-not-persist",
+}));
 await adapter.emit(event({ channel: "D123", channel_type: "im", text: "help" }));
 assert.equal(adapter.forwarded.length, 2, "mentions and DMs bypass subscription lookup");
 assert.deepEqual(adapter.subscriptionChecks, []);
+assert.doesNotMatch(
+  JSON.stringify(adapter.forwarded[0]),
+  /action-token-must-not-persist/u,
+  "request-scoped action tokens are removed before Chat SDK receives the event",
+);
 
 await adapter.emit(event({ text: "unenrolled private content" }));
 assert.equal(adapter.forwarded.length, 2, "unenrolled channel content is not forwarded");
@@ -204,7 +213,9 @@ assert.equal(botConcurrency._concurrencyConfig.debounceMs, 1_000, "short Slack b
 
 console.log("Slack Chat SDK integration checks passed.");
 
-function event(overrides: Partial<SlackEvent>): SlackEvent {
+function event(
+  overrides: Partial<SlackEvent> & { action_token?: string },
+): SlackEvent {
   return {
     channel: "C123",
     channel_type: "channel",
