@@ -119,6 +119,7 @@ try {
 
   for (const table of [
     "__drizzle_migrations",
+    "docs_profiles",
     "docs_signals",
     "workspace_knowledge_events",
     "workspace_knowledge_records",

@@ -20,6 +20,33 @@ export const workspaceSetup = sqliteTable("workspace_setup", {
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const docsProfiles = sqliteTable(
+  "docs_profiles",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    repositoryUrl: text("repository_url").notNull(),
+    requestedRef: text("requested_ref").notNull(),
+    docsRoot: text("docs_root").notNull(),
+    resolvedRevision: text("resolved_revision").notNull(),
+    formatVersion: integer("format_version").notNull(),
+    sourceFingerprint: text("source_fingerprint").notNull(),
+    profile: text("profile", { mode: "json" }).$type<unknown>().notNull(),
+    invalidatedReason: text("invalidated_reason"),
+    createdAt: text("created_at").notNull(),
+    expiresAt: text("expires_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("docs_profiles_identity_idx").on(
+      table.workspaceId,
+      table.repositoryUrl,
+      table.requestedRef,
+      table.docsRoot,
+    ),
+    index("docs_profiles_expiry_idx").on(table.workspaceId, table.expiresAt),
+  ],
+);
+
 export const docsSignals = sqliteTable(
   "docs_signals",
   {
@@ -258,6 +285,7 @@ export const workspaceMemoryEvents = sqliteTable(
 );
 
 export const schema = {
+  docsProfiles,
   docsSignalArtifacts,
   docsSignalEvents,
   docsSignalLinks,

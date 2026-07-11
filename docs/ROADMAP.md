@@ -10,8 +10,8 @@ asking the agent or inspecting runtime and database internals.
 The first local-only web control-plane delivery is complete: the Turborepo
 boundary, operator shell, shared app-owned database and read-service package,
 readiness report, docs-signal queue, and complete signal detail are in place.
-The next appetite is the Technical Editor epic, beginning with a reusable
-repository docs profile.
+The Technical Editor epic is now underway. The reusable repository docs profile
+is complete; the next appetite is the multi-file authoring workspace.
 
 The first delivery is read-only and bound to the local machine. Production
 deployment and authentication, guided setup, connector handoffs,
@@ -63,11 +63,11 @@ one coherent draft to the next human boundary.
 
 | Order | Issue | Why Next | Depends On |
 | --- | --- | --- | --- |
-| 1 | #52 Build and maintain a repository docs profile | Stops Paige from rediscovering conventions and checks on every task. | #38 |
-| 2 | #53 Add a complete multi-file authoring workspace | Removes the one-file exact-replacement ceiling while preserving sandbox and approval boundaries. | #38, #52 |
-| 3 | #54 Plan substantial documentation work before drafting | Makes large work understandable and steerable without adding an approval gate. | #52, #53 |
-| 4 | #55 Choose the right editorial intervention | Lets Paige patch, add, restructure, consolidate, remove, wait, or ask based on the reader problem. | #52, #53, #54 |
-| 5 | #56 Own substantial documentation work asynchronously | Carries investigation, planning, drafting, validation, and continuation as one durable work item. | #41, #53, #54, #55 |
+| Complete | #52 Build and maintain a repository docs profile | Stops Paige from rediscovering conventions and checks on every task. | #38 (complete) |
+| 1 | #53 Add a complete multi-file authoring workspace | Removes the one-file exact-replacement ceiling while preserving sandbox and approval boundaries. | #38, #52 (complete) |
+| 2 | #54 Plan substantial documentation work before drafting | Makes large work understandable and steerable without adding an approval gate. | #52 (complete), #53 |
+| 3 | #55 Choose the right editorial intervention | Lets Paige patch, add, restructure, consolidate, remove, wait, or ask based on the reader problem. | #52 (complete), #53, #54 |
+| 4 | #56 Own substantial documentation work asynchronously | Carries investigation, planning, drafting, validation, and continuation as one durable work item. | #41 (complete), #53, #54, #55 |
 
 ### Later Backlog
 

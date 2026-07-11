@@ -35,6 +35,10 @@
   tree is unchanged.
 - Keep patches small and consistent with existing page structure, terminology,
   examples, and tone.
+- Before writing, use `get_docs_profile` with relevant nearby page paths. Refresh
+  it when a maintainer corrects a convention or repository evidence contradicts it.
+  A correction may be proposed separately with `memory_propose`, but inferred
+  repository patterns never become active workspace memory automatically.
 - Do not create new pages, broad rewrites, or public claims unless the evidence
   clearly supports them.
 - Report evidence used, pages considered, checks run, changes made or skipped,

@@ -271,6 +271,29 @@ writeback behavior by themselves. Slack intake now calls the queue through
 `prepare_docs_signal_patch` and approved draft PR publishing remains isolated in
 `publish_working_repository_pr`.
 
+## Repository Docs Profile
+
+The first real materialization of a working documentation repository performs a
+bounded inspection of explicit instruction and style files, docs configuration,
+navigation, validation scripts, and representative Markdown or MDX pages. It
+stores a concise typed profile covering audiences, navigation, page types,
+style rules, terminology, reusable components and examples, and validation
+commands. Every observation carries confidence and repository source paths.
+
+Profiles live in the app-owned database and are scoped by workspace, repository
+URL, requested ref, resolved docs root, and resolved revision. The cache also
+records a format version, source fingerprint, creation time, and seven-day
+expiry. A matching fresh profile is reused; revision or source changes, expiry,
+unsupported or corrupt data, maintainer correction, contradiction, and manual
+refresh rebuild it. Generation failure stops visibly instead of returning an
+empty successful profile.
+
+`get_docs_profile` explains the base profile and loads up to five task-relevant
+nearby pages on demand. Those examples enrich one task but are not promoted into
+global rules. Repository observations remain separate from workspace memories:
+a maintainer correction can be proposed through `memory_propose`, but neither
+the profile builder nor retrieval tool silently activates memory.
+
 ## Workspace Memories
 
 Workspace memories are compact docs-context records that help future triage,

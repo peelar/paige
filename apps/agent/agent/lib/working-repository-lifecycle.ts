@@ -40,6 +40,7 @@ import type {
   WorkflowState,
 } from "./repository-workflow-contract.js";
 import { readSetupState, requireSetupReady, saveWorkingRepositorySetup } from "./setup-state.js";
+import { ensureDocsProfile } from "./docs-profile.js";
 
 const repositoryCacheMarkerSchema = z.object({
   version: z.literal(1),
@@ -100,6 +101,11 @@ export async function materializeWorkingRepository(
     repositoryInput: resolvedRepositoryInput,
     materialization,
     actionProvenance,
+  });
+  await ensureDocsProfile({
+    ctx,
+    repository: resolvedRepository,
+    materialization,
   });
 
   return materialization;

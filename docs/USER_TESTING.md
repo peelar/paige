@@ -290,3 +290,28 @@ Verify missing, corrupt, unauthorized, and database-failure detail states. Each
 must stop visibly and return to the queue without mutating lifecycle state,
 priority, links, or artifacts. `pnpm check` covers the projection and all detail
 states on desktop and mobile.
+
+## Repository Docs Profile
+
+Fast repository setup with `configure_working_repository` and `prepareNow:
+false` should validate and persist setup without cloning or building a profile.
+The first workflow that materializes `/workspace/working-docs` should build the
+profile from a bounded set of repository instruction, configuration,
+navigation, package-script, and representative docs files.
+
+Call `get_docs_profile` with up to five nearby `taskPaths`. Confirm the response
+names likely audiences, navigation, page types, style and terminology patterns,
+reusable components, validation commands, confidence, and exact source paths.
+Task examples should contain only the requested repository-relative pages and
+must not become profile rules or active workspace memories.
+
+Repeat against the same revision and unchanged source files to confirm
+`reused: true`. A changed resolved revision, modified profile source,
+expiration, explicit `maintainer-correction`, `contradiction`, corrupt cache, or
+unsupported format must rebuild. Missing source files or inspection failure
+must fail visibly. Maintainer corrections may be proposed separately with
+`memory_propose`; profile inference never promotes memory.
+
+`pnpm check` covers cache identity, reuse, revision/source invalidation, expiry,
+contradiction refresh, repository rule and validation extraction, local example
+loading, traversal rejection, and visible generation failure.

@@ -1,6 +1,19 @@
 import "server-only";
 
 export {
+  DOCS_PROFILE_FORMAT_VERSION,
+  cachedDocsProfileSchema,
+  docsProfileIdentitySchema,
+  docsProfileObservationSchema,
+  docsProfileSchema,
+  invalidateDocsProfile,
+  readReusableDocsProfile,
+  saveDocsProfile,
+  type CachedDocsProfile,
+  type DocsProfile,
+  type DocsProfileIdentity,
+} from "./docs-profile.js";
+export {
   getDocsSignal,
   getDocsSignalInputSchema,
   listDocsSignalQueue,
