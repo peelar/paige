@@ -9,7 +9,10 @@ import {
   listDocsSignals,
   updateDocsSignalLifecycle,
 } from "../agent/lib/docs-signals.js";
-import { withDocsAgentDatabase } from "../agent/lib/db/client.js";
+import {
+  migrateDocsAgentDatabase,
+  withDocsAgentDatabase,
+} from "../agent/lib/db/client.js";
 import { docsSignals } from "../agent/lib/db/schema.js";
 
 delete process.env.DOCS_AGENT_DATABASE_URL;
@@ -23,6 +26,7 @@ const tempRoot = await mkdtemp(join(tmpdir(), "docs-agent-signal-queue-"));
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "signals.sqlite")}`;
 delete process.env.VERCEL;
 delete process.env.NODE_ENV;
+await migrateDocsAgentDatabase();
 
 const created = await createDocsSignal({
   source: {
@@ -116,6 +120,7 @@ const openSignals = await listDocsSignals();
 assert.equal(openSignals.signals.some((signal) => signal.id === created.signal.id), false);
 
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "permalink.sqlite")}`;
+await migrateDocsAgentDatabase();
 const permalinkOnly = await createDocsSignal({
   source: {
     kind: "linear-issue",
@@ -135,6 +140,7 @@ assert.equal(permalinkDuplicate.created, false);
 assert.equal(permalinkDuplicate.signal.id, permalinkOnly.signal.id);
 
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "stale.sqlite")}`;
+await migrateDocsAgentDatabase();
 await withDocsAgentDatabase(async (db) => {
   await db.insert(docsSignals).values({
     id: "invalid-status",

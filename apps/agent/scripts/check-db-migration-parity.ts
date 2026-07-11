@@ -15,6 +15,10 @@ import {
   readDocsAgentMigrations,
 } from "../agent/lib/db/migrations.js";
 import { schema } from "../agent/lib/db/schema.js";
+import {
+  DOCS_AGENT_SCHEMA_LATEST_MIGRATION_AT,
+  DOCS_AGENT_SCHEMA_MIGRATION_COUNT,
+} from "../agent/lib/db/schema-readiness.js";
 
 const migrationsFolder = docsAgentMigrationsFolder();
 const journal = JSON.parse(
@@ -25,6 +29,8 @@ const journal = JSON.parse(
 const migrations = readDocsAgentMigrations();
 
 assert.equal(migrations.length, journal.entries.length);
+assert.equal(migrations.length, DOCS_AGENT_SCHEMA_MIGRATION_COUNT);
+assert.equal(migrations.at(-1)?.folderMillis, DOCS_AGENT_SCHEMA_LATEST_MIGRATION_AT);
 assert.deepEqual(
   migrations.map(({ folderMillis }) => folderMillis),
   journal.entries.map(({ when }) => when),

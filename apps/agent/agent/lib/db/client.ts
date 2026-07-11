@@ -1,12 +1,13 @@
 import { createClient } from "@libsql/client";
-import { sql } from "drizzle-orm";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import { mkdir } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readDocsAgentMigrations } from "./migrations.js";
+import { docsAgentMigrationsFolder } from "./migrations.js";
 import * as dbSchema from "./schema.js";
+import { assertDocsAgentDatabaseReady } from "./schema-readiness.js";
 
 export const DOCS_AGENT_DATABASE_URL_ENV = "DOCS_AGENT_DATABASE_URL";
 export const DOCS_AGENT_DATABASE_AUTH_TOKEN_ENV = "DOCS_AGENT_DATABASE_AUTH_TOKEN";
@@ -66,7 +67,10 @@ export async function migrateDocsAgentDatabase(): Promise<void> {
   const connection = await openDocsAgentDatabase();
 
   try {
-    await applyDocsAgentMigrations(connection.db);
+    await migrate(connection.db, {
+      migrationsFolder: docsAgentMigrationsFolder(),
+    });
+    await assertDocsAgentDatabaseReady(connection.db);
   } catch (error) {
     throw new Error(`Docs Agent database migration failed: ${formatUnknownError(error)}`);
   } finally {
@@ -81,7 +85,7 @@ export async function withDocsAgentDatabase<T>(
 
   try {
     try {
-      await applyDocsAgentMigrations(connection.db);
+      await assertDocsAgentDatabaseReady(connection.db);
     } catch (error) {
       throw new Error(`Docs Agent database is unavailable: ${formatUnknownError(error)}`);
     }
@@ -108,37 +112,6 @@ async function openDocsAgentDatabase() {
     client,
     db: drizzle(client, { schema: dbSchema }),
   };
-}
-
-async function applyDocsAgentMigrations(db: DocsAgentDatabase): Promise<void> {
-  await db.run(sql`
-    CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-      id SERIAL PRIMARY KEY,
-      hash text NOT NULL,
-      created_at numeric
-    )
-  `);
-
-  const dbMigrations = await db.values<[number, string, string | number]>(sql`
-    SELECT id, hash, created_at
-    FROM __drizzle_migrations
-    ORDER BY created_at DESC
-    LIMIT 1
-  `);
-  const latestMigrationTime = Number(dbMigrations[0]?.[2] ?? 0);
-
-  for (const migration of readDocsAgentMigrations()) {
-    if (latestMigrationTime >= migration.folderMillis) continue;
-
-    for (const statement of migration.sql) {
-      await db.run(sql.raw(statement));
-    }
-
-    await db.run(sql`
-      INSERT INTO __drizzle_migrations ("hash", "created_at")
-      VALUES (${migration.hash}, ${migration.folderMillis})
-    `);
-  }
 }
 
 function isDeployedRuntime(env: NodeJS.ProcessEnv): boolean {

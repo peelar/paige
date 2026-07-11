@@ -17,6 +17,10 @@ const tempRoot = await mkdtemp(join(tmpdir(), "docs-agent-memory-"));
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "memory.sqlite")}`;
 delete process.env.VERCEL;
 delete process.env.NODE_ENV;
+const { migrateDocsAgentDatabase, withDocsAgentDatabase } = await import(
+  "../agent/lib/db/client.js"
+);
+await migrateDocsAgentDatabase();
 
 assert.throws(
   () =>
@@ -167,7 +171,6 @@ const activeSearchAfterRetire = await memory.searchWorkspaceMemory({
 });
 assert.equal(activeSearchAfterRetire.records.length, 0);
 
-const { withDocsAgentDatabase } = await import("../agent/lib/db/client.js");
 const { workspaceMemoryRecords } = await import("../agent/lib/db/schema.js");
 await withDocsAgentDatabase(async (db) => {
   await db.insert(workspaceMemoryRecords).values({

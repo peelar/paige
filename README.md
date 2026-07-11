@@ -75,6 +75,13 @@ the repository root when
 `DOCS_AGENT_DATABASE_AUTH_TOKEN`. Missing required persistence fails visibly
 before documentation work continues.
 
+`pnpm dev` and `pnpm start` migrate the agent database before Eve starts. A
+Vercel build runs the same committed Drizzle migrations before producing the
+deployment. For any other installation or deployment workflow, run
+`pnpm db:migrate` explicitly before starting the agent. Ordinary database reads
+and writes only validate schema readiness; they fail on a fresh, stale, or
+partial schema and never apply migrations as a side effect.
+
 ## Deploy On Vercel
 
 The repository root owns workspace orchestration and is not a deployable app.

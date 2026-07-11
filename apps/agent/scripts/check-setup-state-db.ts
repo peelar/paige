@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { eq } from "drizzle-orm";
 
 import {
+  migrateDocsAgentDatabase,
   resolveDocsAgentDatabaseConfig,
   withDocsAgentDatabase,
 } from "../agent/lib/db/client.js";
@@ -27,6 +28,7 @@ const originalCwd = process.cwd();
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "setup.sqlite")}`;
 delete process.env.VERCEL;
 delete process.env.NODE_ENV;
+await migrateDocsAgentDatabase();
 
 process.chdir(tempRoot);
 await mkdir(join(tempRoot, ".docs-agent"));
@@ -99,6 +101,7 @@ assert.equal(
 assert.equal(savedState?.githubWriteback.connector, "github/docs-agent");
 
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "stale-state.sqlite")}`;
+await migrateDocsAgentDatabase();
 await withDocsAgentDatabase(async (db) => {
   await db.insert(workspaceSetup).values({
     id: "default",
@@ -109,6 +112,7 @@ await withDocsAgentDatabase(async (db) => {
 await assert.rejects(readSetupState, /version/);
 
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "new-writes.sqlite")}`;
+await migrateDocsAgentDatabase();
 await saveWorkingRepositorySetup(repositoryInput);
 await saveGitHubWritebackSetup({ connector: "github/new-writes" });
 await withDocsAgentDatabase(async (db) => {
