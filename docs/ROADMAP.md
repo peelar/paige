@@ -89,14 +89,16 @@ issue ordering cannot be read.
 | 8 | #43 Add connector installation handoffs and verification | Improves installation without pretending provider consent can be silent. | #39 |
 | 9 | #44 Add workspace-memory review to the web app | Exposes an existing human-governed lifecycle after the core signal UI. | #37, #38 |
 | 10 | #45 Add product-level run history and trace links | Connects product work to Eve and Vercel traces without building a second runtime. | #37, #38 |
-| 11 | #32 Reduce always-on instruction bloat without changing agent behavior | Establishes the instruction boundary required by the identity work. | None |
-| 12 | #31 Define and express Docs Agent's technical-editor identity | Sets the product default before personality becomes configurable. | #32 |
-| 13 | #33 Persist Chat SDK state in the existing libSQL/Turso database | Provides durable subscription and debounce state before changing Slack transport. | None |
-| 14 | #34 Replace Eve's native Slack channel with Chat SDK Slack integration | Establishes the transport and privacy boundary needed for continued participation. | #33 |
-| 15 | #30 Let Docs Agent keep participating after it is mentioned in a Slack thread | Defines the default participation lifecycle before exposing settings. | #33, #34 |
-| 16 | #46 Add structured personality and participation settings | Tunes tested defaults without exposing raw prompts or widening authority. | #30, #31, #32, #37, #38 |
-| 17 | #47 Add a centralized approval inbox | Aggregates pending side effects after signal detail and identity are established. | #37, #38, #41 |
-| 18 | #48 Show eval results and behavioral regressions | Adds a contributor and operator assurance surface after the core product UI. | #36, #37 |
+| 11 | #47 Add a centralized approval inbox | Aggregates pending side effects after signal detail and the product run index can discover parked sessions. | #37, #38, #41, #45 |
+| 12 | #50 Record eval and validation results for the control plane | Establishes a durable, redacted result source before the assurance UI. | #38 |
+| 13 | #48 Show eval results and behavioral regressions | Renders the recorded assurance data without inventing a browser-side execution path. | #36, #37, #50 |
+| 14 | #32 Reduce always-on instruction bloat without changing agent behavior | Establishes the instruction boundary required by the identity work. | None |
+| 15 | #31 Define and express Docs Agent's technical-editor identity | Sets the product default before personality becomes configurable. | #32 |
+| 16 | #33 Persist Chat SDK state in the existing libSQL/Turso database | Adds durable subscription and debounce state through the shared database boundary. | #38 |
+| 17 | #34 Replace Eve's native Slack channel with Chat SDK Slack integration | Establishes the transport and privacy boundary needed for continued participation. | #33 |
+| 18 | #30 Let Docs Agent keep participating after it is mentioned in a Slack thread | Defines the default participation lifecycle before exposing settings. | #33, #34 |
+| 19 | #49 Let Docs Agent retrieve missing Slack context on demand | Adds bounded, user-authorized retrieval after the Chat SDK transport and privacy boundary exist. | #34 |
+| 20 | #46 Add structured personality and participation settings | Tunes tested defaults without exposing raw prompts or widening authority. | #30, #31, #32, #37, #38 |
 
 ## Later
 

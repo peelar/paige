@@ -14,6 +14,12 @@ package docs are unavailable, use <https://eve.dev/docs> as a fallback.
   all required validators wired into that command instead of relying on separate
   remembered steps.
 - Once a scope of work is complete, propose a commit message following conventional commit message conventions. End with "Commit? [Y/n]".
+- The only exception to the per-scope commit prompt is a user-started goal that
+  explicitly activates the repo's bounded overnight backlog mode and names its
+  issue scope. In that mode, each issue may be committed and pushed without a
+  fresh prompt only after its dependencies are closed, its issue-specific proof
+  and `pnpm check` pass, and all stop conditions in the repo's `$next` skill are
+  clear. The mode never bypasses product approval gates or external consent.
 - We'll be often using peelar/saleor-docs as the working documentation repository. It is our dogfooding project. Avoid overfitting to this repository. It's only an example we need to generalize from.
 
 ## Identity Instructions

@@ -177,7 +177,8 @@ The following work stays below the first delivery chain:
 - personality and participation settings after the default behavior is defined
   and covered by evals ([#46](https://github.com/peelar/docs-agent/issues/46));
 - a centralized approval inbox ([#47](https://github.com/peelar/docs-agent/issues/47));
-- eval results and behavioral regression reporting ([#48](https://github.com/peelar/docs-agent/issues/48));
+- durable, redacted eval and validation result recording ([#50](https://github.com/peelar/docs-agent/issues/50));
+- eval results and behavioral regression reporting backed by those records ([#48](https://github.com/peelar/docs-agent/issues/48));
 - schedules, notifications, usage, retention, and data-management controls.
 
 Chat SDK persistence ([#33](https://github.com/peelar/docs-agent/issues/33)),

@@ -8,7 +8,9 @@ description: >-
   state before choosing one issue. Propose the smallest coherent slice, wait for
   approval, implement it directly on main without opening a PR, verify with
   pnpm check, and when agent behavior changes, add an executable eval or present
-  an end-user scenario the user can run manually.
+  an end-user scenario the user can run manually. A user-created goal may
+  explicitly activate the skill's bounded overnight backlog mode for a named
+  issue scope.
 ---
 
 # Next
@@ -19,6 +21,12 @@ Use this workflow to pick and ship the next coherent docs-maintainer-agent
 backlog item. This repo does not use the global `$next` draft-PR publishing
 loop. Work is intended to land directly on `main` after validation and explicit
 commit approval.
+
+The default workflow is interactive and handles exactly one issue. A user may
+instead start a goal that explicitly activates **bounded overnight backlog
+mode** for a named issue scope. That mode pre-approves routine implementation,
+commit, push, issue comment, and closure inside the stated scope, but only while
+every gate in the bounded mode section remains satisfied.
 
 GitHub Issues are the backlog source of truth. `docs/ROADMAP.md` is the
 fallback ordering source when GitHub Projects or custom priority fields are not
@@ -95,7 +103,9 @@ available.
    - Ask at most one scope question at a time. Include a recommended answer.
    - Try to answer questions from the repo, issues, docs, and code before
      asking the user.
-   - Wait for explicit user approval before implementation.
+   - Wait for explicit user approval before implementation unless bounded
+     overnight backlog mode is active and the issue needs no unresolved product,
+     architecture, scope, or verification decision.
 9. Implement only the accepted slice.
    - Preserve unrelated user or local changes.
    - Follow existing repo patterns and Eve conventions.
@@ -122,14 +132,106 @@ available.
     - Do not open a PR.
     - Do not create or update a draft PR.
     - After checks pass, propose a conventional commit message and end with
-      `Commit? [Y/n]`, as required by `AGENTS.md`.
-    - On approval, commit on `main`, push `origin main`, comment on the GitHub
-      issue with the commit, checks, eval or scenario evidence, and close the
-      issue.
+      `Commit? [Y/n]`, as required by `AGENTS.md`, unless bounded overnight
+      backlog mode is active.
+    - In bounded overnight backlog mode, use a conventional commit message,
+      commit and push the verified slice, comment on and close its issue, then
+      re-fetch `main` and the ordered backlog before selecting another issue.
+    - In normal interactive mode, on approval, commit on `main`, push
+      `origin main`, comment on the GitHub issue with the commit, checks, eval
+      or scenario evidence, and close the issue.
     - If pushing or issue updates fail, report the failure visibly with the
       exact command or API error. Do not pretend the issue was shipped.
 13. Summarize what changed, what was verified, what eval or scenario covers the
     behavior, and what remains.
+
+## Bounded Overnight Backlog Mode
+
+This is an explicit unattended exception, not the default `$next` workflow.
+
+### Activation
+
+Activate the mode only when the user starts a goal whose objective:
+
+- names this repository and says `bounded overnight backlog mode`;
+- names the included issue range, list, milestone, or ordered backlog;
+- names any excluded or separately in-flight issues;
+- explicitly authorizes implementation, commits, pushes, issue comments, and
+  issue closure for verified work in that scope.
+
+Do not infer activation from phrases such as "keep going", "clear the backlog",
+or "work overnight" alone. The normal proposal and commit prompts still apply
+unless the goal objective contains the explicit activation and authority above.
+
+### Preflight
+
+Before the first issue and again after every shipped issue:
+
+1. Require a clean worktree on `main` with `HEAD` aligned to `origin/main`.
+2. Re-fetch the live issue, its comments, dependencies, and the roadmap order.
+3. Require every dependency to be closed with its implementation present on
+   `main`; an excluded open dependency still blocks dependent work.
+4. Require the issue to state a coherent problem, bounded slice, acceptance
+   criteria, dependencies, and a runnable behavior-proof mechanism.
+5. Confirm the issue still agrees with the manifest, roadmap, ADRs, current
+   implementation, installed Eve docs, and any work that landed earlier in the
+   same goal.
+
+### Per-Issue Loop
+
+For exactly one eligible issue at a time:
+
+1. Derive the smallest implementation that satisfies the issue as written.
+2. Implement only that slice; do not combine adjacent issues.
+3. Run narrow checks while developing.
+4. Run the issue-specific eval, script, browser flow, or documented end-user
+   scenario, and always run `pnpm check`.
+5. Commit with a conventional commit message, push `main`, comment with the
+   commit and verification evidence, and close the issue.
+6. Confirm the push and issue closure succeeded before continuing.
+
+### Hard Stops
+
+Stop the goal and report the exact blocker without selecting a later issue when:
+
+- the worktree contains concurrent or unrelated changes;
+- local `main`, `origin/main`, the roadmap, or live issue state disagree;
+- a dependency is open, incomplete, local-only, or excluded from the goal;
+- the issue needs a product, architecture, provider, security, retention,
+  migration, or scope decision that its body and repo docs do not answer;
+- implementation would exceed the issue, weaken an assertion, skip required
+  proof, or combine multiple issues;
+- required credentials, provider consent, external installation, production
+  access, or another human action is unavailable;
+- a required check, eval, script, browser flow, or manual scenario cannot run or
+  does not pass after reasonable in-scope fixes;
+- a commit, push, issue comment, or issue closure fails or cannot be confirmed;
+- a newly discovered safety, privacy, data-loss, or irreversible-action risk is
+  not already resolved by the accepted contract.
+
+Never skip the blocked issue, edit its acceptance criteria to match the partial
+implementation, treat unverified work as complete, or bypass application-level
+human approval and provider-consent boundaries.
+
+### Completion
+
+The goal is complete only when every included issue is closed with verified work
+on `main`. Excluded issues may remain open, but any included issue that depends
+on them remains blocked. Finish with a concise ledger of issues, commits, proof,
+and anything explicitly excluded.
+
+### Goal Objective Template
+
+```text
+Use bounded overnight backlog mode in peelar/docs-agent. Work through the open
+issues in docs/ROADMAP.md order, including <scope> and excluding <issues>. This
+goal explicitly authorizes implementation, conventional commits, pushes to
+main, issue comments, and issue closure for each verified in-scope issue. Apply
+all preflight, per-issue proof, pnpm check, and hard-stop rules from the repo's
+$next skill. Do not skip a blocked included issue or bypass application-level
+approval and provider-consent boundaries. Finish only when every included issue
+is closed on main, or stop with the first exact blocker.
+```
 
 ## Backlog Problem Format
 
