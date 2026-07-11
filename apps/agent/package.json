@@ -15,7 +15,7 @@
     "dev": "pnpm db:migrate && eve dev",
     "eval": "eve eval",
     "start": "pnpm db:migrate && eve start",
-    "test": "tsx scripts/check-db-migration-parity.ts && tsx scripts/check-db-schema-lifecycle.ts && tsx scripts/check-repository-materialization.ts && tsx scripts/check-repository-workflow.ts && tsx scripts/check-setup-state-db.ts && tsx scripts/check-docs-signal-queue.ts && tsx scripts/check-docs-signal-lifecycle.ts && tsx scripts/check-docs-impact-decision.ts && tsx scripts/check-workflow-model.ts && tsx scripts/check-slack-docs-signal.ts && tsx scripts/check-linear-docs-signal.ts && tsx scripts/check-docs-signal-patch-handoff.ts && tsx scripts/check-docs-signal-workflow-safety.ts && tsx scripts/check-workspace-memory.ts",
+    "test": "tsx scripts/check-db-migration-parity.ts && tsx scripts/check-db-schema-lifecycle.ts && tsx scripts/check-repository-materialization.ts && tsx scripts/check-repository-workflow.ts && tsx scripts/check-setup-state-db.ts && tsx scripts/check-docs-signal-queue.ts && tsx scripts/check-docs-signal-lifecycle.ts && tsx scripts/check-docs-signal-capture.ts && tsx scripts/check-docs-impact-decision.ts && tsx scripts/check-workflow-model.ts && tsx scripts/check-slack-docs-signal.ts && tsx scripts/check-linear-docs-signal.ts && tsx scripts/check-docs-signal-patch-handoff.ts && tsx scripts/check-docs-signal-workflow-safety.ts && tsx scripts/check-workspace-memory.ts",
     "typecheck": "tsc"
   },
   "dependencies": {

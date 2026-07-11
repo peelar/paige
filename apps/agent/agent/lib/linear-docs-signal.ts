@@ -9,10 +9,9 @@ import {
   type DocsImpactDecisionRecord,
 } from "./docs-impact-decision.js";
 import {
-  createDocsSignal,
+  captureDocsSignal,
   docsSignalDetailSchema,
   docsSignalLinkInputSchema,
-  transitionDocsSignalLifecycle,
   type DocsSignalStatus,
 } from "./docs-signals.js";
 import { getSetupStatus } from "./setup-state.js";
@@ -126,71 +125,67 @@ export async function captureLinearDocsSignal(
   });
   const desiredStatus = statusForDecision(decision);
 
-  const created = await createDocsSignal({
-    source: {
-      kind: "linear-issue",
-      provider: "linear",
-      providerId: linearProviderId(parsed),
-      permalink: parsed.issueUrl ?? parsed.agentSessionUrl,
-      title: parsed.issueIdentifier === undefined
-        ? parsed.issueTitle ?? parsed.sourceSummary
-        : `${parsed.issueIdentifier}: ${parsed.issueTitle ?? parsed.sourceSummary}`,
-      authors: externalContext.authors,
-      sourceText: formatLinearIssueSourceText(parsed),
-      sourceCreatedAt: externalContext.sourceCreatedAt,
-      sourceUpdatedAt: externalContext.sourceUpdatedAt,
-      capturedAt,
+  const created = await captureDocsSignal(
+    {
+      source: {
+        kind: "linear-issue",
+        provider: "linear",
+        providerId: linearProviderId(parsed),
+        permalink: parsed.issueUrl ?? parsed.agentSessionUrl,
+        title: parsed.issueIdentifier === undefined
+          ? parsed.issueTitle ?? parsed.sourceSummary
+          : `${parsed.issueIdentifier}: ${parsed.issueTitle ?? parsed.sourceSummary}`,
+        authors: externalContext.authors,
+        sourceText: formatLinearIssueSourceText(parsed),
+        sourceCreatedAt: externalContext.sourceCreatedAt,
+        sourceUpdatedAt: externalContext.sourceUpdatedAt,
+        capturedAt,
+        metadata: {
+          externalContextType: "issue-tracker-item",
+          organizationId: parsed.organizationId,
+          agentSessionId: parsed.agentSessionId,
+          agentActivityId: parsed.agentActivityId,
+          sourceCommentId: parsed.sourceCommentId,
+          agentSessionUrl: parsed.agentSessionUrl,
+          issueId: parsed.issueId,
+          issueIdentifier: parsed.issueIdentifier,
+          issueTitle: parsed.issueTitle,
+          labels: parsed.labels,
+          project: parsed.project,
+          status: parsed.status,
+          commentUrls: parsed.comments
+            .map((comment) => comment.url)
+            .filter((url): url is string => url !== undefined),
+          commentCount: parsed.comments.length,
+        },
+      },
+      sourceSummary: parsed.sourceSummary,
+      extractedClaims: parsed.extractedClaims,
+      likelyDocsConcepts: parsed.likelyDocsConcepts,
+      likelyDocsPages: parsed.likelyDocsPages,
+      productSurfaces: parsed.productSurfaces,
+      missingEvidence: parsed.missingEvidence,
+      uncertainty: parsed.uncertainty.join(" ") || undefined,
+      priority: parsed.priority,
+      links: [
+        ...linearIssueLinks(parsed),
+        ...parsed.links,
+      ],
+      artifacts: [],
+    },
+    {
+      status: desiredStatus,
+      reason: decision.reason,
+      actor: "docs-agent:linear-intake",
       metadata: {
-        externalContextType: "issue-tracker-item",
-        organizationId: parsed.organizationId,
-        agentSessionId: parsed.agentSessionId,
-        agentActivityId: parsed.agentActivityId,
-        sourceCommentId: parsed.sourceCommentId,
-        agentSessionUrl: parsed.agentSessionUrl,
-        issueId: parsed.issueId,
-        issueIdentifier: parsed.issueIdentifier,
-        issueTitle: parsed.issueTitle,
-        labels: parsed.labels,
-        project: parsed.project,
-        status: parsed.status,
-        commentUrls: parsed.comments
-          .map((comment) => comment.url)
-          .filter((url): url is string => url !== undefined),
-        commentCount: parsed.comments.length,
+        decision: decision.decision,
+        recommendedNextAction: decision.recommendedNextAction,
+        currentDocsVerification: decision.currentDocsVerification,
+        shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),
+        externalContext,
       },
     },
-    sourceSummary: parsed.sourceSummary,
-    extractedClaims: parsed.extractedClaims,
-    likelyDocsConcepts: parsed.likelyDocsConcepts,
-    likelyDocsPages: parsed.likelyDocsPages,
-    productSurfaces: parsed.productSurfaces,
-    missingEvidence: parsed.missingEvidence,
-    uncertainty: parsed.uncertainty.join(" ") || undefined,
-    priority: parsed.priority,
-    links: [
-      ...linearIssueLinks(parsed),
-      ...parsed.links,
-    ],
-    artifacts: [],
-  });
-
-  const updatedSignal = await transitionDocsSignalLifecycle({
-    id: created.signal.id,
-    status: desiredStatus,
-    reason: decision.reason,
-    actor: "docs-agent:linear-intake",
-    missingEvidence: decision.missingEvidence,
-    uncertainty: decision.uncertainty.join(" ") || undefined,
-    links: [],
-    artifacts: [],
-    metadata: {
-      decision: decision.decision,
-      recommendedNextAction: decision.recommendedNextAction,
-      currentDocsVerification: decision.currentDocsVerification,
-      shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),
-      externalContext,
-    },
-  }, "intake");
+  );
 
   const setupStatus = await getSetupStatus();
   const verificationStatus = buildVerificationStatus(
@@ -201,7 +196,7 @@ export async function captureLinearDocsSignal(
 
   return captureLinearDocsSignalResultSchema.parse({
     created: created.created,
-    signal: updatedSignal,
+    signal: created.signal,
     externalContext,
     decision,
     shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),

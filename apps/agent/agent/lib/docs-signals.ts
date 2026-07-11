@@ -140,6 +140,13 @@ const transitionDocsSignalLifecycleInputSchema = z.object({
   actor: z.string().trim().min(1),
 }).strict();
 
+const initialDocsSignalLifecycleSchema = z.object({
+  status: docsSignalStatusSchema,
+  reason: z.string().trim().min(1),
+  actor: z.string().trim().min(1),
+  metadata: z.record(z.string(), z.unknown()).default({}),
+}).strict();
+
 export const listDocsSignalsInputSchema = z.object({
   statuses: z.array(docsSignalStatusSchema).default([]),
   sourceKinds: z.array(docsSignalSourceKindSchema).default([]),
@@ -251,65 +258,100 @@ export type UpdateDocsSignalLifecycleInput = z.infer<
 export type TransitionDocsSignalLifecycleInput = z.infer<
   typeof transitionDocsSignalLifecycleInputSchema
 >;
+export type InitialDocsSignalLifecycle = z.input<
+  typeof initialDocsSignalLifecycleSchema
+>;
 export type ListDocsSignalsInput = z.infer<typeof listDocsSignalsInputSchema>;
 
 export async function createDocsSignal(
   input: CreateDocsSignalInput,
 ): Promise<z.infer<typeof createDocsSignalResultSchema>> {
+  return captureDocsSignal(input, {
+    status: "captured",
+    reason: "Docs signal captured.",
+    actor: "docs-agent",
+  });
+}
+
+export async function captureDocsSignal(
+  input: CreateDocsSignalInput,
+  initialLifecycle: InitialDocsSignalLifecycle,
+): Promise<z.infer<typeof createDocsSignalResultSchema>> {
   const parsed = createDocsSignalInputSchema.parse(input);
+  const lifecycle = initialDocsSignalLifecycleSchema.parse(initialLifecycle);
   const dedupeKey = buildDedupeKey(parsed.source);
+  assertDocsSignalTransitionReady({
+    authority: "intake",
+    from: "captured",
+    to: lifecycle.status,
+    missingEvidence: parsed.missingEvidence,
+  });
 
   return withDocsAgentDatabase(async (db) => {
-    if (dedupeKey !== null) {
-      const existing = await findSignalByDedupeKey(db, dedupeKey);
-      if (existing !== null) {
+    return db.transaction(async (tx) => {
+      const signalId = randomUUID();
+      const capturedAt = parsed.source.capturedAt ?? nowIso();
+      const createdAt = nowIso();
+      const insert = tx.insert(docsSignals).values({
+        id: signalId,
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        status: lifecycle.status,
+        sourceKind: parsed.source.kind,
+        dedupeKey,
+        sourceSummary: parsed.sourceSummary,
+        extractedClaims: parsed.extractedClaims,
+        likelyDocsConcepts: parsed.likelyDocsConcepts,
+        likelyDocsPages: parsed.likelyDocsPages,
+        productSurfaces: parsed.productSurfaces,
+        missingEvidence: parsed.missingEvidence,
+        uncertainty: parsed.uncertainty ?? null,
+        priority: parsed.priority,
+        nextActionAt: parsed.nextActionAt ?? null,
+        capturedAt,
+        createdAt,
+        updatedAt: createdAt,
+      });
+      const insertedRows = dedupeKey === null
+        ? await insert.returning({ id: docsSignals.id })
+        : await insert
+            .onConflictDoNothing({
+              target: [docsSignals.workspaceId, docsSignals.dedupeKey],
+            })
+            .returning({ id: docsSignals.id });
+
+      if (insertedRows.length === 0) {
+        const existing = dedupeKey === null
+          ? null
+          : await findSignalByDedupeKey(tx, dedupeKey);
+        if (existing === null) {
+          throw new Error("Docs signal insert conflicted without a matching dedupe key.");
+        }
         return createDocsSignalResultSchema.parse({
           created: false,
-          signal: await readDocsSignalDetail(db, existing.id),
+          signal: await readDocsSignalDetail(tx, existing.id),
         });
       }
-    }
 
-    const signalId = randomUUID();
-    const capturedAt = parsed.source.capturedAt ?? nowIso();
-    const createdAt = nowIso();
+      await insertSource(tx, signalId, parsed.source, capturedAt);
+      await insertLinks(tx, signalId, parsed.links);
+      await insertArtifacts(tx, signalId, parsed.artifacts);
+      await insertEvent(tx, {
+        signalId,
+        eventType: "signal-created",
+        fromStatus: null,
+        toStatus: lifecycle.status,
+        reason: lifecycle.reason,
+        actor: lifecycle.actor,
+        metadata: {
+          ...lifecycle.metadata,
+          dedupeKey,
+        },
+      });
 
-    await db.insert(docsSignals).values({
-      id: signalId,
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      status: "captured",
-      sourceKind: parsed.source.kind,
-      dedupeKey,
-      sourceSummary: parsed.sourceSummary,
-      extractedClaims: parsed.extractedClaims,
-      likelyDocsConcepts: parsed.likelyDocsConcepts,
-      likelyDocsPages: parsed.likelyDocsPages,
-      productSurfaces: parsed.productSurfaces,
-      missingEvidence: parsed.missingEvidence,
-      uncertainty: parsed.uncertainty ?? null,
-      priority: parsed.priority,
-      nextActionAt: parsed.nextActionAt ?? null,
-      capturedAt,
-      createdAt,
-      updatedAt: createdAt,
-    });
-
-    await insertSource(db, signalId, parsed.source, capturedAt);
-    await insertLinks(db, signalId, parsed.links);
-    await insertArtifacts(db, signalId, parsed.artifacts);
-    await insertEvent(db, {
-      signalId,
-      eventType: "signal-created",
-      fromStatus: null,
-      toStatus: "captured",
-      reason: "Docs signal captured.",
-      actor: "docs-agent",
-      metadata: { dedupeKey },
-    });
-
-    return createDocsSignalResultSchema.parse({
-      created: true,
-      signal: await readDocsSignalDetail(db, signalId),
+      return createDocsSignalResultSchema.parse({
+        created: true,
+        signal: await readDocsSignalDetail(tx, signalId),
+      });
     });
   });
 }

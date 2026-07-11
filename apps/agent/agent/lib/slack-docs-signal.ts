@@ -9,10 +9,9 @@ import {
   type DocsImpactDecisionRecord,
 } from "./docs-impact-decision.js";
 import {
-  createDocsSignal,
+  captureDocsSignal,
   docsSignalDetailSchema,
   docsSignalLinkInputSchema,
-  transitionDocsSignalLifecycle,
   type DocsSignalStatus,
 } from "./docs-signals.js";
 import { getSetupStatus } from "./setup-state.js";
@@ -112,63 +111,59 @@ export async function captureSlackDocsSignal(
   });
   const desiredStatus = statusForDecision(decision);
 
-  const created = await createDocsSignal({
-    source: {
-      kind: "slack-thread",
-      provider: "slack",
-      providerId: `${parsed.channelId}:${parsed.threadTs}`,
-      permalink: parsed.permalink,
-      title: parsed.sourceSummary,
-      authors: externalContext.authors,
-      sourceText: formatSlackThreadSourceText(parsed.messages),
-      sourceCreatedAt: externalContext.firstMessageAt,
-      sourceUpdatedAt: externalContext.lastMessageAt,
-      capturedAt,
+  const created = await captureDocsSignal(
+    {
+      source: {
+        kind: "slack-thread",
+        provider: "slack",
+        providerId: `${parsed.channelId}:${parsed.threadTs}`,
+        permalink: parsed.permalink,
+        title: parsed.sourceSummary,
+        authors: externalContext.authors,
+        sourceText: formatSlackThreadSourceText(parsed.messages),
+        sourceCreatedAt: externalContext.firstMessageAt,
+        sourceUpdatedAt: externalContext.lastMessageAt,
+        capturedAt,
+        metadata: {
+          externalContextType: "communication-thread",
+          teamId: parsed.teamId,
+          channelId: parsed.channelId,
+          channelName: parsed.channelName,
+          threadTs: parsed.threadTs,
+          triggeringMessageTs: parsed.triggeringMessageTs,
+          messagePermalinks: parsed.messages
+            .map((message) => message.permalink)
+            .filter((permalink): permalink is string => permalink !== undefined),
+          messageCount: parsed.messages.length,
+        },
+      },
+      sourceSummary: parsed.sourceSummary,
+      extractedClaims: parsed.extractedClaims,
+      likelyDocsConcepts: parsed.likelyDocsConcepts,
+      likelyDocsPages: parsed.likelyDocsPages,
+      productSurfaces: parsed.productSurfaces,
+      missingEvidence: parsed.missingEvidence,
+      uncertainty: parsed.uncertainty.join(" ") || undefined,
+      priority: parsed.priority,
+      links: [
+        ...slackThreadLinks(parsed),
+        ...parsed.links,
+      ],
+      artifacts: [],
+    },
+    {
+      status: desiredStatus,
+      reason: decision.reason,
+      actor: "docs-agent:slack-intake",
       metadata: {
-        externalContextType: "communication-thread",
-        teamId: parsed.teamId,
-        channelId: parsed.channelId,
-        channelName: parsed.channelName,
-        threadTs: parsed.threadTs,
-        triggeringMessageTs: parsed.triggeringMessageTs,
-        messagePermalinks: parsed.messages
-          .map((message) => message.permalink)
-          .filter((permalink): permalink is string => permalink !== undefined),
-        messageCount: parsed.messages.length,
+        decision: decision.decision,
+        recommendedNextAction: decision.recommendedNextAction,
+        currentDocsVerification: decision.currentDocsVerification,
+        shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),
+        externalContext,
       },
     },
-    sourceSummary: parsed.sourceSummary,
-    extractedClaims: parsed.extractedClaims,
-    likelyDocsConcepts: parsed.likelyDocsConcepts,
-    likelyDocsPages: parsed.likelyDocsPages,
-    productSurfaces: parsed.productSurfaces,
-    missingEvidence: parsed.missingEvidence,
-    uncertainty: parsed.uncertainty.join(" ") || undefined,
-    priority: parsed.priority,
-    links: [
-      ...slackThreadLinks(parsed),
-      ...parsed.links,
-    ],
-    artifacts: [],
-  });
-
-  const updatedSignal = await transitionDocsSignalLifecycle({
-    id: created.signal.id,
-    status: desiredStatus,
-    reason: decision.reason,
-    actor: "docs-agent:slack-intake",
-    missingEvidence: decision.missingEvidence,
-    uncertainty: decision.uncertainty.join(" ") || undefined,
-    links: [],
-    artifacts: [],
-    metadata: {
-      decision: decision.decision,
-      recommendedNextAction: decision.recommendedNextAction,
-      currentDocsVerification: decision.currentDocsVerification,
-      shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),
-      externalContext,
-    },
-  }, "intake");
+  );
 
   const setupStatus = await getSetupStatus();
   const verificationStatus = buildVerificationStatus(
@@ -179,7 +174,7 @@ export async function captureSlackDocsSignal(
 
   return captureSlackDocsSignalResultSchema.parse({
     created: created.created,
-    signal: updatedSignal,
+    signal: created.signal,
     externalContext,
     decision,
     shouldVerifyCurrentDocs: shouldVerifyCurrentDocs(decision),
