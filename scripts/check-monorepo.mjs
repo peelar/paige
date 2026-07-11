@@ -7,11 +7,31 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const agentRoot = join(repositoryRoot, "apps", "agent");
 const packageJson = JSON.parse(readFileSync(join(repositoryRoot, "package.json"), "utf8"));
+const turboJson = JSON.parse(readFileSync(join(repositoryRoot, "turbo.json"), "utf8"));
 
 for (const script of ["dev", "build", "typecheck", "test", "check"]) {
   if (!packageJson.scripts?.[script]?.includes("turbo run")) {
     throw new Error(`Root script ${script} must run through Turborepo.`);
   }
+}
+
+const agentBuildTask = turboJson.tasks?.["docs-agent#build"];
+const agentBuildEnvironment = new Set(agentBuildTask?.env ?? []);
+
+for (const variable of [
+  "DOCS_AGENT_DATABASE_AUTH_TOKEN",
+  "DOCS_AGENT_DATABASE_URL",
+  "DOCS_AGENT_LINEAR_CONNECTOR",
+  "DOCS_AGENT_SLACK_CONNECTOR",
+  "EVE_GATEWAY_MODEL",
+]) {
+  if (!agentBuildEnvironment.has(variable)) {
+    throw new Error(`Agent build must receive ${variable} through Turborepo.`);
+  }
+}
+
+if (!agentBuildTask?.outputs?.includes(".vercel/output/**")) {
+  throw new Error("Agent build must cache its Vercel Build Output API artifacts.");
 }
 
 const workspaceList = JSON.parse(

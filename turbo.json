@@ -11,6 +11,21 @@
         ".output/**"
       ]
     },
+    "docs-agent#build": {
+      "dependsOn": ["^build"],
+      "env": [
+        "DOCS_AGENT_DATABASE_AUTH_TOKEN",
+        "DOCS_AGENT_DATABASE_URL",
+        "DOCS_AGENT_LINEAR_CONNECTOR",
+        "DOCS_AGENT_SLACK_CONNECTOR",
+        "EVE_GATEWAY_MODEL"
+      ],
+      "outputs": [
+        ".eve/**",
+        ".vercel/output/**",
+        ".output/**"
+      ]
+    },
     "check": {
       "dependsOn": ["^build"],
       "cache": false
