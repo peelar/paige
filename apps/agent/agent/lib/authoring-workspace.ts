@@ -17,6 +17,7 @@ import {
 import { saveRepositoryWorkflowState } from "./repository-workflow-state.js";
 import type { WorkflowState } from "./repository-workflow-contract.js";
 import { repositoryCheckNameSchema } from "./repository-workflow-contract.js";
+import { recommendationMatchesTask } from "./editorial-recommendation.js";
 
 const pathSchema = z.string().trim().min(1);
 export const authoringOperationSchema = z.discriminatedUnion("kind", [
@@ -42,6 +43,7 @@ type PersistState = (state: WorkflowState) => Promise<void>;
 export async function applyAuthoringDraft(input: z.infer<typeof applyAuthoringDraftInputSchema>, ctx: ToolContext, state: WorkflowState, persistState: PersistState = saveRepositoryWorkflowState): Promise<WorkflowState["draft"]> {
   const parsed = applyAuthoringDraftInputSchema.parse(input);
   const repository = state.repositoryInput.workingDocumentationRepository;
+  const editorialRecommendation = requireEditorialRecommendationForDraft(parsed, state);
   const contentPlan = await requireContentPlanForSubstantialWork(parsed, ctx, state);
   for (const operation of parsed.operations) {
     switch (operation.kind) {
@@ -56,7 +58,9 @@ export async function applyAuthoringDraft(input: z.infer<typeof applyAuthoringDr
   const diff = await exportRepositoryDiff(ctx, repository, state.actionProvenance);
   state.draft = {
     baseRevision: state.materialization.resolvedCommit ?? state.materialization.requestedRef,
-    taskReferences: [...new Set([...(state.draft?.taskReferences ?? []), ...(contentPlan?.taskReferences ?? []), ...parsed.taskReferences])],
+    taskReferences: [...new Set([...(state.draft?.taskReferences ?? []), ...(editorialRecommendation?.taskReferences ?? []), ...(contentPlan?.taskReferences ?? []), ...parsed.taskReferences])],
+    editorialRecommendationId: editorialRecommendation?.id ?? state.draft?.editorialRecommendationId,
+    editorialRecommendationRevision: editorialRecommendation?.revision ?? state.draft?.editorialRecommendationRevision,
     contentPlanId: contentPlan?.id ?? state.draft?.contentPlanId,
     contentPlanRevision: contentPlan?.revision ?? state.draft?.contentPlanRevision,
     operationCount: (state.draft?.operationCount ?? 0) + parsed.operations.length,
@@ -83,6 +87,15 @@ export async function inspectAuthoringDraft(input: { paths?: string[] }, ctx: To
 export async function prepareAuthoringDraft(input: z.infer<typeof prepareAuthoringDraftInputSchema>, ctx: ToolContext, state: WorkflowState, persistState: PersistState = saveRepositoryWorkflowState) {
   const parsed = prepareAuthoringDraftInputSchema.parse(input);
   const repository = state.repositoryInput.workingDocumentationRepository;
+  if (state.draft?.editorialRecommendationId !== undefined) {
+    if (
+      state.editorialRecommendation?.id !== state.draft.editorialRecommendationId ||
+      state.editorialRecommendation.status === "blocked" ||
+      state.editorialRecommendation.status === "complete-no-change"
+    ) {
+      throw new Error("The editorial recommendation for this draft is missing or does not permit authoring.");
+    }
+  }
   if (state.draft?.contentPlanId !== undefined) {
     if (state.contentPlan?.id !== state.draft.contentPlanId || state.contentPlan.status !== "ready") {
       throw new Error("The content plan for this authoring draft is missing or blocked. Resolve the plan before preparing the draft.");
@@ -103,6 +116,8 @@ export async function prepareAuthoringDraft(input: z.infer<typeof prepareAuthori
   state.draft = {
     baseRevision,
     taskReferences: state.draft?.taskReferences ?? [],
+    editorialRecommendationId: state.draft?.editorialRecommendationId,
+    editorialRecommendationRevision: state.editorialRecommendation?.revision ?? state.draft?.editorialRecommendationRevision,
     contentPlanId: state.draft?.contentPlanId,
     contentPlanRevision: state.contentPlan?.revision ?? state.draft?.contentPlanRevision,
     operationCount: state.draft?.operationCount ?? 0,
@@ -127,6 +142,38 @@ export async function abandonAuthoringDraft(ctx: ToolContext, state: WorkflowSta
   state.lastResult = undefined;
   await persistState(state);
   return { abandoned: true as const };
+}
+
+function requireEditorialRecommendationForDraft(
+  input: z.infer<typeof applyAuthoringDraftInputSchema>,
+  state: WorkflowState,
+) {
+  const recommendation = state.editorialRecommendation;
+  const draftRecommendationId = state.draft?.editorialRecommendationId;
+  if (draftRecommendationId !== undefined) {
+    if (recommendation?.id !== draftRecommendationId) {
+      throw new Error("The editorial recommendation for this authoring draft is missing.");
+    }
+  } else if (recommendation === undefined || !recommendationMatchesTask(recommendation, input.taskReferences)) {
+    return undefined;
+  }
+
+  if (recommendation.status === "blocked") {
+    throw new Error(`Editorial recommendation pauses drafting: ${recommendation.blockingDecisions.join("; ")}`);
+  }
+  if (recommendation.status === "complete-no-change") {
+    throw new Error("Editorial recommendation selected no change, so no authoring draft should be created.");
+  }
+  if (recommendation.status === "plan-required") {
+    const plan = state.contentPlan;
+    if (plan?.status === "blocked" && recommendationMatchesTask(recommendation, plan.taskReferences)) {
+      throw new Error(`Content plan is blocked. Resolve before drafting: ${plan.blockers.join("; ")}`);
+    }
+    if (plan === undefined || !recommendationMatchesTask(recommendation, plan.taskReferences)) {
+      throw new Error(`Editorial intervention ${recommendation.chosenIntervention} requires a matching ready content plan before drafting.`);
+    }
+  }
+  return recommendation;
 }
 
 async function requireContentPlanForSubstantialWork(

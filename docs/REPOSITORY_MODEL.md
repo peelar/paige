@@ -294,10 +294,35 @@ global rules. Repository observations remain separate from workspace memories:
 a maintainer correction can be proposed through `memory_propose`, but neither
 the profile builder nor retrieval tool silently activates memory.
 
+## Editorial Recommendation
+
+After current-docs verification, `editorial_recommendation` records Paige's
+concise choice of no change, focused patch, new document, rewrite, restructure,
+consolidation, removal, changelog-only, waiting for evidence, or asking a
+maintainer. It names the reader problem, repository and docs-profile evidence,
+up to three important alternatives, source evidence, relevant workspace-memory
+references, and remaining uncertainty or blockers. This is the immediate
+handoff from docs-impact judgment, not a second planning document.
+
+The recommendation is model judgment. Code validates the typed handoff and
+safety boundaries; it does not score documentation quality. A requested format
+can be rejected when repository evidence shows duplication or a broken reader
+path. If a maintainer explicitly reaffirms a consequential intervention after
+seeing the tradeoff, the recommendation must follow it unless that would create
+an unsupported public claim or cross an existing safety boundary. Routine style
+preferences do not warrant pushback.
+
+Recommendations are living Eve session state with a stable id, revision, prior
+docs-impact reference, and task or docs-signal references. `proceed` choices can
+enter reversible authoring directly, `plan-required` choices must create a
+content plan, `complete-no-change` stops without a draft, and `blocked` stops
+before mutation. Associated drafts record the recommendation id and revision.
+
 ## Content Planning
 
-The docs-impact decision establishes whether documentation work is warranted.
-For substantial work, `content_plan` then records what Paige intends to write:
+The docs-impact decision establishes whether documentation work is warranted,
+and the editorial recommendation chooses the intervention. For substantial
+work, `content_plan` then records what Paige intends to write:
 the reader and desired outcome, content type and placement, affected surfaces,
 outline, evidence, examples, assets, unresolved decisions, validation, and
 definition of done. The plan points back to the prior impact decision instead
@@ -326,9 +351,9 @@ assets are valid draft surfaces. Repository-relative path validation prevents
 escape; watched and context repositories never enter this write path.
 
 The sandbox working tree keeps the draft reversible across turns. Draft state
-records the resolved base revision, task references, associated content-plan id
-and revision when present, operation count, changed files, checks, complete
-binary-aware diff, and preparation time. Inspect reads
+records the resolved base revision, task references, associated editorial
+recommendation and content-plan ids and revisions when present, operation count,
+changed files, checks, complete binary-aware diff, and preparation time. Inspect reads
 the current draft, prepare runs selected repository checks and freezes the
 reviewable result for writeback, and abandon restores the sandbox checkout to
 its base without touching GitHub.

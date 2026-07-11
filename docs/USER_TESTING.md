@@ -316,9 +316,32 @@ must fail visibly. Maintainer corrections may be proposed separately with
 contradiction refresh, repository rule and validation extraction, local example
 loading, traversal rejection, and visible generation failure.
 
+## Editorial Intervention Choice
+
+After current-docs verification and `get_docs_profile`, ask Paige to choose an
+intervention with `editorial_recommendation`. Confirm the concise result names
+the reader problem, repository evidence, chosen intervention, important rejected
+alternatives, and remaining uncertainty without becoming a second content plan.
+
+Exercise the behavioral cases in `editorial-interventions.eval.ts`: a requested
+new page that duplicates a canonical guide should become a focused patch; a
+small canonical-page gap should also become a focused patch; fragmented or
+obsolete pages should be consolidated; a distinct administrator task should
+produce a new document; an explicitly reaffirmed new-document choice should be
+followed after the tradeoff is understood; and missing public-behavior evidence
+should choose `wait-for-evidence` and produce no draft. Substantial choices must
+call `content_plan`; focused patches must not.
+
+The executable `check-editorial-recommendation.ts` keeps the typed handoff and
+safety behavior in `pnpm check`. It covers every supported intervention,
+duplicate-page challenge, focused-patch authoring without a plan, consolidation
+handoff, reaffirmed maintainer direction, recommendation revisions, and a
+missing-evidence pause before sandbox mutation. It deliberately does not encode
+documentation quality as a scoring engine.
+
 ## Substantial-work Content Planning
 
-After a docs-impact decision recommends a new page, coordinated page set,
+After `editorial_recommendation` chooses a new page, coordinated page set,
 restructure, migration guide, or broad replacement, call `content_plan` before
 authoring. Confirm the complete artifact identifies the reader and outcome,
 content type and placement, affected surfaces, outline, evidence, examples,

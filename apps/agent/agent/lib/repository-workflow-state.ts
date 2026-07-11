@@ -12,6 +12,7 @@ import {
   docsMaintenanceWorkflowResultSchema,
   authoringDraftSchema,
   contentPlanSchema,
+  editorialRecommendationSchema,
   repositoryMaterializationSchema,
   type WorkflowState,
 } from "./repository-workflow-contract.js";
@@ -50,6 +51,10 @@ export async function loadRepositoryWorkflowState(): Promise<WorkflowState> {
         : docsMaintenanceWorkflowResultSchema.parse(state.lastResult),
     contentPlan:
       state.contentPlan === undefined ? undefined : contentPlanSchema.parse(state.contentPlan),
+    editorialRecommendation:
+      state.editorialRecommendation === undefined
+        ? undefined
+        : editorialRecommendationSchema.parse(state.editorialRecommendation),
     draft: state.draft === undefined ? undefined : authoringDraftSchema.parse(state.draft),
   };
 }

@@ -63,6 +63,8 @@ export const docsMaintenanceWorkflowResultSchema = z.object({
 export const authoringDraftSchema = z.object({
   baseRevision: z.string(),
   taskReferences: z.array(z.string()),
+  editorialRecommendationId: z.string().optional(),
+  editorialRecommendationRevision: z.number().int().positive().optional(),
   contentPlanId: z.string().optional(),
   contentPlanRevision: z.number().int().positive().optional(),
   operationCount: z.number().int().nonnegative(),
@@ -113,6 +115,48 @@ export const contentPlanSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const editorialInterventionSchema = z.enum([
+  "no-change",
+  "focused-patch",
+  "new-document",
+  "rewrite",
+  "restructure",
+  "consolidate",
+  "remove",
+  "changelog-only",
+  "wait-for-evidence",
+  "ask-maintainer",
+]);
+
+export const editorialRecommendationSchema = z.object({
+  id: z.string(),
+  revision: z.number().int().positive(),
+  sourceDecisionReference: z.string().trim().min(1),
+  taskReferences: z.array(z.string().trim().min(1)),
+  reader: z.string().trim().min(1),
+  readerProblem: z.string().trim().min(1),
+  chosenIntervention: editorialInterventionSchema,
+  rationale: z.string().trim().min(1),
+  repositoryEvidence: z.array(z.string().trim().min(1)),
+  docsProfileReferences: z.array(z.string().trim().min(1)),
+  sourceEvidence: z.array(z.string().trim().min(1)),
+  workspaceMemoryReferences: z.array(z.string().trim().min(1)),
+  alternatives: z.array(z.object({
+    intervention: editorialInterventionSchema,
+    reasonRejected: z.string().trim().min(1),
+  })),
+  remainingUncertainty: z.array(z.string().trim().min(1)),
+  blockingDecisions: z.array(z.string().trim().min(1)),
+  maintainerDirection: z.object({
+    requestedIntervention: editorialInterventionSchema,
+    reaffirmed: z.boolean(),
+  }).optional(),
+  overrideReason: z.enum(["unsupported-public-claim", "existing-safety-boundary"]).optional(),
+  status: z.enum(["proceed", "plan-required", "complete-no-change", "blocked"]),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 export const runDocsMaintenanceScenarioInputSchema = z.object({
   scenarioText: z
     .string()
@@ -137,6 +181,7 @@ export interface WorkflowState {
   materialization: DocsMaintenanceWorkflowResult["materialization"];
   actionProvenance: RepositoryActionRecord[];
   lastResult?: DocsMaintenanceWorkflowResult;
+  editorialRecommendation?: z.infer<typeof editorialRecommendationSchema>;
   contentPlan?: z.infer<typeof contentPlanSchema>;
   draft?: z.infer<typeof authoringDraftSchema>;
 }

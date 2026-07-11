@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { saveRepositoryWorkflowState } from "./repository-workflow-state.js";
+import { recommendationMatchesTask } from "./editorial-recommendation.js";
 import {
   contentPlanDecisionSchema,
   contentPlanEvidenceSchema,
@@ -48,8 +49,23 @@ export async function createContentPlan(
     throw new Error("The active authoring draft already has a content plan. Revise that plan or abandon the draft before starting another one.");
   }
 
+  const details = contentPlanDetailsSchema.parse(input);
+  const recommendation = state.editorialRecommendation;
+  if (recommendation === undefined) {
+    throw new Error("Choose and share an editorial recommendation before creating a substantial-work content plan.");
+  }
+  if (recommendation.status !== "plan-required") {
+    throw new Error(`Editorial intervention ${recommendation.chosenIntervention} does not require a substantial-work content plan.`);
+  }
+  if (!recommendationMatchesTask(recommendation, details.taskReferences)) {
+    throw new Error("The editorial recommendation and content plan refer to different tasks.");
+  }
+  if (recommendation.sourceDecisionReference !== details.sourceDecisionReference) {
+    throw new Error("The editorial recommendation and content plan must reference the same docs-impact decision.");
+  }
+
   const now = new Date().toISOString();
-  state.contentPlan = buildContentPlan(contentPlanDetailsSchema.parse(input), {
+  state.contentPlan = buildContentPlan(details, {
     id: `content-plan-${randomUUID()}`,
     revision: 1,
     createdAt: now,

@@ -5,7 +5,8 @@
 Docs Agent is an open-source agent for software teams that keep product
 documentation in Git. Its first job is not to broadly generate prose. Its job is
 to inspect engineering context, decide whether documentation is affected, and
-make the smallest reviewable docs change when the evidence supports it.
+make the smallest reviewable intervention that solves the reader's problem when
+the evidence supports it.
 
 The agent should be present where work happens. Product decisions, release
 intent, support signals, and behavior clarifications often appear in Slack and

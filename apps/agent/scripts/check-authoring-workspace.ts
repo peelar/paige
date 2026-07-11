@@ -7,6 +7,7 @@ import type { ToolContext } from "eve/tools";
 
 import { abandonAuthoringDraft, applyAuthoringDraft, inspectAuthoringDraft, prepareAuthoringDraft } from "../agent/lib/authoring-workspace.js";
 import { createContentPlan } from "../agent/lib/content-plan.js";
+import { createEditorialRecommendation } from "../agent/lib/editorial-recommendation.js";
 import type { ResolvedRepositoryInput } from "../agent/lib/repository-contract.js";
 import type { WorkflowState } from "../agent/lib/repository-workflow-contract.js";
 import { collectChangedFileEntries } from "../agent/lib/github-writeback.js";
@@ -34,6 +35,9 @@ const noPersist = async () => {};
 
 try {
   const asset = Buffer.from([0, 1, 2, 3, 255]).toString("base64");
+  const recommendation = await createEditorialRecommendation({
+    sourceDecisionReference: "docs-impact:DOCS-53", taskReferences: ["DOCS-53"], reader: "Developers", readerProblem: "They need a complete new guide.", chosenIntervention: "new-document", rationale: "The reader task is not covered by an existing canonical page.", repositoryEvidence: ["No matching page exists."], docsProfileReferences: ["docs profile: guide placement"], sourceEvidence: ["DOCS-53"], workspaceMemoryReferences: [], alternatives: [{ intervention: "focused-patch", reasonRejected: "There is no existing page to patch." }], remainingUncertainty: [], blockingDecisions: [],
+  }, state, noPersist);
   const plan = await createContentPlan({
     sourceDecisionReference: "docs-impact:DOCS-53",
     taskReferences: ["DOCS-53"],
@@ -56,6 +60,7 @@ try {
     { kind: "delete", path: "docs/obsolete.mdx" },
   ] }, ctx, state, noPersist);
   assert.equal(first?.baseRevision, baseRevision);
+  assert.equal(first?.editorialRecommendationId, recommendation.recommendation.id);
   assert.equal(first?.contentPlanId, plan.plan.id);
   assert.equal(first?.changedFiles.length, 8);
   const inspected = await inspectAuthoringDraft({ paths: ["docs/new-page.mdx", "sidebars.js"] }, ctx, state, noPersist);

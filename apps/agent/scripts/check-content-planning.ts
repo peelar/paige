@@ -7,6 +7,7 @@ import type { ToolContext } from "eve/tools";
 
 import { abandonAuthoringDraft, applyAuthoringDraft, inspectAuthoringDraft } from "../agent/lib/authoring-workspace.js";
 import { createContentPlan, inspectContentPlan, reviseContentPlan } from "../agent/lib/content-plan.js";
+import { createEditorialRecommendation } from "../agent/lib/editorial-recommendation.js";
 import type { ResolvedRepositoryInput } from "../agent/lib/repository-contract.js";
 import type { WorkflowState } from "../agent/lib/repository-workflow-contract.js";
 
@@ -39,6 +40,9 @@ try {
     /content plan required/i,
   );
 
+  await createEditorialRecommendation({
+    sourceDecisionReference: "docs-impact:DOCS-54", taskReferences: ["DOCS-54"], reader: "App developers", readerProblem: "They need a safe upgrade path.", chosenIntervention: "new-document", rationale: "The task is distinct and needs a durable guide.", repositoryEvidence: ["No upgrade guide exists."], docsProfileReferences: ["docs profile: guides"], sourceEvidence: ["DOCS-54"], workspaceMemoryReferences: [], alternatives: [{ intervention: "focused-patch", reasonRejected: "No canonical page covers the task." }], remainingUncertainty: [], blockingDecisions: [],
+  }, state, noPersist);
   const created = await createContentPlan({
     sourceDecisionReference: "docs-impact:DOCS-54",
     taskReferences: ["DOCS-54"],
@@ -72,6 +76,9 @@ try {
   assert.equal(inspectContentPlan(state)?.plan.id, created.plan.id);
   await abandonAuthoringDraft(ctx, state, noPersist);
 
+  await createEditorialRecommendation({
+    sourceDecisionReference: "docs-impact:DOCS-BLOCKED", taskReferences: ["DOCS-BLOCKED"], reader: "Administrators", readerProblem: "They need the supported deployment mode.", chosenIntervention: "new-document", rationale: "A distinct administrator task needs a guide once evidence exists.", repositoryEvidence: ["No deployment guide exists."], docsProfileReferences: ["docs profile: admin guides"], sourceEvidence: [], workspaceMemoryReferences: [], alternatives: [], remainingUncertainty: [], blockingDecisions: [],
+  }, state, noPersist);
   const blocked = await createContentPlan({
     sourceDecisionReference: "docs-impact:DOCS-BLOCKED",
     taskReferences: ["DOCS-BLOCKED"],

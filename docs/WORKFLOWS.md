@@ -53,6 +53,7 @@ publishing remains a separate explicit approval through
 | Signal intake | Convert provider context into a docs signal with provenance. | `capture_slack_docs_signal`, `capture_linear_docs_signal`; `create_docs_signal`, `list_docs_signals`, `get_docs_signal`, `update_docs_signal_lifecycle`; watched scans also create source evidence. | Inspect or patch docs directly. |
 | Decision and triage | Classify docs impact, missing evidence, verification need, and next action. | `planDocsImpactDecision` and the shared decision schemas. | Treat Slack or Linear context alone as proof for public docs claims. |
 | Current-docs verification | Inspect the configured working documentation repository in the sandbox. | `verify_docs_signal_current_docs` for captured signals; existing scenario workflow in `run_docs_maintenance_scenario`. | Publish or write outside `/workspace/working-docs`. |
+| Editorial recommendation | Choose the smallest intervention that solves the reader problem and explain evidence plus important alternatives. | `editorial_recommendation`, linked to current-docs evidence, docs profile, prior impact decision, and later draft. | Turn model judgment into a large rule engine, blindly follow a requested format, or debate routine style. |
 | Content planning | Define the reader outcome, placement, scope, evidence, outline, validation, and done state for substantial work. | `content_plan`, linked to the prior docs-impact decision and authoring draft. | Duplicate impact judgment, gate a ready plan on approval, or require a plan for a localized patch. |
 | Draft authoring | Create, revise, inspect, check, or abandon a complete working-repository draft. | `authoring_workspace`; `get_docs_profile` for conventions and nearby examples; `prepare_docs_signal_patch` for the existing signal-specific handoff. | Open a PR or write to watched/source repositories. |
 | Writeback | Publish an approved draft PR to the working docs repository. | `publish_working_repository_pr`, optionally with `signalId` to mark the originating signal `draft-pr-opened`. | Run without explicit approval or target any repository except the configured working docs repo. |
@@ -78,6 +79,9 @@ publishing remains a separate explicit approval through
 - `content_plan`: create, revise, or inspect the living plan for substantial
   work, return a concise maintainer progress update, continue ready plans into
   sandbox authoring, and pause blocked plans before mutation.
+- `editorial_recommendation`: create, revise, or inspect the concise
+  reader-oriented intervention choice after current-docs verification; route
+  substantial choices to `content_plan` and blockers to a visible pause.
 - `create_docs_signal`: create or dedupe the durable work item.
 - `list_docs_signals`: find active work by status and source kind.
 - `get_docs_signal`: read source provenance, links, artifacts, and lifecycle

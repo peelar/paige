@@ -11,8 +11,9 @@ The first local-only web control-plane delivery is complete: the Turborepo
 boundary, operator shell, shared app-owned database and read-service package,
 readiness report, docs-signal queue, and complete signal detail are in place.
 The Technical Editor epic is now underway. The reusable repository docs profile,
-complete multi-file authoring workspace, and substantial-work content planning
-are complete; the next appetite is choosing the right editorial intervention.
+complete multi-file authoring workspace, substantial-work content planning, and
+editorial intervention choice are complete; the next appetite is durable
+asynchronous ownership of substantial documentation work.
 
 The first delivery is read-only and bound to the local machine. Production
 deployment and authentication, guided setup, connector handoffs,
@@ -67,8 +68,8 @@ one coherent draft to the next human boundary.
 | Complete | #52 Build and maintain a repository docs profile | Stops Paige from rediscovering conventions and checks on every task. | #38 (complete) |
 | Complete | #53 Add a complete multi-file authoring workspace | Removes the one-file exact-replacement ceiling while preserving sandbox and approval boundaries. | #38, #52 (complete) |
 | Complete | #54 Plan substantial documentation work before drafting | Makes large work understandable and steerable without adding an approval gate. | #52, #53 (complete) |
-| 1 | #55 Choose the right editorial intervention | Lets Paige patch, add, restructure, consolidate, remove, wait, or ask based on the reader problem. | #52, #53, #54 (complete) |
-| 2 | #56 Own substantial documentation work asynchronously | Carries investigation, planning, drafting, validation, and continuation as one durable work item. | #41, #53, #54 (complete), #55 |
+| Complete | #55 Choose the right editorial intervention | Lets Paige patch, add, restructure, consolidate, remove, wait, or ask based on the reader problem. | #52, #53, #54 (complete) |
+| 1 | #56 Own substantial documentation work asynchronously | Carries investigation, planning, drafting, validation, and continuation as one durable work item. | #41, #53, #54, #55 (complete) |
 
 ### Later Backlog
 
