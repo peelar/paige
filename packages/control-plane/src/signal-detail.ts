@@ -201,7 +201,7 @@ function redactValue(value: unknown): unknown {
   return value;
 }
 
-function safeExternalUrl(value: string | null): string | null {
+export function safeExternalUrl(value: string | null): string | null {
   if (value === null) return null;
 
   try {

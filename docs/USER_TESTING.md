@@ -503,6 +503,40 @@ must stop visibly and return to the queue without mutating lifecycle state,
 priority, links, or artifacts. `pnpm check` covers the projection and all detail
 states on desktop and mobile.
 
+## Workspace Memory Review
+
+Open `/memories` in an authenticated operator session with proposed, active,
+stale, and retired records in the app-owned database.
+
+1. Filter each lifecycle status and memory kind, then search statement, scope,
+   summary, and tags. Confirm expired active memory is labelled
+   **Active · expired**, explicit stale memory is labelled **Stale**, and a
+   fresh active memory stays distinct from both.
+2. Open a detail record. Confirm kind, statement, scope, summary, tags,
+   confidence, freshness, sources, and chronological lifecycle events are
+   present. Model-generated memory text and verbatim provenance must be in
+   separate sections. Markup in source text must remain inert.
+3. Inspect the browser payload. It must not contain workspace ids, provider
+   external ids, raw source metadata, credential-shaped URLs, tokens, or
+   secrets. Safe HTTPS source links may remain.
+4. Promote a proposed memory with a reason. Confirm the stored record becomes
+   active and a `memory-promoted` event carries that reason and the stable
+   authenticated operator id.
+5. Mark an active memory stale with a reason, then retire a stale memory with a
+   reason. Confirm each action appends its lifecycle event instead of editing
+   prior events or memory text. Retired memory offers no further transition.
+6. Submit a lifecycle request with a browser-supplied `actor`. Confirm the API
+   rejects it. Clear the operator session and confirm both the page and mutation
+   route are unavailable.
+
+Every list and detail view repeats the trust boundary: workspace memory is
+routing and triage context, not proof for public documentation claims. Public
+claims still require source evidence and current-docs verification.
+
+`pnpm check` covers shared lifecycle projections and transitions, fresh versus
+expired states, unsafe-link removal, browser actor rejection, list/detail error
+states, inert provenance, filtering, and desktop/mobile layouts.
+
 ## Repository Docs Profile
 
 Fast repository setup with `configure_working_repository` and `prepareNow:

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleGauge, Inbox } from "lucide-react";
+import { Brain, CircleGauge, Inbox } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { href: "/status", label: "Status", icon: CircleGauge },
   { href: "/signals", label: "Signals", icon: Inbox },
+  { href: "/memories", label: "Memories", icon: Brain },
 ] as const;
 
 export function PrimaryNav() {

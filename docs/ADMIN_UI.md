@@ -250,11 +250,28 @@ grant. GitHub stays outbound-only in this runtime: its trigger is not
 applicable, while its installation, configured repository grant, and write
 permissions are checked through the repository-targeted preflight.
 
+### 10. Workspace-memory review
+
+Tracked by [#44](https://github.com/peelar/docs-agent/issues/44).
+
+The authenticated Memories surface now lists and filters proposed, active,
+stale, and retired workspace memories. Active records with a future review date,
+an expired date, or no date remain visibly different. Detail keeps
+model-generated statement and summary text separate from inert provenance text,
+safe source links, and chronological lifecycle events.
+
+The agent tools and web app share one control-plane lifecycle service. The web
+app projects out workspace ids, provider ids, raw metadata, and unsafe links.
+Operators can promote a proposal, mark active context stale, or retire active or
+stale context only by providing a reason. The server supplies the authenticated
+operator id and calls the existing lifecycle transition; browser input cannot
+choose the audit actor or edit memory rows directly. The page repeats that
+memory is routing and triage context, never proof for a public docs claim.
+
 ## Later Backlog
 
 The following work stays below the first delivery chain:
 
-- workspace-memory proposal, freshness, promotion, and retirement review ([#44](https://github.com/peelar/docs-agent/issues/44));
 - product-level run history and links to deeper Eve or Vercel traces ([#45](https://github.com/peelar/docs-agent/issues/45));
 - personality and participation settings after the default behavior is defined
   and covered by evals ([#46](https://github.com/peelar/docs-agent/issues/46));

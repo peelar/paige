@@ -124,3 +124,30 @@ export {
   redactMetadata,
   type OperatorSignalDetail,
 } from "./signal-detail.js";
+export {
+  getOperatorMemoryDetail,
+  listOperatorMemories,
+  mutateOperatorMemory,
+  operatorMemoryDetailSchema,
+  operatorMemoryDisplayStateSchema,
+  operatorMemoryListInputSchema,
+  operatorMemoryListItemSchema,
+  operatorMemoryListResultSchema,
+  operatorMemoryMutationInputSchema,
+  OperatorMemoryTransitionError,
+  type OperatorMemoryDetail,
+  type OperatorMemoryDisplayState,
+  type OperatorMemoryListInput,
+  type OperatorMemoryListItem,
+  type OperatorMemoryListResult,
+  type OperatorMemoryMutationInput,
+} from "./workspace-memory-review.js";
+export {
+  workspaceMemoryConfidenceSchema,
+  workspaceMemoryFreshnessStateSchema,
+  workspaceMemoryKindSchema,
+  workspaceMemoryStatusSchema,
+  type WorkspaceMemoryConfidence,
+  type WorkspaceMemoryKind,
+  type WorkspaceMemoryStatus,
+} from "./workspace-memory.js";

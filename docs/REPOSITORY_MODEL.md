@@ -531,6 +531,14 @@ The model-facing memory tools are deliberately small:
 - `memory_mark_stale`: mark a memory stale with a reason.
 - `memory_retire`: retire a memory with a reason.
 
+The authenticated operator app uses the same shared control-plane lifecycle.
+Its list projects memory text and freshness without loading provenance for every
+row. Detail shows statement, summary, sources, and events as separate surfaces;
+unsafe links and internal source metadata are omitted. Promotion, stale, and
+retirement actions require a reason, take the audit actor from the authenticated
+server session, and append lifecycle events through the shared service. They do
+not edit stored memory text.
+
 Workspace memories differ from nearby state boundaries:
 
 - Docs signals are work items that can trigger verification, patch handoff, and

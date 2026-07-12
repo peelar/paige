@@ -46,6 +46,9 @@ test("unauthenticated pages redirect to sign in and protected operations reject"
   expect((await page.request.post("/api/operator/workspace-setup/validate", {
     data: { repositoryUrl: "https://github.com/example/docs" },
   })).status()).toBe(401);
+  expect((await page.request.post("/api/operator/memories/example/lifecycle", {
+    data: { action: "promote", reason: "Unauthorized mutation." },
+  })).status()).toBe(401);
 });
 
 test("sign in uses GitHub OAuth state in an HttpOnly cookie", async ({ page }) => {

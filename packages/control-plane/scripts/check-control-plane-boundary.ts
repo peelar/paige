@@ -115,6 +115,14 @@ try {
   assert.equal(packageManifest.exports?.["./agent"], "./dist/agent.js");
   assert.equal(packageManifest.exports?.["./testing"], "./dist/testing.js");
 
+  const agentMemoryShim = await readFile(
+    join(agentRoot, "agent", "lib", "workspace-memory.ts"),
+    "utf8",
+  );
+  assert.match(agentMemoryShim, /@docs-agent\/control-plane\/agent/);
+  assert.equal(agentMemoryShim.includes("db/client"), false);
+  assert.equal(agentMemoryShim.includes("db/schema"), false);
+
   const publicEntry = await readFile(join(packageRoot, "src", "index.ts"), "utf8");
   assert.match(publicEntry, /import "server-only"/);
   assert.equal(publicEntry.includes("db/client"), false);

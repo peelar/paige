@@ -61,7 +61,7 @@ pnpm dev --no-ui
 The root commands keep the repository workflow stable while routing work to the
 right package. `pnpm dev --no-ui` and `pnpm eval` target the Eve app in
 `apps/agent`; `pnpm db:migrate` targets the shared control-plane package that
-owns the schema and migrations. Use `pnpm dev:web` for the minimal Next.js app.
+owns the schema and migrations. Use `pnpm dev:web` for the Next.js operator app.
 The package-qualified forms use `docs-agent`, `@docs-agent/control-plane`, and
 `@docs-agent/web`.
 
@@ -76,6 +76,9 @@ An authenticated operator can also validate and save the working repository,
 optional watched repositories, and GitHub writeback connector from that page.
 Validation is read-only; failed repository, ref, docs-root, installation,
 repository-grant, or permission checks are shown before anything is saved.
+The Memories page lists proposed, active, stale, and retired routing context,
+keeps provenance separate from generated memory text, and records authenticated
+promotion, stale, and retirement decisions as append-only lifecycle events.
 
 Put local agent variables in `apps/agent/.env.local` and web-only variables in
 `apps/web/.env.local`. Both apps resolve local state through
@@ -101,7 +104,8 @@ Create two projects from this repository:
 - set the agent project's Root Directory to `apps/agent`; it owns Eve routes,
   channels, tools, sandboxes, workflow state, and agent runtime variables.
 - set the operator project's Root Directory to `apps/web`; it owns authenticated
-  pages and server-side control-plane reads. Run the committed database
+  pages, server-side control-plane reads, and audited operator mutations. Run
+  the committed database
   migrations before either app uses a new schema.
 
 The operator deployment requires `DOCS_AGENT_OPERATOR_ACCESS=github`,

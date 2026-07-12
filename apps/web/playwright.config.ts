@@ -20,6 +20,7 @@ export default defineConfig({
       DOCS_AGENT_AUTH_TEST_MODE: "1",
       DOCS_AGENT_OPERATOR_ACCESS: "test",
       DOCS_AGENT_READINESS_TEST_SCENARIOS: "1",
+      DOCS_AGENT_MEMORY_TEST_SCENARIOS: "1",
       DOCS_AGENT_SIGNAL_TEST_SCENARIOS: "1",
     },
     url: `http://127.0.0.1:${port}`,
