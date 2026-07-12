@@ -28,6 +28,7 @@ type SlackTurnSender = (
   options: ChatSdkSendOptions,
 ) => Promise<unknown>;
 type SlackPresenceLifecycle = {
+  verifyInbound(): Promise<unknown>;
   enroll(input: {
     teamId?: string;
     channelId: string;
@@ -58,6 +59,7 @@ export function registerSlackTurnHandlers(
   presence: SlackPresenceLifecycle,
 ): void {
   bot.onNewMention(async (thread, message, context) => {
+    await presence.verifyInbound();
     const metadata = slackPresenceMetadata(thread, message);
     await presence.enroll(metadata);
     try {
@@ -73,9 +75,11 @@ export function registerSlackTurnHandlers(
     await sendSlackTurn(send, thread, message, { skipped: context?.skipped });
   });
   bot.onDirectMessage(async (thread, message, context) => {
+    await presence.verifyInbound();
     await sendSlackTurn(send, thread, message, { skipped: context?.skipped });
   });
   bot.onSubscribedMessage(async (thread, message, context) => {
+    await presence.verifyInbound();
     if (isSlackThreadDismissal(message.text)) {
       discardStagedSlackSearchRequest(message.id);
       await presence.end({

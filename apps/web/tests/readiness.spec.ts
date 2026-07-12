@@ -33,6 +33,58 @@ test("keeps unknown and reachable provider paths distinct from verified", async 
     "configured",
   );
   await expect(page.getByText("Mention Paige in Slack and confirm the inbound event.")).toBeVisible();
+  const slackStages = page.locator('[data-connector-stages="slack"]');
+  await expect(slackStages.locator('[data-connector-stage="connector"]')).toHaveAttribute(
+    "data-connector-stage-state",
+    "verified",
+  );
+  await expect(slackStages.locator('[data-connector-stage="trigger"]')).toHaveAttribute(
+    "data-connector-stage-state",
+    "action-required",
+  );
+  await expect(slackStages.getByText(/--trigger-path \/eve\/v1\/slack/)).toBeVisible();
+
+  const linearStages = page.locator('[data-connector-stages="linear"]');
+  await expect(linearStages.locator('[data-connector-stage="installation"]')).toHaveAttribute(
+    "data-connector-stage-state",
+    "action-required",
+  );
+  await expect(linearStages.getByText(/app:assignable and app:mentionable/)).toBeVisible();
+});
+
+test("shows repository-targeted GitHub installation state separately", async ({ page }) => {
+  await page.goto("/status?scenario=blocked");
+
+  const githubStages = page.locator('[data-connector-stages="github-writeback"]');
+  await expect(githubStages.locator('[data-connector-stage="connector"]')).toHaveAttribute(
+    "data-connector-stage-state",
+    "verified",
+  );
+  await expect(githubStages.locator('[data-connector-stage="installation"]')).toHaveAttribute(
+    "data-connector-stage-state",
+    "verified",
+  );
+  await expect(githubStages.locator('[data-connector-stage="trigger"]')).toHaveAttribute(
+    "data-connector-stage-state",
+    "not-applicable",
+  );
+  await expect(githubStages.locator('[data-connector-stage="grant"]')).toHaveAttribute(
+    "data-connector-stage-state",
+    "action-required",
+  );
+  await expect(page.getByText(/configured working documentation repository/)).toBeVisible();
+});
+
+test("rechecks installation state without leaving onboarding", async ({ page }) => {
+  await page.goto("/status?scenario=partial");
+  const repository = page.getByLabel("Working documentation repository");
+  await repository.fill("https://github.com/example/in-progress-docs");
+  const recheck = page.getByRole("button", { name: "Recheck installation" });
+  await expect(recheck).toBeVisible();
+  await recheck.click();
+  await expect(page).toHaveURL(/\/status\?scenario=partial$/);
+  await expect(page.locator("[data-workspace-onboarding]")).toBeVisible();
+  await expect(repository).toHaveValue("https://github.com/example/in-progress-docs");
 });
 
 test("renders actionable database and provider failures without secrets", async ({ page }) => {
@@ -45,4 +97,5 @@ test("renders actionable database and provider failures without secrets", async 
 
   const body = await page.locator("body").innerText();
   expect(body).not.toMatch(/xox[baprs]-|lin_api_|github_pat_/i);
+  expect(body).not.toMatch(/slack\/docs-agent|linear\/docs-agent|scl_[a-z0-9]+/i);
 });

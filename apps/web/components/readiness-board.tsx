@@ -2,6 +2,7 @@ import type { ReadinessItem, ReadinessReport } from "@docs-agent/control-plane";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { ReadinessRecheckButton } from "@/components/readiness-recheck-button";
 import { cn } from "@/lib/utils";
 
 const stateStyles: Record<ReadinessItem["state"], string> = {
@@ -19,6 +20,14 @@ const stateMarks: Record<ReadinessItem["state"], string> = {
   blocked: "×",
   unknown: "?",
 };
+
+const stageMarks = {
+  verified: "●",
+  "action-required": "→",
+  blocked: "×",
+  unknown: "?",
+  "not-applicable": "—",
+} as const;
 
 export function ReadinessBoard({ report }: { report: ReadinessReport }) {
   const readyCount = report.items.filter(({ ready }) => ready).length;
@@ -58,9 +67,12 @@ export function ReadinessBoard({ report }: { report: ReadinessReport }) {
         ))}
       </div>
 
-      <p className="font-mono text-[0.66rem] leading-5 font-bold tracking-[0.08em] text-muted-foreground uppercase">
-        Last checked <time dateTime={report.checkedAt}>{formatTimestamp(report.checkedAt)}</time>
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="font-mono text-[0.66rem] leading-5 font-bold tracking-[0.08em] text-muted-foreground uppercase">
+          Last checked <time dateTime={report.checkedAt}>{formatTimestamp(report.checkedAt)}</time>
+        </p>
+        <ReadinessRecheckButton />
+      </div>
     </div>
   );
 }
@@ -91,6 +103,50 @@ function ReadinessCard({ item, index }: { item: ReadinessItem; index: number }) 
         <ul className="mt-5 grid gap-1.5 text-xs leading-5 text-foreground/75">
           {item.detail.map((detail) => <li key={detail}>— {detail}</li>)}
         </ul>
+      ) : null}
+
+      {item.stages.length > 0 ? (
+        <div className="mt-7 border-y border-foreground/15" data-connector-stages={item.id}>
+          {item.stages.map((stage) => (
+            <div
+              className="grid gap-2 border-t border-foreground/10 py-4 first:border-t-0 sm:grid-cols-[9rem_minmax(0,1fr)]"
+              data-connector-stage={stage.id}
+              data-connector-stage-state={stage.state}
+              key={stage.id}
+            >
+              <p className="font-mono text-[0.61rem] leading-5 font-bold tracking-[0.08em] uppercase">
+                <span className="mr-2 text-accent" aria-hidden="true">{stageMarks[stage.state]}</span>
+                {stage.label}
+              </p>
+              <div>
+                <p className="text-xs leading-5 text-foreground/75">{stage.summary}</p>
+                {stage.action ? (
+                  <div className="mt-3 grid gap-2 rounded-lg border border-foreground/15 bg-background/70 p-3">
+                    <p className="text-xs leading-5 font-medium">{stage.action.label}</p>
+                    {stage.action.command ? (
+                      <pre className="overflow-x-auto rounded-md bg-primary p-3 font-mono text-[0.68rem] leading-5 text-primary-foreground"><code>{stage.action.command}</code></pre>
+                    ) : null}
+                    {stage.action.href ? (
+                      <a
+                        className="w-fit text-xs font-semibold text-accent underline decoration-accent/35 underline-offset-4 hover:decoration-accent"
+                        href={stage.action.href}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Open supported management flow ↗
+                      </a>
+                    ) : null}
+                    {stage.action.humanRequired ? (
+                      <p className="text-[0.68rem] leading-5 text-muted-foreground">
+                        Human action required. In a headless environment, stop here and ask a workspace admin to complete provider consent.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : null}
 
       <div className="mt-8 border-t border-foreground/15 pt-4">

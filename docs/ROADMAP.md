@@ -18,11 +18,12 @@ service, the privacy-filtered Chat SDK Slack transport, and scoped continued
 thread participation, and bounded user-authorized Slack context retrieval are
 also complete. The authenticated operator implementation and guided workspace
 onboarding are in place; the real GitHub OAuth deployment smoke remains
-required before #37 is complete. Connector installation handoffs are next.
+required before #37 is complete. Connector installation handoffs are complete;
+workspace-memory review is next.
 
 The first delivery remains the local read-only baseline. Production
-authentication and guided setup now build on it. Connector handoffs,
-workspace-memory review, run history, personality and participation settings,
+authentication, guided setup, and connector handoffs now build on it.
+Workspace-memory review, run history, personality and participation settings,
 approvals, and eval reporting stay below it in the backlog.
 
 The operator surface builds on the existing agent workflow contract in
@@ -87,7 +88,7 @@ one coherent draft to the next human boundary.
 | Complete | #49 Retrieve missing Slack context on demand | Adds bounded, user-authorized retrieval without ambient ingestion. | #34 (complete) |
 | 11 | #37 Deploy and protect the operator app | Adds remote access only after the local control plane proves its value and boundaries. | #41 (complete) |
 | Complete | #42 Add guided workspace onboarding | Adds authenticated setup mutations after the readiness model proves what users need. | #37 implementation, #39 (complete) |
-| 13 | #43 Add connector installation handoffs | Improves installation without pretending provider consent can be silent. | #37, #39 (complete) |
+| Complete | #43 Add connector installation handoffs | Improves installation without pretending provider consent can be silent. | #37 implementation, #39 (complete) |
 | 14 | #44 Add workspace-memory review | Exposes an existing human-governed lifecycle in the authenticated app. | #37, #38 |
 | 15 | #45 Add product-level run history and trace links | Connects product work to Eve and Vercel traces without building a second runtime. | #37, #38 |
 | 16 | #47 Add a centralized approval inbox | Aggregates pending side effects while Eve remains the approval source of truth. | #37, #38, #41 (complete), #45 |

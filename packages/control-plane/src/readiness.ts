@@ -1,6 +1,14 @@
 import { getTokenResponse } from "@vercel/connect";
 import { z } from "zod";
 
+import {
+  buildAppChannelStages,
+  buildGitHubStages,
+  classifyConnectSetupError,
+  connectorStageSchema,
+  readConnectorDeliveryVerification,
+  type ConnectorStage,
+} from "./connector-handoffs.js";
 import { runGitHubWritebackPreflight } from "./github-preflight.js";
 import {
   resolveEveRuntimeUrl,
@@ -40,6 +48,7 @@ export const readinessItemSchema = z.object({
   lastCheckedAt: z.string(),
   nextAction: z.string().nullable(),
   detail: z.array(z.string()),
+  stages: z.array(connectorStageSchema),
 });
 
 export const readinessReportSchema = z.object({
@@ -63,6 +72,7 @@ export type ReadinessObservation = {
   source: string;
   nextAction?: string | null;
   detail?: string[];
+  stages?: ConnectorStage[];
 };
 
 export type ReadinessProbe = () => Promise<ReadinessObservation>;
@@ -111,6 +121,7 @@ export async function collectReadinessReport(
           lastCheckedAt: checkedAt,
           nextAction: observation.nextAction ?? null,
           detail: observation.detail ?? [],
+          stages: observation.stages ?? [],
         });
       } catch (error) {
         return readinessItemSchema.parse({
@@ -123,6 +134,7 @@ export async function collectReadinessReport(
           lastCheckedAt: checkedAt,
           nextAction: probeFailureAction[id],
           detail: [],
+          stages: [],
         });
       }
     }),
@@ -195,28 +207,35 @@ export function createProductionReadinessDependencies(
       "github-writeback": async () => {
         const state = await readSetupState();
         if (state === null) {
-          return blocked(
-            "Workspace setup is missing, so GitHub writeback cannot be checked.",
-            "Canonical setup service and GitHub App installation preflight",
-            "Configure the working repository and GitHub connector.",
-          );
+          return {
+            ...blocked(
+              "Workspace setup is missing, so GitHub writeback cannot be checked.",
+              "Canonical setup service and GitHub App installation preflight",
+              "Configure the working repository and GitHub connector.",
+            ),
+            stages: buildGitHubStages({ status: "missing-connector" }),
+          };
         }
         const result = await runGitHubWritebackPreflight({
           state,
           abortSignal: AbortSignal.timeout(5_000),
         });
         if (result.status !== "ready") {
-          return blocked(
-            result.message,
-            "Vercel Connect installation token and GitHub repository preflight",
-            githubNextAction(result.status),
-          );
+          return {
+            ...blocked(
+              result.message,
+              "Vercel Connect installation token and GitHub repository preflight",
+              githubNextAction(result.status),
+            ),
+            stages: buildGitHubStages({ status: result.status }),
+          };
         }
         return {
           verified: true,
           ready: true,
           summary: result.message,
           source: "Vercel Connect installation token and GitHub repository preflight",
+          stages: buildGitHubStages({ status: result.status }),
         };
       },
       slack: () => probeSlack(env),
@@ -228,39 +247,94 @@ export function createProductionReadinessDependencies(
 
 async function probeSlack(env: NodeJS.ProcessEnv): Promise<ReadinessObservation> {
   const connector = resolveSlackConnector(env);
-  const token = await getTokenResponse(
-    connector,
-    { subject: { type: "app" } },
-    { forceRefresh: true },
-  );
+  const delivery = await readConnectorDeliveryVerification({
+    provider: "slack",
+    env,
+  });
+  let token: Awaited<ReturnType<typeof getTokenResponse>>;
+  try {
+    token = await getTokenResponse(
+      connector,
+      { subject: { type: "app" } },
+      { forceRefresh: true },
+    );
+  } catch (error) {
+    const setup = classifyConnectSetupError(error);
+    return {
+      blockedReason: "Slack connector setup requires an operator action.",
+      ready: false,
+      summary: "Slack could not issue an app-scoped token for this deployment.",
+      source: "Server-side Vercel Connect app-token check",
+      nextAction: "Complete the first incomplete Slack installation stage, then recheck.",
+      stages: buildAppChannelStages({ provider: "slack", ...setup, delivery }),
+    };
+  }
+
   const response = await fetch("https://slack.com/api/auth.test", {
     method: "POST",
     headers: { Authorization: `Bearer ${token.token}` },
     signal: AbortSignal.timeout(5_000),
   });
-  const body = await response.json() as { ok?: boolean; error?: string };
-  if (!response.ok || body.ok !== true) {
-    throw new Error(body.error ?? `Slack auth.test returned ${response.status}.`);
+  const body = await response.json() as { ok?: boolean };
+  const providerReachable = response.ok && body.ok === true;
+  const stages = buildAppChannelStages({
+    provider: "slack",
+    connector: "verified",
+    installation: providerReachable ? "verified" : "blocked",
+    delivery,
+  });
+  if (!providerReachable) {
+    return {
+      blockedReason: "Slack rejected the app-scoped installation check.",
+      ready: false,
+      summary: "Slack issued a token, but auth.test did not verify the installation.",
+      source: "Server-side Vercel Connect token and Slack auth.test",
+      nextAction: "Review the Slack app installation in Vercel Connect, then recheck.",
+      stages,
+    };
   }
 
   return {
     configured: true,
     reachable: true,
-    ready: false,
-    summary: "The Slack connector can reach Slack, but inbound event delivery is not yet verified.",
+    verified: delivery !== null,
+    ready: delivery !== null,
+    summary: delivery === null
+      ? "The Slack connector can reach Slack, but inbound event delivery is not yet verified."
+      : "Slack installation and inbound event delivery are verified.",
     source: "Server-side Vercel Connect token and Slack auth.test",
-    nextAction: "Mention Paige in Slack and confirm the event reaches /eve/v1/slack.",
+    nextAction: delivery === null
+      ? "Attach the Slack trigger, mention Paige, then recheck this report."
+      : null,
     detail: ["Credentials are server-only and are not included in this report."],
+    stages,
   };
 }
 
 async function probeLinear(env: NodeJS.ProcessEnv): Promise<ReadinessObservation> {
   const connector = resolveLinearConnector(env);
-  const token = await getTokenResponse(
-    connector,
-    { subject: { type: "app" } },
-    { forceRefresh: true },
-  );
+  const delivery = await readConnectorDeliveryVerification({
+    provider: "linear",
+    env,
+  });
+  let token: Awaited<ReturnType<typeof getTokenResponse>>;
+  try {
+    token = await getTokenResponse(
+      connector,
+      { subject: { type: "app" } },
+      { forceRefresh: true },
+    );
+  } catch (error) {
+    const setup = classifyConnectSetupError(error);
+    return {
+      blockedReason: "Linear connector setup requires an operator action.",
+      ready: false,
+      summary: "Linear could not issue an app-scoped token for this deployment.",
+      source: "Server-side Vercel Connect app-token check",
+      nextAction: "Complete the first incomplete Linear installation stage, then recheck.",
+      stages: buildAppChannelStages({ provider: "linear", ...setup, delivery }),
+    };
+  }
   const response = await fetch("https://api.linear.app/graphql", {
     method: "POST",
     headers: {
@@ -271,18 +345,41 @@ async function probeLinear(env: NodeJS.ProcessEnv): Promise<ReadinessObservation
     signal: AbortSignal.timeout(5_000),
   });
   const body = await response.json() as { data?: { viewer?: { id?: string } }; errors?: unknown[] };
-  if (!response.ok || body.data?.viewer?.id === undefined || body.errors !== undefined) {
-    throw new Error(`Linear viewer check failed with status ${response.status}.`);
+  const providerReachable =
+    response.ok &&
+    body.data?.viewer?.id !== undefined &&
+    body.errors === undefined;
+  const stages = buildAppChannelStages({
+    provider: "linear",
+    connector: "verified",
+    installation: providerReachable ? "verified" : "blocked",
+    delivery,
+  });
+  if (!providerReachable) {
+    return {
+      blockedReason: "Linear rejected the provider app installation check.",
+      ready: false,
+      summary: "Linear issued a token, but the viewer query did not verify the provider app.",
+      source: "Server-side Vercel Connect token and Linear viewer query",
+      nextAction: "Review the Linear provider app in Vercel Connect, then recheck.",
+      stages,
+    };
   }
 
   return {
     configured: true,
     reachable: true,
-    ready: false,
-    summary: "The Linear connector can reach Linear, but inbound Agent Session delivery is not yet verified.",
+    verified: delivery !== null,
+    ready: delivery !== null,
+    summary: delivery === null
+      ? "The Linear connector can reach Linear, but inbound Agent Session delivery is not yet verified."
+      : "Linear provider app and Agent Session delivery are verified.",
     source: "Server-side Vercel Connect token and Linear viewer query",
-    nextAction: "Delegate an issue to Paige and confirm the event reaches /eve/v1/linear.",
+    nextAction: delivery === null
+      ? "Attach the Linear trigger, delegate an issue to Paige, then recheck this report."
+      : null,
     detail: ["Credentials are server-only and are not included in this report."],
+    stages,
   };
 }
 

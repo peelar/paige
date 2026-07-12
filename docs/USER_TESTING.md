@@ -170,7 +170,7 @@ remote configuration fails visibly instead of using the local database.
 
 ## Operator Readiness
 
-The Status page is a read-only report over six server-side checks: database and
+The Status page reports six server-side checks: database and
 migrations, working repository setup, GitHub writeback, Slack, Linear, and Eve
 runtime health. It uses `configured`, `reachable`, `verified`, `blocked`, and
 `unknown` literally; a configured or reachable provider is not shown as
@@ -194,13 +194,14 @@ Use these scenarios when real provider credentials are available:
   access, and `contents:write` plus `pull_requests:write` checks pass.
 - Slack: open `/status` with the Slack Connect client attached. A successful
   `auth.test` makes the connector `reachable`. Mention Paige in Slack and
-  confirm delivery to `/eve/v1/slack`; until the product records that inbound
-  operation, the page must keep the manual verification action visible rather
-  than claiming `verified`.
+  confirm delivery to `/eve/v1/slack`. The verified webhook records
+  connector-bound delivery proof. Select **Recheck installation** and confirm
+  the trigger becomes `verified` without restarting workspace onboarding.
 - Linear: open `/status` with the Linear Connect client attached. A successful
   viewer query makes the connector `reachable`. Delegate a test issue to Paige
-  and confirm delivery to `/eve/v1/linear`; until that inbound operation is
-  durably recorded, the page must not claim `verified`.
+  and confirm delivery to `/eve/v1/linear`. The verified Agent Session webhook
+  records connector-bound delivery proof. Recheck and confirm the trigger and
+  relevant grant become `verified`.
 
 When a connector, installation, repository grant, permission, or provider is
 unavailable, stop at the visible `blocked` or `unknown` result. Do not add local
@@ -208,6 +209,50 @@ tokens, bypass Connect, or use test fixtures to make a real-provider scenario
 look successful. The page may name server-side variable keys and supported
 routes, but it must never render credential values, tokens, or raw connector
 responses.
+
+## Connector Installation Handoffs
+
+Use the authenticated `/status` page for installation. Each provider shows
+connector, installation, trigger, and relevant grant separately. The page
+renders placeholders such as `<uid>` instead of the configured connector id and
+never renders credentials.
+
+For Slack, use an interactive terminal or the linked Vercel Connect dashboard:
+
+```sh
+vercel connect create slack --triggers
+vercel connect detach <uid> --yes
+vercel connect attach <uid> --triggers --trigger-path /eve/v1/slack --yes
+```
+
+Complete Slack workspace consent in the browser. Then send a real app mention
+or direct message and recheck. Token issuance alone verifies installation, not
+event subscription or trigger delivery.
+
+For Linear, use the same supported flow at the Agent Session route:
+
+```sh
+vercel connect create linear --triggers
+vercel connect detach <uid> --yes
+vercel connect attach <uid> --triggers --trigger-path /eve/v1/linear --yes
+```
+
+The provider app must have `app:assignable` and `app:mentionable`, and its
+webhook categories must include `AgentSessionEvent`. Delegate or mention Paige
+in a real issue, then recheck. A viewer query without Agent Session delivery is
+still incomplete.
+
+GitHub writeback is outbound in this runtime, so its trigger is explicitly
+`not-applicable`. Create or open the GitHub connector, let a GitHub administrator
+install the app, grant the configured working repository, and grant
+`contents:write` plus `pull_requests:write`. The server verifies an
+installation-scoped token against that exact repository before marking the
+grant verified.
+
+These flows require provider consent or administrator approval. In headless
+automation, stop at the human-action message and hand the browser step to an
+authorized administrator. Do not substitute a runtime OAuth prompt, local
+token, or synthetic webhook receipt.
 
 ## Operator GitHub OAuth Smoke
 

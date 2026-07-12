@@ -106,6 +106,19 @@ export {
   type ReadinessState,
 } from "./readiness.js";
 export {
+  buildAppChannelStages,
+  buildGitHubStages,
+  connectorHandoffActionSchema,
+  connectorProviderSchema,
+  connectorStageIdSchema,
+  connectorStageSchema,
+  connectorStageStateSchema,
+  type ConnectorProvider,
+  type AppChannelProbe,
+  type ConnectorStage,
+  type ConnectorStageState,
+} from "./connector-handoffs.js";
+export {
   getOperatorSignalDetail,
   operatorSignalDetailSchema,
   redactMetadata,

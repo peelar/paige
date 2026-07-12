@@ -17,7 +17,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate-db.ts",
     "db:migrate:deployment": "tsx scripts/migrate-db-for-build.ts",
-    "test": "tsx scripts/check-db-migration-parity.ts && tsx scripts/check-db-schema-lifecycle.ts && tsx scripts/check-control-plane-boundary.ts && tsx scripts/check-workspace-onboarding.ts && tsx scripts/check-readiness.ts && tsx scripts/check-signal-queue.ts && tsx scripts/check-docs-follow-ups.ts && tsx scripts/check-owned-docs-work.ts && tsx scripts/check-signal-detail.ts && tsx scripts/check-docs-profile.ts && tsx scripts/check-libsql-chat-state.ts && tsx scripts/check-slack-thread-presence.ts",
+    "test": "tsx scripts/check-db-migration-parity.ts && tsx scripts/check-db-schema-lifecycle.ts && tsx scripts/check-control-plane-boundary.ts && tsx scripts/check-workspace-onboarding.ts && tsx scripts/check-connector-handoffs.ts && tsx scripts/check-readiness.ts && tsx scripts/check-signal-queue.ts && tsx scripts/check-docs-follow-ups.ts && tsx scripts/check-owned-docs-work.ts && tsx scripts/check-signal-detail.ts && tsx scripts/check-docs-profile.ts && tsx scripts/check-libsql-chat-state.ts && tsx scripts/check-slack-thread-presence.ts",
     "test:chat-state:remote": "tsx scripts/smoke-libsql-chat-state-remote.ts",
     "typecheck": "tsc --noEmit"
   },

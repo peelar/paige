@@ -118,6 +118,7 @@ registerSlackTurnHandlers(
   },
   async (input) => { registeredSendCalls += 1; registeredInputs.push(input); },
   {
+    verifyInbound: async () => { presenceEvents.push({ action: "verify-inbound" }); },
     enroll: async (input) => { presenceEvents.push({ action: "enroll", ...input }); },
     end: async (input) => { presenceEvents.push({ action: "end", ...input }); },
   },
@@ -137,8 +138,9 @@ await registered.subscribed!(rootThread, rootMessage);
 assert.equal(registeredSendCalls, 3, "mention, DM, and subscribed handlers all dispatch to Eve");
 assert.doesNotMatch(JSON.stringify(registeredInputs[0]), /\[\[SILENT\]\]/u);
 assert.match(JSON.stringify(registeredInputs[2]), /\[\[SILENT\]\]/u, "followed-thread turns receive the speaking policy");
-assert.equal(presenceEvents[0]?.action, "enroll");
-assert.equal(presenceEvents[0]?.continuationToken, rootThread.id);
+assert.equal(presenceEvents[0]?.action, "verify-inbound");
+assert.equal(presenceEvents[1]?.action, "enroll");
+assert.equal(presenceEvents[1]?.continuationToken, rootThread.id);
 
 await registered.subscribed!(rootThread, message("201.000", "Paige, stop following this thread.", false, "200.000"));
 assert.equal(registeredSendCalls, 3, "dismissal does not start an Eve turn");

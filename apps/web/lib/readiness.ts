@@ -1,6 +1,8 @@
 import "server-only";
 
 import {
+  buildAppChannelStages,
+  buildGitHubStages,
   getReadinessReport,
   readinessReportSchema,
   type ReadinessItem,
@@ -31,10 +33,22 @@ function readinessFixture(scenario: string): ReadinessReport {
       replace(items, "slack", fixtureItem("slack", "reachable", false, {
         summary: "Slack is reachable; inbound delivery has not been verified.",
         nextAction: "Mention Paige in Slack and confirm the inbound event.",
+        stages: buildAppChannelStages({
+          provider: "slack",
+          connector: "verified",
+          installation: "verified",
+          delivery: null,
+        }),
       }));
       replace(items, "linear", fixtureItem("linear", "configured", false, {
         summary: "Linear is configured but has not passed a provider check.",
         nextAction: "Run the Linear provider check, then delegate a test issue.",
+        stages: buildAppChannelStages({
+          provider: "linear",
+          connector: "verified",
+          installation: "required",
+          delivery: null,
+        }),
       }));
       break;
     case "unknown":
@@ -44,6 +58,7 @@ function readinessFixture(scenario: string): ReadinessReport {
           ready: false,
           summary: `No supported check has established ${item.label.toLowerCase()} readiness.`,
           nextAction: "Run the documented manual verification action.",
+          stages: [],
         });
       }
       break;
@@ -51,6 +66,7 @@ function readinessFixture(scenario: string): ReadinessReport {
       replace(items, "github-writeback", fixtureItem("github-writeback", "blocked", false, {
         summary: "The GitHub App is not granted to the working repository.",
         nextAction: "Grant the app access to the repository, then retry preflight.",
+        stages: buildGitHubStages({ status: "repository-not-granted" }),
       }));
       break;
     case "database-down":
@@ -63,10 +79,22 @@ function readinessFixture(scenario: string): ReadinessReport {
       replace(items, "slack", fixtureItem("slack", "blocked", false, {
         summary: "Slack auth.test could not reach the provider.",
         nextAction: "Check the Slack connector installation, then retry.",
+        stages: buildAppChannelStages({
+          provider: "slack",
+          connector: "verified",
+          installation: "blocked",
+          delivery: null,
+        }),
       }));
       replace(items, "linear", fixtureItem("linear", "blocked", false, {
         summary: "The Linear viewer query returned a provider error.",
         nextAction: "Check the Linear connector installation, then retry.",
+        stages: buildAppChannelStages({
+          provider: "linear",
+          connector: "verified",
+          installation: "blocked",
+          delivery: null,
+        }),
       }));
       break;
     default:
@@ -88,9 +116,33 @@ function readyItems(): ReadinessItem[] {
   return [
     fixtureItem("database", "verified", true),
     fixtureItem("working-repository", "verified", true),
-    fixtureItem("github-writeback", "verified", true),
-    fixtureItem("slack", "verified", true),
-    fixtureItem("linear", "verified", true),
+    fixtureItem("github-writeback", "verified", true, {
+      stages: buildGitHubStages({ status: "ready" }),
+    }),
+    fixtureItem("slack", "verified", true, {
+      stages: buildAppChannelStages({
+        provider: "slack",
+        connector: "verified",
+        installation: "verified",
+        delivery: {
+          provider: "slack",
+          evidence: "slack-verified-webhook",
+          verifiedAt: checkedAt,
+        },
+      }),
+    }),
+    fixtureItem("linear", "verified", true, {
+      stages: buildAppChannelStages({
+        provider: "linear",
+        connector: "verified",
+        installation: "verified",
+        delivery: {
+          provider: "linear",
+          evidence: "linear-agent-session-webhook",
+          verifiedAt: checkedAt,
+        },
+      }),
+    }),
     fixtureItem("eve-runtime", "verified", true),
   ];
 }
@@ -120,6 +172,7 @@ function fixtureItem(
     lastCheckedAt: checkedAt,
     nextAction: ready ? null : "Complete the documented verification action.",
     detail: [],
+    stages: [],
     ...overrides,
   };
 }

@@ -9,6 +9,7 @@ import {
   continueSlackThreadPresence,
   endSlackThreadPresence,
   enrollSlackThreadPresence,
+  recordConnectorDeliveryVerification,
 } from "@docs-agent/control-plane/agent";
 import { chatSdkChannel } from "eve/channels/chat-sdk";
 
@@ -52,6 +53,11 @@ export const { bot, channel, send } = chatSdkChannel({
 registerSlackTurnHandlers(bot, send, {
   enroll: enrollSlackThreadPresence,
   end: endSlackThreadPresence,
+  verifyInbound: () =>
+    recordConnectorDeliveryVerification({
+      provider: "slack",
+      evidence: "slack-verified-webhook",
+    }),
 });
 
 export default channel;

@@ -41,6 +41,24 @@ export const workspaceSetupEvents = sqliteTable(
   ],
 );
 
+export const connectorDeliveryVerifications = sqliteTable(
+  "connector_delivery_verifications",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    provider: text("provider").notNull(),
+    connectorFingerprint: text("connector_fingerprint").notNull(),
+    evidence: text("evidence").notNull(),
+    verifiedAt: text("verified_at").notNull(),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("connector_delivery_workspace_provider_idx").on(
+      table.workspaceId,
+      table.provider,
+    ),
+  ],
+);
+
 export const docsProfiles = sqliteTable(
   "docs_profiles",
   {
@@ -473,6 +491,7 @@ export const schema = {
   chatSdkLocks,
   chatSdkQueueEntries,
   chatSdkSubscriptions,
+  connectorDeliveryVerifications,
   docsProfiles,
   docsFollowUpRuns,
   docsFollowUps,

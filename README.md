@@ -146,5 +146,12 @@ Linear uses Eve's Linear Agent Session channel and Vercel Connect. Set
 connector and attach its trigger to `/eve/v1/linear`. Paige handles delegated or
 prompted Agent Sessions without crawling or editing Linear issues.
 
+The authenticated Status page shows connector, installation, trigger, and
+repository or provider grant separately. It displays the supported Vercel
+Connect handoff, records only real verified Slack or Linear delivery, and can
+recheck completed browser or CLI actions without restarting workspace setup.
+Provider consent and administrator approval remain explicit human steps. See
+[Connector Installation Handoffs](./docs/USER_TESTING.md#connector-installation-handoffs).
+
 See [Paige's identity and asset guide](./docs/IDENTITY.md) for the visual assets
 and the manual Slack display-name and avatar setup.

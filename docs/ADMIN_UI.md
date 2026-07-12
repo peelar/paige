@@ -231,11 +231,29 @@ action set, and their `watched-repository:<owner>/<repo>` provenance label;
 browser input cannot widen that authority. A successful save refreshes the
 canonical readiness report.
 
+### 9. Connector installation handoffs
+
+Tracked by [#43](https://github.com/peelar/docs-agent/issues/43).
+
+Slack, Linear, and GitHub now expose connector, provider installation, inbound
+trigger, and relevant grant as separate Status-page stages. Each incomplete
+stage links to Vercel Connect or displays the installed Eve-supported CLI
+command. Browser and provider consent remain human steps; headless setup stops
+and says so.
+
+Slack and Linear record a redacted, connector-bound receipt only after a
+verified inbound webhook reaches the authored channel. Rechecking the page
+turns that receipt into trigger proof without restarting workspace onboarding,
+and changing the server-side connector invalidates the old proof. Linear also
+uses a real Agent Session as evidence for its assignable or mentionable app
+grant. GitHub stays outbound-only in this runtime: its trigger is not
+applicable, while its installation, configured repository grant, and write
+permissions are checked through the repository-targeted preflight.
+
 ## Later Backlog
 
 The following work stays below the first delivery chain:
 
-- connector installation handoffs and verification ([#43](https://github.com/peelar/docs-agent/issues/43));
 - workspace-memory proposal, freshness, promotion, and retirement review ([#44](https://github.com/peelar/docs-agent/issues/44));
 - product-level run history and links to deeper Eve or Vercel traces ([#45](https://github.com/peelar/docs-agent/issues/45));
 - personality and participation settings after the default behavior is defined
