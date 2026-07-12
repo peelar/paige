@@ -14,6 +14,7 @@ const sourceFixtureRoot = join(appRoot, "fixtures", "validation-reporter-agent")
 const fixtureRoot = await mkdtemp(join(appRoot, "fixtures", ".validation-reporter-"));
 const eveBin = join(appRoot, "node_modules", "eve", "bin", "eve.js");
 const tempRoot = await mkdtemp(join(tmpdir(), "docs-agent-eve-validation-"));
+const retainedDatabaseUrl = process.env.DOCS_AGENT_VALIDATION_INTEGRATION_DATABASE_URL?.trim();
 const originalDatabaseUrl = process.env.DOCS_AGENT_DATABASE_URL;
 const originalEvalRunId = process.env.DOCS_AGENT_EVAL_RUN_ID;
 const originalVercel = process.env.VERCEL;
@@ -21,7 +22,8 @@ const originalNodeEnv = process.env.NODE_ENV;
 
 try {
   await prepareFixture();
-  process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "validation.sqlite")}`;
+  process.env.DOCS_AGENT_DATABASE_URL =
+    retainedDatabaseUrl || `file:${join(tempRoot, "validation.sqlite")}`;
   process.env.DOCS_AGENT_EVAL_RUN_ID = "fixture:real-eve-eval";
   delete process.env.VERCEL;
   delete process.env.NODE_ENV;

@@ -21,7 +21,8 @@ onboarding are in place; the real GitHub OAuth deployment smoke remains
 required before #37 is complete. Connector installation handoffs are complete;
 workspace-memory review, product-level run history, and the centralized
 approval inbox are also complete. Durable eval and validation result recording
-is complete. The assurance UI is next.
+and its read-only assurance UI are complete. Instruction-boundary cleanup is
+next.
 
 The first delivery remains the local read-only baseline. Production
 authentication, guided setup, connector handoffs, workspace-memory review, and
@@ -95,7 +96,7 @@ one coherent draft to the next human boundary.
 | Complete | #45 Add product-level run history and trace links | Connects product work to Eve and Vercel traces without building a second runtime. | #37 implementation, #38 (complete) |
 | Complete | #47 Add a centralized approval inbox | Aggregates pending side effects while Eve remains the approval source of truth. | #37 implementation, #38, #41, #45 (complete) |
 | Complete | #50 Record eval and validation results | Establishes a durable, redacted result source before the assurance UI. | #38 (complete) |
-| 18 | #48 Show eval results and behavioral regressions | Renders recorded assurance data without inventing browser-side execution. | #36 (complete), #37, #50 |
+| Complete | #48 Show eval results and behavioral regressions | Renders recorded assurance data without inventing browser-side execution. | #36, #37 implementation, #50 (complete) |
 | 19 | #32 Reduce always-on instruction bloat | Moves situational workflows into the right Eve context boundaries without changing behavior. | None |
 | 20 | #46 Add personality and participation settings | Tunes tested defaults without exposing raw prompts or widening authority. | #30, #31 (complete), #32, #37, #38 |
 

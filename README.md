@@ -101,6 +101,11 @@ outputs, source context, reasoning, or credentials and expire after 30 days.
 `--skip-report` intentionally disables this reporter. Use
 `pnpm --filter docs-agent test:validation-reporter-integration` to run one real
 deterministic Eve eval against an isolated database and read the record back.
+The authenticated Assurance page reads those records without importing raw
+tables or reporter code. It separates live model evals from deterministic
+validation, keeps missing, skipped, flaky, failed, passed, and expired states
+distinct, and compares a run only with an earlier compatible baseline. It is a
+read-only evidence surface and cannot start evals or repository commands.
 
 Put local agent variables in `apps/agent/.env.local` and web-only variables in
 `apps/web/.env.local`. Both apps resolve local state through

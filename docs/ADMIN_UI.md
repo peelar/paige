@@ -326,13 +326,34 @@ output. Persistence failures reject the reporter callback visibly. The
 assurance UI remains separate work in #48 and must read this service rather
 than importing reporter or table code.
 
+### 14. Assurance and behavioral regressions
+
+Tracked by [#48](https://github.com/peelar/docs-agent/issues/48).
+
+The authenticated Assurance surface lists suite, target, model, commit or
+deployment, timing, proof kind, case counts, expiry, and result from the shared
+typed read service. Live model evals and deterministic validation are visibly
+different. Missing, skipped, flaky, failed, passed, and expired records retain
+their own states and filters.
+
+Detail renders safe case names as the related product behavior, bounded
+assertion summaries, redacted failures, and safe artifact references. It labels
+this sequence the recorded assurance log; raw Eve logs, prompts, output,
+reasoning, source context, event streams, tool payloads, and credentials remain
+outside the product database and browser payload.
+
+Baseline comparison is server-owned and read-only. The service offers only an
+earlier run of the same suite, proof kind, and target class. It detects removed
+assertions, gate-to-soft changes, lower thresholds, regressions, improvements,
+new cases, and missing cases. The browser cannot select an incompatible run,
+edit an assertion, start an eval, or run a repository command.
+
 ## Later Backlog
 
 The following work stays below the first delivery chain:
 
 - personality and participation settings after the default behavior is defined
   and covered by evals ([#46](https://github.com/peelar/docs-agent/issues/46));
-- eval results and behavioral regression reporting backed by those records ([#48](https://github.com/peelar/docs-agent/issues/48));
 - schedules, notifications, usage, retention, and data-management controls.
 
 Chat SDK persistence ([#33](https://github.com/peelar/docs-agent/issues/33)) and

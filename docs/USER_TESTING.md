@@ -613,6 +613,35 @@ outcomes, strict omission, redaction, idempotency, retention, bounded cleanup,
 and visible persistence failures. The browser does not run evals or arbitrary
 validation commands in this slice.
 
+## Assurance And Regression View
+
+Open `/assurance` in an authenticated operator session. Confirm every record
+shows suite, target, model when applicable, commit or deployment, start time,
+duration, case counts, proof type, and result. Filter live model evals and
+deterministic validation separately. Missing, skipped, flaky, failed, passed,
+and expired must remain distinct and no non-passing state may use passed copy or
+styling.
+
+Open a run and inspect the recorded assurance log. Confirm each case names the
+related behavior, assertion kind, gate or soft severity, threshold and score
+when available, redacted failure, timing, and safe artifact reference. Inspect
+the HTML and server payload for prompt, output, source context, reasoning,
+credentials, raw events, and tool payloads; none should be present.
+
+Choose an earlier baseline. Only the same suite, proof kind, and target class
+should be available. Confirm failed or missing cases are regressions, repaired
+cases are improvements, and removed assertions, gate-to-soft changes, or lower
+thresholds are explicitly weakened. An incompatible baseline must stop visibly.
+The page must not expose a command input, eval trigger, or assertion editor.
+
+`pnpm check` covers the typed read service, corrupt records, baseline
+compatibility and weakening, production build, authentication, list/detail,
+filters, loading, empty, failure, and desktop/mobile states. For the real-data
+proof, run `test:validation-reporter-integration` with
+`DOCS_AGENT_VALIDATION_INTEGRATION_DATABASE_URL` pointing at a temporary local
+database, start `pnpm dev:web` with that same database, and confirm the list and
+detail outcomes match the recorded Eve summary.
+
 ## Repository Docs Profile
 
 Fast repository setup with `configure_working_repository` and `prepareNow:

@@ -611,6 +611,13 @@ Runs expire after 30 days and a bounded service deletes them with their cases.
 External reporters and Eve artifacts keep their own independent contracts and
 retention.
 
+The authenticated assurance read service projects list and detail records for
+the operator app. A comparison baseline must be earlier and match the current
+suite, validation kind, and target class. Case comparison treats removed
+assertions, gate-to-soft changes, and lower thresholds as weakened proof; it
+does not rewrite the current or baseline record. The route and browser import
+only this typed projection, never the database client, tables, or Eve reporter.
+
 ## Docs Impact Decision Model
 
 Docs Agent uses a shared decision contract for signal triage, watched-release

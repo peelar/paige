@@ -7,7 +7,9 @@ import { migrateDocsAgentDatabase } from "../src/db/client.js";
 import {
   cleanupExpiredValidationRuns,
   completeValidationRun,
+  getValidationAssuranceDetail,
   getValidationRun,
+  listValidationRuns,
   recordValidationCase,
   startValidationRun,
 } from "../src/validation-results.js";
@@ -110,6 +112,69 @@ try {
       startedAt: "2026-07-11T10:00:00.000Z",
     }),
     /identity conflict/,
+  );
+
+  await startValidationRun({
+    id: "deterministic:pnpm-check:baseline",
+    kind: "deterministic-validation",
+    suite: "pnpm-check",
+    target: "local workspace",
+    startedAt: "2026-07-11T09:00:00.000Z",
+  });
+  await recordValidationCase({
+    validationRunId: "deterministic:pnpm-check:baseline",
+    caseId: "case-failed",
+    name: "Case failed",
+    outcome: "passed",
+    assertions: [
+      { name: "succeeded", passed: true, severity: "gate", threshold: 1 },
+    ],
+    startedAt: "2026-07-11T09:00:00.000Z",
+    completedAt: "2026-07-11T09:00:10.000Z",
+  });
+  await completeValidationRun({
+    id: "deterministic:pnpm-check:baseline",
+    outcome: "passed",
+    completedAt: "2026-07-11T09:01:00.000Z",
+  });
+
+  const list = await listValidationRuns({
+    kinds: ["deterministic-validation"],
+    query: "pnpm-check",
+    now: "2026-07-11T12:00:00.000Z",
+  });
+  assert.deepEqual(list.map((item) => item.id), [run.id, "deterministic:pnpm-check:baseline"]);
+  assert.equal(list[0]?.caseCounts.failed, 1);
+  const assurance = await getValidationAssuranceDetail({
+    id: run.id,
+    now: "2026-07-11T12:00:00.000Z",
+  });
+  assert.equal(assurance.baseline?.id, "deterministic:pnpm-check:baseline");
+  assert.equal(
+    assurance.comparison.find((item) => item.caseId === "case-failed")?.change,
+    "weakened",
+  );
+  await startValidationRun({
+    id: "deterministic:pnpm-check:wrong-target",
+    kind: "deterministic-validation",
+    suite: "pnpm-check",
+    target: "remote:https://agent.example.com",
+    startedAt: "2026-07-11T08:00:00.000Z",
+  });
+  await completeValidationRun({
+    id: "deterministic:pnpm-check:wrong-target",
+    outcome: "passed",
+    completedAt: "2026-07-11T08:01:00.000Z",
+  });
+  assert.deepEqual(
+    (await getValidationAssuranceDetail({ id: run.id })).availableBaselines.map(
+      (item) => item.id,
+    ),
+    ["deterministic:pnpm-check:baseline"],
+  );
+  await assert.rejects(
+    getValidationAssuranceDetail({ id: run.id, baselineId: "not-an-earlier-run" }),
+    /not an earlier/,
   );
 
   await startValidationRun({
