@@ -7,6 +7,7 @@ export * from "./owned-docs-work-contract.js";
 export * from "./libsql-chat-state.js";
 export * from "./slack-thread-presence.js";
 export * from "./workspace-memory.js";
+export * from "./product-runs.js";
 export { recordConnectorDeliveryVerification } from "./connector-handoffs.js";
 export * from "./repository-contract.js";
 export * from "./setup-state.js";

@@ -141,9 +141,9 @@ docs change.
 - Build policy and safety evals before expanding Slack, Linear,
   source-repository, context-repository, or proactive integrations so behavior
   can be regression tested as tools and channels become more capable.
-- Keep the web control plane on the same typed setup, signal, memory, and
-  workflow services as the agent. Do not turn it into a raw database or runtime
-  state editor.
+- Keep the web control plane on the same typed setup, signal, memory, run-index,
+  and workflow services as the agent. Do not turn it into a raw database or
+  runtime state editor.
 
 ## Repository Workflow
 

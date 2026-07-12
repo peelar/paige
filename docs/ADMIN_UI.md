@@ -268,11 +268,30 @@ operator id and calls the existing lifecycle transition; browser input cannot
 choose the audit actor or edit memory rows directly. The page repeats that
 memory is routing and triage context, never proof for a public docs claim.
 
+### 11. Product run history
+
+Tracked by [#45](https://github.com/peelar/docs-agent/issues/45).
+
+The authenticated Runs surface indexes the product operations behind signal
+capture, verification, patch preparation, writeback, and owned documentation
+work. List and detail views show the related signal or workflow object, stable
+Eve session and run ids, trigger, model, timing, token totals, waiting or failure
+state, and safe product-level steps. Active, waiting, failed, completed, and
+expired records remain visually distinct.
+
+The shared control-plane service accepts only bounded metadata from Eve events.
+It never persists messages, model output, reasoning, tool payloads, or
+credentials. Detail links to the durable Eve stream and supported Vercel or
+OpenTelemetry traces; missing access to one of those traces does not change the
+product run status. The index and its step projections expire after 30 days and
+are deleted by a bounded cleanup service. External traces keep their own
+retention. The app does not add replay, cancellation, or another tracing
+backend.
+
 ## Later Backlog
 
 The following work stays below the first delivery chain:
 
-- product-level run history and links to deeper Eve or Vercel traces ([#45](https://github.com/peelar/docs-agent/issues/45));
 - personality and participation settings after the default behavior is defined
   and covered by evals ([#46](https://github.com/peelar/docs-agent/issues/46));
 - a centralized approval inbox ([#47](https://github.com/peelar/docs-agent/issues/47));

@@ -537,6 +537,34 @@ claims still require source evidence and current-docs verification.
 expired states, unsafe-link removal, browser actor rejection, list/detail error
 states, inert provenance, filtering, and desktop/mobile layouts.
 
+## Product Run History
+
+Open `/runs` in an authenticated operator session with active,
+waiting-for-input, failed, completed, and expired records.
+
+1. Filter by status and run type, then search a signal id, session id, run id,
+   model, or signal summary. Confirm each state remains visually distinct.
+2. Open a run. Confirm its related signal or workflow id, Eve session and run
+   ids, trigger, model, timing, token summary, and product-level steps are
+   present. Waiting and failure summaries must be bounded product text, not raw
+   prompts or provider responses.
+3. Inspect Eve, Vercel, and OpenTelemetry links. An inaccessible trace must say
+   **Unavailable** while a completed run remains **Completed**.
+4. Inspect the browser payload and app-owned database. They must not contain
+   model input or output, messages, reasoning, tool payloads, authorization
+   challenges, credentials, or the durable event stream.
+5. Advance the clock past `expiresAt`, run bounded cleanup, and confirm the run
+   plus its step and trace projections are deleted. External traces retain
+   their own lifecycle.
+6. Clear the operator session and confirm `/runs` redirects to sign-in. Verify
+   missing, invalid, unauthorized, and database-failure states stop visibly.
+
+Run `pnpm --filter docs-agent test:run-index:integration` to start a real local
+Eve fixture session, record its stable run reference, project its lifecycle,
+and prove the product detail links to—but does not copy—the durable stream.
+`pnpm check` covers deterministic index behavior and desktop/mobile browser
+states.
+
 ## Repository Docs Profile
 
 Fast repository setup with `configure_working_repository` and `prepareNow:

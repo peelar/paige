@@ -485,6 +485,106 @@ export const workspaceMemoryEvents = sqliteTable(
   ],
 );
 
+export const productRuns = sqliteTable(
+  "product_runs",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    operationKey: text("operation_key").notNull(),
+    runType: text("run_type").notNull(),
+    trigger: text("trigger").notNull(),
+    status: text("status").notNull(),
+    sessionId: text("session_id").notNull(),
+    runId: text("run_id").notNull(),
+    signalId: text("signal_id").references(() => docsSignals.id, {
+      onDelete: "set null",
+    }),
+    workflowId: text("workflow_id"),
+    model: text("model"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
+    waitingSummary: text("waiting_summary"),
+    failureSummary: text("failure_summary"),
+    startedAt: text("started_at").notNull(),
+    completedAt: text("completed_at"),
+    expiresAt: text("expires_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("product_runs_operation_idx").on(
+      table.workspaceId,
+      table.operationKey,
+    ),
+    index("product_runs_status_idx").on(
+      table.workspaceId,
+      table.status,
+      table.updatedAt,
+    ),
+    index("product_runs_session_idx").on(
+      table.workspaceId,
+      table.sessionId,
+      table.runId,
+    ),
+    index("product_runs_expiry_idx").on(table.workspaceId, table.expiresAt),
+  ],
+);
+
+export const productRunSteps = sqliteTable(
+  "product_run_steps",
+  {
+    id: text("id").primaryKey(),
+    productRunId: text("product_run_id")
+      .notNull()
+      .references(() => productRuns.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id").notNull(),
+    stepKey: text("step_key").notNull(),
+    label: text("label").notNull(),
+    status: text("status").notNull(),
+    model: text("model"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
+    failureSummary: text("failure_summary"),
+    startedAt: text("started_at").notNull(),
+    completedAt: text("completed_at"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("product_run_steps_identity_idx").on(
+      table.productRunId,
+      table.stepKey,
+    ),
+    index("product_run_steps_run_idx").on(
+      table.productRunId,
+      table.startedAt,
+    ),
+  ],
+);
+
+export const productRunTraceLinks = sqliteTable(
+  "product_run_trace_links",
+  {
+    id: text("id").primaryKey(),
+    productRunId: text("product_run_id")
+      .notNull()
+      .references(() => productRuns.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id").notNull(),
+    kind: text("kind").notNull(),
+    label: text("label").notNull(),
+    url: text("url"),
+    availability: text("availability").notNull(),
+    unavailableReason: text("unavailable_reason"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("product_run_trace_links_kind_idx").on(
+      table.productRunId,
+      table.kind,
+    ),
+  ],
+);
+
 export const schema = {
   chatSdkKeyValues,
   chatSdkListEntries,
@@ -501,6 +601,9 @@ export const schema = {
   docsSignalOwnedWork,
   docsSignalSources,
   docsSignals,
+  productRunSteps,
+  productRunTraceLinks,
+  productRuns,
   slackThreadPresences,
   workspaceMemoryEvents,
   workspaceMemoryRecords,

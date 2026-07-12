@@ -550,6 +550,28 @@ Workspace memories differ from nearby state boundaries:
 - Eve skills are load-on-demand procedures. Workspace memory is data; it does
   not create new instructions or execution surfaces by itself.
 
+## Product Run Index
+
+Eve remains the durable execution source of truth. The app-owned product run
+index stores only the metadata needed to connect product work to that runtime:
+stable Eve session and run ids, related signal or workflow ids, run type,
+trigger, product status, model, timing, token totals, and bounded step
+projections. Owned documentation operations register their run reference, and
+an authored Eve hook projects accepted step, input, completion, and failure
+events through the shared control-plane service.
+
+The projection deliberately omits raw messages, model input and output,
+reasoning, tool payloads, authorization challenges, and credentials. Safe links
+point to the Eve event stream, Vercel Agent Run, or OpenTelemetry trace instead
+of copying those systems into the product database. A missing or inaccessible
+external trace is link availability, not product-run failure.
+
+Every index row stores `expiresAt`, 30 days after start by default. Bounded
+cleanup deletes expired rows; database cascades delete their product-level
+steps and trace links. Eve, Vercel, and OpenTelemetry own their separate
+retention policies. This index does not implement workflow replay,
+cancellation, or a tracing backend.
+
 ## Docs Impact Decision Model
 
 Docs Agent uses a shared decision contract for signal triage, watched-release

@@ -79,6 +79,13 @@ repository-grant, or permission checks are shown before anything is saved.
 The Memories page lists proposed, active, stale, and retired routing context,
 keeps provenance separate from generated memory text, and records authenticated
 promotion, stale, and retirement decisions as append-only lifecycle events.
+The Runs page indexes the product operations behind signals and owned work. It
+shows safe status, timing, model, usage, and step projections, then links to the
+durable Eve stream or supported external traces without copying messages,
+reasoning, model output, or tool payloads into the product database. Run
+metadata expires after 30 days. Use
+`pnpm --filter docs-agent test:run-index:integration` to exercise the contract
+against a real local Eve session backed by a deterministic fixture model.
 
 Put local agent variables in `apps/agent/.env.local` and web-only variables in
 `apps/web/.env.local`. Both apps resolve local state through

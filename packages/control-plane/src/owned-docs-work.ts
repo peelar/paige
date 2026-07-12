@@ -20,6 +20,8 @@ import {
   type OwnedDocsWorkStatus,
 } from "./owned-docs-work-contract.js";
 import { DEFAULT_WORKSPACE_ID } from "./setup-state.js";
+import { createProductRun } from "./product-runs.js";
+import { resolveEveRuntimeUrl } from "./provider-config.js";
 
 const nowIso = () => new Date().toISOString();
 const operationKeySchema = z.string().trim().min(1).max(500);
@@ -76,7 +78,7 @@ export async function startOwnedDocsWork(
 ) {
   const parsed = startOwnedDocsWorkInputSchema.parse(input);
   const activeRuntime = runtimeSchema.parse(runtime);
-  return withDocsAgentDatabase(async (db) => db.transaction(async (tx) => {
+  const result = await withDocsAgentDatabase(async (db) => db.transaction(async (tx) => {
     await assertSignalExists(tx, parsed.signalId);
     const existing = await readOwnedWork(tx, parsed.signalId);
     if (existing !== null) {
@@ -96,6 +98,8 @@ export async function startOwnedDocsWork(
     const work = await requireOwnedWork(tx, parsed.signalId);
     return ownedDocsWorkResultSchema.parse({ created: true, replayed: false, work, channelUpdate: `Accepted substantial documentation work: ${parsed.intendedOutcome}` });
   }));
+  await recordOwnedProductRun(parsed.operationKey, result.work, activeRuntime);
+  return result;
 }
 
 export async function getOwnedDocsWork(input: { signalId: string }) {
@@ -109,7 +113,7 @@ export async function updateOwnedDocsWork(
 ) {
   const parsed = updateOwnedDocsWorkInputSchema.parse(input);
   const activeRuntime = runtimeSchema.parse(runtime);
-  return withDocsAgentDatabase(async (db) => db.transaction(async (tx) => {
+  const result = await withDocsAgentDatabase(async (db) => db.transaction(async (tx) => {
     const current = await requireOwnedWork(tx, parsed.signalId);
     if (current.sessionId !== activeRuntime.sessionId) throw new Error(`Owned work ${current.id} must resume in Eve session ${current.sessionId}, not ${activeRuntime.sessionId}.`);
     if (current.lastOperationKey === parsed.operationKey) return ownedDocsWorkResultSchema.parse({ created: false, replayed: true, work: current, channelUpdate: null });
@@ -124,6 +128,8 @@ export async function updateOwnedDocsWork(
     const work = await requireOwnedWork(tx, parsed.signalId);
     return ownedDocsWorkResultSchema.parse({ created: false, replayed: false, work, channelUpdate: transition.channelUpdate });
   }));
+  await recordOwnedProductRun(parsed.operationKey, result.work, activeRuntime);
+  return result;
 }
 
 function applyOwnedWorkAction(current: OwnedDocsWorkRecord, input: z.infer<typeof updateOwnedDocsWorkInputSchema>): { status: OwnedDocsWorkStatus; outcome: OwnedDocsWorkRecord["outcome"]; references: OwnedDocsWorkRecord["references"]; milestone: string | null; channelUpdate: string | null } {
@@ -166,3 +172,34 @@ async function requireOwnedWork(db: Executor, signalId: string) {
 async function touchSignal(db: Executor, signalId: string, updatedAt: string) { await db.update(docsSignals).set({ updatedAt }).where(and(eq(docsSignals.workspaceId, DEFAULT_WORKSPACE_ID), eq(docsSignals.id, signalId))); }
 async function insertOwnedArtifacts(db: Executor, signalId: string, artifacts: z.infer<typeof docsSignalArtifactInputSchema>[]) { if (artifacts.length === 0) return; await db.insert(docsSignalArtifacts).values(artifacts.map((artifact) => ({ id: randomUUID(), signalId, workspaceId: DEFAULT_WORKSPACE_ID, kind: artifact.kind, label: artifact.label ?? null, url: artifact.url ?? null, path: artifact.path ?? null, metadata: artifact.metadata, createdAt: nowIso() }))); }
 async function insertOwnedEvent(db: Executor, event: { signalId: string; eventType: string; reason: string; metadata: Record<string, unknown> }) { await db.insert(docsSignalEvents).values({ id: randomUUID(), signalId: event.signalId, workspaceId: DEFAULT_WORKSPACE_ID, eventType: event.eventType, fromStatus: null, toStatus: null, reason: event.reason, actor: "docs-agent:owned-work", metadata: event.metadata, createdAt: nowIso() }); }
+
+async function recordOwnedProductRun(
+  operationKey: string,
+  work: OwnedDocsWorkRecord,
+  runtime: OwnedDocsWorkRuntime,
+): Promise<void> {
+  const runtimeUrl = resolveEveRuntimeUrl().replace(/\/$/, "");
+  await createProductRun({
+    operationKey: `owned-docs-work:${work.signalId}:${operationKey}`,
+    runType: "owned-docs-work",
+    trigger: ownedTrigger(work.conversation.kind),
+    sessionId: runtime.sessionId,
+    runId: runtime.runId,
+    signalId: work.signalId,
+    workflowId: work.id,
+    traceLinks: [{
+      kind: "eve",
+      label: "Durable Eve event stream",
+      url: `${runtimeUrl}/eve/v1/session/${encodeURIComponent(runtime.sessionId)}/stream`,
+      availability: "available",
+    }],
+  });
+}
+
+function ownedTrigger(kind: OwnedDocsWorkRecord["conversation"]["kind"]) {
+  if (kind === "slack-thread") return "slack" as const;
+  if (kind === "linear-issue") return "linear" as const;
+  if (kind === "terminal") return "terminal" as const;
+  if (kind === "web") return "web" as const;
+  return "other" as const;
+}

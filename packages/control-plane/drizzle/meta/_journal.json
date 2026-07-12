@@ -71,6 +71,13 @@
       "when": 1783813659246,
       "tag": "0009_loose_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1783816133641,
+      "tag": "0010_mixed_gorilla_man",
+      "breakpoints": true
     }
   ]
 }

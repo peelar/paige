@@ -19,11 +19,12 @@ thread participation, and bounded user-authorized Slack context retrieval are
 also complete. The authenticated operator implementation and guided workspace
 onboarding are in place; the real GitHub OAuth deployment smoke remains
 required before #37 is complete. Connector installation handoffs are complete;
-workspace-memory review is also complete. Product-level run history is next.
+workspace-memory review and product-level run history are also complete. A
+centralized approval inbox is next.
 
 The first delivery remains the local read-only baseline. Production
-authentication, guided setup, connector handoffs, and workspace-memory review
-now build on it. Run history, personality and participation settings,
+authentication, guided setup, connector handoffs, workspace-memory review, and
+run history now build on it. Personality and participation settings,
 approvals, and eval reporting stay below it in the backlog.
 
 The operator surface builds on the existing agent workflow contract in
@@ -90,7 +91,7 @@ one coherent draft to the next human boundary.
 | Complete | #42 Add guided workspace onboarding | Adds authenticated setup mutations after the readiness model proves what users need. | #37 implementation, #39 (complete) |
 | Complete | #43 Add connector installation handoffs | Improves installation without pretending provider consent can be silent. | #37 implementation, #39 (complete) |
 | Complete | #44 Add workspace-memory review | Exposes an existing human-governed lifecycle in the authenticated app. | #37 implementation, #38 (complete) |
-| 15 | #45 Add product-level run history and trace links | Connects product work to Eve and Vercel traces without building a second runtime. | #37, #38 |
+| Complete | #45 Add product-level run history and trace links | Connects product work to Eve and Vercel traces without building a second runtime. | #37 implementation, #38 (complete) |
 | 16 | #47 Add a centralized approval inbox | Aggregates pending side effects while Eve remains the approval source of truth. | #37, #38, #41 (complete), #45 |
 | 17 | #50 Record eval and validation results | Establishes a durable, redacted result source before the assurance UI. | #38 |
 | 18 | #48 Show eval results and behavioral regressions | Renders recorded assurance data without inventing browser-side execution. | #36 (complete), #37, #50 |

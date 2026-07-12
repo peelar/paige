@@ -38,6 +38,9 @@ test("unauthenticated pages redirect to sign in and protected operations reject"
   await expect(page.getByRole("heading", { name: "Sign in to Docs Agent" }))
     .toBeVisible();
 
+  await page.goto("/runs");
+  await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fruns$/);
+
   const operation = await page.request.get("/api/operator/whoami");
   expect(operation.status()).toBe(401);
   await expect(operation.json()).resolves.toMatchObject({
