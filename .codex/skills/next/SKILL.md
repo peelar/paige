@@ -5,10 +5,11 @@ description: >-
   writes "$next", says "next", or asks Codex to pick up the next GitHub issue
   in this repository. Inspect the ordered issue backlog, planning docs, repo
   instructions, Eve docs for changed runtime surfaces, and current main branch
-  state before choosing one issue. Propose the smallest coherent slice, wait for
-  approval, implement it directly on main without opening a PR, verify with
-  pnpm check, and when agent behavior changes, add an executable eval or present
-  an end-user scenario the user can run manually.
+  state before choosing one issue. Normally propose the smallest coherent slice
+  and wait for approval. When the user explicitly activates loop mode with a
+  bounded issue scope, implement and ship those issues without per-issue approval
+  pauses. Verify each issue, and when agent behavior changes, add an executable
+  eval or present an end-user scenario the user can run manually.
 ---
 
 # Next
@@ -23,6 +24,62 @@ commit approval.
 GitHub Issues are the backlog source of truth. `docs/internal/ROADMAP.md` is the
 fallback ordering source when GitHub Projects or custom priority fields are not
 available.
+
+## Loop Mode
+
+Loop mode is an explicit exception to the normal design and commit approval
+pauses. It does not weaken scope, dependency, validation, safety, or write
+boundaries.
+
+Activate loop mode only when the user's objective:
+
+- explicitly says to run `$next` in loop mode;
+- names this repository;
+- names the exact allowed issue set, range, or ordered queue;
+- names any exclusions; and
+- authorizes implementation, commits, pushes, issue comments, and issue closure
+  for that bounded scope without further approval.
+
+Treat that objective as advance approval for each in-scope issue. Do not pause
+for a design check, ask `Commit? [Y/n]`, or wait for approval between issues.
+Still state the selected issue and intended slice briefly before editing so the
+loop remains inspectable.
+
+Before the first issue, require:
+
+- `main` checked out with a clean worktree;
+- local `main` aligned with `origin/main` after fetching;
+- a self-contained, dependency-ordered queue with a verification mechanism for
+  every issue; and
+- no excluded or unrelated work in the selected issue's dependency path.
+
+For each issue:
+
+1. Re-read the live issue, current roadmap order, dependencies, and relevant
+   repository contracts.
+2. Implement only the smallest coherent issue slice.
+3. Run focused checks, required behavior proof, `pnpm check`, and the complete
+   `pnpm check:full` handoff gate.
+4. Commit with a conventional commit message, push `main`, comment with the
+   implementation and verification evidence, and close the issue.
+5. Compact the working context before selecting the next issue when compaction
+   is available.
+
+Stop loop mode instead of guessing when:
+
+- the next issue is ambiguous, stale, not self-contained, or requires an
+  unresolved product decision;
+- a dependency is missing, incomplete, excluded, or only implemented outside
+  the aligned `main` branch;
+- unrelated work appears or `main` diverges from `origin/main`;
+- required validation or behavior proof cannot pass without widening scope;
+- required credentials, provider access, or manual external proof are missing;
+- a commit, push, GitHub comment, or issue closure fails; or
+- the authorized issue scope is exhausted.
+
+Report the exact blocker and leave later issues untouched. Never expand the
+authorized issue scope, refine the backlog, or create replacement work while
+loop mode is active unless the objective explicitly authorizes it.
 
 ## Workflow
 
@@ -97,7 +154,9 @@ available.
    - Ask at most one scope question at a time. Include a recommended answer.
    - Try to answer questions from the repo, issues, docs, and code before
      asking the user.
-   - Wait for explicit user approval before implementation.
+   - Outside loop mode, wait for explicit user approval before implementation.
+   - In loop mode, treat the bounded objective as advance approval and continue
+     without pausing.
 9. Implement only the accepted slice.
    - Preserve unrelated user or local changes.
    - Follow existing repo patterns and Eve conventions.
@@ -123,11 +182,13 @@ available.
 12. Ship directly on `main`.
     - Do not open a PR.
     - Do not create or update a draft PR.
-    - After checks pass, propose a conventional commit message and end with
-      `Commit? [Y/n]`, as required by `AGENTS.md`.
-    - On approval, commit on `main`, push `origin main`, comment on the GitHub
-      issue with the commit, checks, eval or scenario evidence, and close the
-      issue.
+    - Outside loop mode, after checks pass, propose a conventional commit message
+      and end with `Commit? [Y/n]`, as required by `AGENTS.md`.
+    - Outside loop mode, on approval, commit on `main`, push `origin main`,
+      comment on the GitHub issue with the commit, checks, eval or scenario
+      evidence, and close the issue.
+    - In loop mode, use the advance approval to commit, push, comment, and close
+      without prompting, then continue to the next authorized issue.
     - If pushing or issue updates fail, report the failure visibly with the
       exact command or API error. Do not pretend the issue was shipped.
 13. Summarize what changed, what was verified, what eval or scenario covers the
