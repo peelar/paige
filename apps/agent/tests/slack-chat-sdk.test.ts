@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import type { SlackEvent } from "@chat-adapter/slack";
 import type { Message, Thread, WebhookOptions } from "chat";
 
+import type { WatchEventAdmission } from "@docs-agent/control-plane/agent";
+
 import {
   buildSlackActionAuth,
   isSilentSlackReply,
@@ -10,7 +12,10 @@ import {
   registerSlackTurnHandlers,
   sendSlackTurn,
 } from "../agent/lib/slack-chat-turn";
-import { SubscriptionFilteredSlackAdapter } from "../agent/lib/subscription-filtered-slack-adapter";
+import {
+  SubscriptionFilteredSlackAdapter,
+  type SlackWatchEventScope,
+} from "../agent/lib/subscription-filtered-slack-adapter";
 import { test } from "vitest";
 
 test("slack chat sdk", async () => {
@@ -23,6 +28,9 @@ class TestSlackAdapter extends SubscriptionFilteredSlackAdapter {
     admitEntryMessage?: (
       entry: "mention" | "direct-message",
     ) => Promise<boolean>;
+    admitWatchEvent?: (
+      scope: SlackWatchEventScope,
+    ) => Promise<readonly WatchEventAdmission[]>;
   } = {}) {
     super({ botToken: "xoxb-test", webhookVerifier: () => true }, options);
   }
@@ -115,6 +123,57 @@ assert.equal(
 await adapter.emit(event({ text: "unenrolled private content" }));
 assert.equal(adapter.forwarded.length, 2, "unenrolled channel content is not forwarded");
 assert.deepEqual(adapter.subscriptionChecks, ["slack:C123:100.000"]);
+
+const watchScopes: SlackWatchEventScope[] = [];
+const watchFiltered = new TestSlackAdapter({
+  admitWatchEvent: async (scope) => {
+    watchScopes.push(scope);
+    return [];
+  },
+});
+let rejectedContentReads = 0;
+const rejectedWatchEvent = event({ channel: "C-UNWATCHED" });
+Object.defineProperty(rejectedWatchEvent, "text", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    rejectedContentReads += 1;
+    return "content outside active watch scope";
+  },
+});
+await watchFiltered.emit(rejectedWatchEvent);
+assert.equal(rejectedContentReads, 0, "watch lookup receives no message content");
+assert.deepEqual(watchScopes, [{
+  providerWorkspaceId: "T123",
+  resource: { type: "channel", id: "C-UNWATCHED" },
+  eventType: "message",
+}]);
+assert.equal(watchFiltered.forwarded.length, 0);
+assert.deepEqual(
+  watchFiltered.subscriptionChecks,
+  ["slack:C-UNWATCHED:100.000"],
+  "metadata-only watch lookup runs before the separate subscription path",
+);
+
+await watchFiltered.emit(event({ type: "app_mention", text: "@Paige direct path" }));
+await watchFiltered.emit(event({ channel: "D123", channel_type: "im", text: "DM path" }));
+assert.equal(watchScopes.length, 1, "mentions and DMs do not enter watch lookup");
+
+const unavailableWatchState = new TestSlackAdapter({
+  admitWatchEvent: async () => {
+    throw new Error("watch state unavailable");
+  },
+});
+await assert.rejects(
+  () => unavailableWatchState.emit(event({ text: "must not be parsed" })),
+  /watch state unavailable/,
+);
+assert.equal(unavailableWatchState.forwarded.length, 0);
+assert.deepEqual(
+  unavailableWatchState.subscriptionChecks,
+  [],
+  "watch failures stop before Chat SDK subscription state or content parsing",
+);
 
 adapter.subscribed = true;
 await adapter.emit(event({ channel_type: "group", text: "followed private-channel reply" }));

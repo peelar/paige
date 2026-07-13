@@ -5,6 +5,8 @@ import {
 } from "@chat-adapter/slack";
 import type { WebhookOptions } from "chat";
 
+import type { WatchEventAdmission } from "@docs-agent/control-plane/agent";
+
 import {
   redactSlackSearchSecrets,
   stageSlackSearchRequest,
@@ -27,6 +29,9 @@ export class SubscriptionFilteredSlackAdapter extends SlackAdapter {
     entry: "mention" | "direct-message",
   ) => Promise<boolean>;
   private readonly admitOrdinaryMessage?: (threadId: string) => Promise<boolean>;
+  private readonly admitWatchEvent?: (
+    scope: SlackWatchEventScope,
+  ) => Promise<readonly WatchEventAdmission[]>;
 
   constructor(
     config: SlackAdapterConfig,
@@ -35,11 +40,15 @@ export class SubscriptionFilteredSlackAdapter extends SlackAdapter {
         entry: "mention" | "direct-message",
       ) => Promise<boolean>;
       admitOrdinaryMessage?: (threadId: string) => Promise<boolean>;
+      admitWatchEvent?: (
+        scope: SlackWatchEventScope,
+      ) => Promise<readonly WatchEventAdmission[]>;
     } = {},
   ) {
     super(config);
     this.admitEntryMessage = options.admitEntryMessage;
     this.admitOrdinaryMessage = options.admitOrdinaryMessage;
+    this.admitWatchEvent = options.admitWatchEvent;
   }
 
   protected override handleMessageEvent(
@@ -143,6 +152,9 @@ export class SubscriptionFilteredSlackAdapter extends SlackAdapter {
     event: SlackEvent,
     options?: WebhookOptions,
   ): Promise<void> {
+    if (this.admitWatchEvent !== undefined) {
+      await this.admitWatchEvent(slackWatchEventScope(event));
+    }
     const threadId = slackThreadId(this, event);
     if (!(await this.isThreadSubscribed(threadId))) return;
     await this.forwardAcceptedMessage(event, options);
@@ -166,10 +178,22 @@ export function createSubscriptionFilteredSlackAdapter(
       entry: "mention" | "direct-message",
     ) => Promise<boolean>;
     admitOrdinaryMessage?: (threadId: string) => Promise<boolean>;
+    admitWatchEvent?: (
+      scope: SlackWatchEventScope,
+    ) => Promise<readonly WatchEventAdmission[]>;
   } = {},
 ): SubscriptionFilteredSlackAdapter {
   return new SubscriptionFilteredSlackAdapter(config, options);
 }
+
+export type SlackWatchEventScope = {
+  providerWorkspaceId: string;
+  resource: {
+    type: "channel";
+    id: string;
+  };
+  eventType: string;
+};
 
 export function shouldIgnoreSlackMessage(event: SlackEvent): boolean {
   return (
@@ -184,4 +208,17 @@ function slackThreadId(adapter: SlackAdapter, event: SlackEvent): string {
     channel: event.channel ?? "",
     threadTs: event.thread_ts ?? event.ts ?? "",
   });
+}
+
+function slackWatchEventScope(event: SlackEvent): SlackWatchEventScope {
+  if (!event.team_id || !event.channel || !event.type) {
+    throw new Error(
+      "Slack watch admission requires verified workspace, resource, and event identity.",
+    );
+  }
+  return {
+    providerWorkspaceId: event.team_id,
+    resource: { type: "channel", id: event.channel },
+    eventType: event.type,
+  };
 }

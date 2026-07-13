@@ -255,11 +255,15 @@ in-memory watch, default active policy, or inferred authority fallback.
 Slack enters Eve through `chatSdkChannel` and the Chat SDK Slack adapter at the
 existing `/eve/v1/slack` route. Vercel Connect still resolves the app-scoped bot
 token and verifies trigger-forwarded requests. The adapter admits explicit app
-mentions and DMs, but ordinary public or private channel messages receive only a
-thread-id subscription lookup first. An unenrolled message is discarded before
-Chat SDK parses its content or can run dedupe, history, queue, or Eve/model
-processing. Bot and self-authored messages, edits, deletes, and unsupported
-subtypes are discarded even earlier. Accepted mentions create a separate
+mentions and DMs through their existing participation mode. For ordinary public
+or private channel messages, the verified adapter sends only workspace,
+resource, and event-type metadata to the active-watch lookup before running the
+separate thread-id subscription lookup. If neither an active effective watch nor
+an enrolled thread admits the event, it is discarded before Chat SDK parses its
+content or can run dedupe, history, queue, or Eve/model processing. A watch match
+is bound to the exact effective revision and does not itself create a Chat SDK
+conversation or Eve turn. Bot and self-authored messages, edits, deletes, and
+unsupported subtypes are discarded even earlier. Accepted mentions create a separate
 `slack_thread_presence` record and Chat SDK subscription for that thread. The
 record preserves the Slack workspace, channel, root timestamp, continuation
 token, inviter, activity, status, and expiry without becoming a docs signal.

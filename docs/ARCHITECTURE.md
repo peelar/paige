@@ -206,6 +206,11 @@ unavailable, corrupt, expired, or internally inconsistent state fails visibly
 and never produces a usable watch. The secret-safe readiness projection reports
 `unavailable`, `invalid`, `proposed`, `paused`, `expired`, `active`, or `deleted`
 without exposing database configuration, credentials, or raw provider state.
+Verified provider adapters may resolve admission with workspace, provider,
+resource, and event-type metadata only. The lookup returns the exact immutable
+effective revision for each matching active watch. It rejects paused, expired,
+missing, corrupt, or unauthorized state before raw provider content can enter
+Chat SDK history, parsing, queues, Eve sessions, or model context.
 
 ## Integration Boundaries
 

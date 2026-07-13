@@ -16,3 +16,8 @@ export * from "./repository-contract.ts";
 export * from "./setup-state.ts";
 export * from "./repository-validation.ts";
 export { docsAgentDatabaseLocation } from "./db/client.ts";
+export * from "./watch-event-admission.ts";
+export {
+  WATCH_CAPABILITY_REGISTRY_VERSION,
+  type WatchCapabilityRegistry,
+} from "./watch-service-readiness.ts";
