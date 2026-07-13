@@ -4,6 +4,12 @@ Paige work starts from a docs signal and ends with a report, a lifecycle
 state change, a patch handoff, or a maintainer question. Current-docs
 verification is one capability inside these workflows, not the whole product.
 
+Stable capability-family identifiers, authority semantics, and the exhaustive
+current-to-target tool migration live in
+[`CAPABILITIES.md`](./CAPABILITIES.md). Workflows and skills compose those
+capabilities; they do not define new authority or persist current tool names as
+policy.
+
 ## Workflow Model
 
 ### Mentioned In Context

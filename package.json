@@ -5,9 +5,10 @@
   "packageManager": "pnpm@11.12.0",
   "scripts": {
     "brand:check": "node scripts/check-brand-name.mjs",
+    "capability:check": "pnpm --filter docs-agent capability:check",
     "build": "turbo run build",
-    "check": "pnpm validation-graph:check && pnpm lint && turbo run typecheck test --affected && pnpm brand:check && pnpm workspace:check",
-    "check:full": "pnpm validation-graph:check && pnpm lint && turbo run typecheck test build test:e2e && pnpm brand:check && pnpm monorepo:smoke && pnpm status:smoke",
+    "check": "pnpm validation-graph:check && pnpm capability:check && pnpm lint && turbo run typecheck test --affected && pnpm brand:check && pnpm workspace:check",
+    "check:full": "pnpm validation-graph:check && pnpm capability:check && pnpm lint && turbo run typecheck test build test:e2e && pnpm brand:check && pnpm monorepo:smoke && pnpm status:smoke",
     "db:generate": "pnpm --filter @docs-agent/control-plane db:generate",
     "db:migrate": "pnpm --filter @docs-agent/control-plane db:migrate",
     "dev": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} portless",

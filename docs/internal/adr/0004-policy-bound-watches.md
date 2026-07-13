@@ -106,6 +106,8 @@ message, or report an active watch through a fail-open fallback.
 - [Project roadmap](../ROADMAP.md)
 - [Repository model](../REPOSITORY_MODEL.md)
 - [Workflow model](../WORKFLOWS.md)
+- [ADR-0006: Use Stable Capability Families For Model Authority](./0006-stable-capability-families.md)
+- [Capability contract and migration inventory](../CAPABILITIES.md)
 - [Epic #57: Give Paige policy-bound watches for proactive docs attention](https://github.com/peelar/paige/issues/57)
 - [Issue #58: Persist a bounded watch contract](https://github.com/peelar/paige/issues/58)
 - [Issue #59: Admit configured Slack channel events](https://github.com/peelar/paige/issues/59)

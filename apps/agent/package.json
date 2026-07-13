@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "pnpm --filter @docs-agent/control-plane db:migrate:deployment && eve build",
+    "capability:check": "eve info --json >/dev/null && node ../../scripts/check-capability-inventory.mjs",
     "check": "pnpm typecheck && pnpm test",
     "dev": "pnpm --filter @docs-agent/control-plane db:migrate && eve dev",
     "dev:portless": "pnpm dev",

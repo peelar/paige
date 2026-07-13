@@ -189,7 +189,8 @@ complete.
 
 ## Target Model-Facing Surface
 
-The final names should be decided in CR0, but the target responsibilities are:
+ADR-0006 records the stable capability-family identifiers. Model-facing tool
+names remain implementation details, but the target responsibilities are:
 
 ### Workspace knowledge
 
@@ -235,9 +236,9 @@ write surface is part of this program.
 ## Effective Capability Matrix
 
 Dynamic capability resolution should converge on this shape. Exact tool names
-are intentionally omitted until CR0 records the contract.
+remain intentionally independent from the stable identifiers recorded by CR0.
 
-| Context | Read knowledge | Docs work state | Draft docs | Provider intake/retrieval | Schedule processing | Publish |
+| Context | `knowledge.read` and `repository.read` | `docs_work.manage` | `draft.edit` | Provider intake/retrieval | `follow_up.schedule` | `publication.publish` |
 | --- | --- | --- | --- | --- | --- | --- |
 | Unconfigured ordinary conversation | Model/web answer with stated limits | No | No | Channel-specific only | No | No |
 | Configured interactive Eve turn | Yes | Yes | When requested | No | No | Only for a prepared draft and authorized caller |
@@ -253,7 +254,7 @@ auth, setup, lifecycle, and repository policy inside `execute`.
 
 | Order | Slice | Outcome | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| CR0 | Record the architecture contract and behavioral baseline | One accepted capability model and migration inventory | None | Proposed |
+| CR0 | Record the architecture contract and migration inventory | One accepted capability model and checked migration inventory | None | Complete |
 | CR1 | Remove fixture workflows from the production tool surface | Runtime behavior no longer depends on Saleor-specific scenario code | CR0 | Proposed |
 | CR2 | Build the read-only working-repository capability kernel | One composable repository inspection surface | CR0, CR1 | Proposed |
 | CR3 | Converge all documentation mutation on `authoring_workspace` | One reversible, concurrency-safe draft path | CR2 | Proposed |
@@ -323,8 +324,8 @@ runtime behavior.
   model-facing tools.
 - Record consumers, tests, durable state, control-plane projections, and removal
   conditions for every tool marked for migration.
-- Capture the current deterministic and live behavioral baseline without
-  weakening existing assertions.
+- Preserve the existing behavioral suites and keep live or external proof
+  requirements on their owning issues without weakening assertions.
 - Decide stable target names for the capabilities described above.
 
 ### Deliverables
@@ -335,8 +336,9 @@ runtime behavior.
   `.eve/compile/compiled-agent-manifest.json`, not a hand-maintained count.
 - A migration table in `docs/internal/WORKFLOWS.md` or a directly linked
   internal architecture document.
-- Baseline results for general conversation, docs-needed, no-change, Slack,
-  Linear, watched-repository, memory, authoring, and approval behavior.
+- A documented behavioral-proof boundary for general conversation,
+  docs-needed, no-change, Slack, Linear, watched-repository, memory, authoring,
+  and approval behavior.
 
 ### Acceptance
 

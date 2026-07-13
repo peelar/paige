@@ -8,11 +8,14 @@ Last Reviewed: 2026-07-13
 - `docs/internal/MANIFEST.md`
 - `docs/internal/ROADMAP.md`
 - `docs/internal/REPOSITORY_MODEL.md`
+- `docs/internal/CAPABILITIES.md`
 - `docs/internal/ADMIN_UI.md`
 - `docs/DEPLOYMENT.md`
 - `docs/internal/adr/0001-docs-signal-persistence.md`
 - `docs/internal/adr/0002-turborepo-agent-and-web-apps.md`
+- `docs/internal/adr/0004-policy-bound-watches.md`
 - `docs/internal/adr/0005-one-database-per-agent.md`
+- `docs/internal/adr/0006-stable-capability-families.md`
 - Installed Eve security, authentication, durability, and multi-tenant pattern
   documentation under `node_modules/eve/docs/`
 - Turso Platform API and database-token documentation
@@ -47,6 +50,39 @@ database. If Paige later becomes a SaaS, multiple agents may share application
 runtime, but every request must first resolve an authenticated agent context and
 then bind to that agent's exclusive database. The SaaS registry, provisioning
 layer, and tenant router are explicitly deferred.
+
+## Capability Contract
+
+Paige grants model authority through stable resource-and-effect families rather
+than current tool names or scenario workflows. The accepted identifiers are:
+
+- `knowledge.read` for bounded, provenance-bearing workspace evidence;
+- `repository.read` for policy-aware configured-repository inspection and named
+  read-oriented checks;
+- `docs_work.manage` for durable documentation-work state;
+- `draft.edit` for reversible working-documentation sandbox changes;
+- `follow_up.schedule` for bounded signal-linked follow-up work;
+- `provider.deliver` for policy-bound delivery to a preapproved provider target;
+- `publication.publish` for approval-gated publication of a prepared working-
+  documentation draft.
+
+Capability identifiers are durable policy terms, not promises of availability.
+Eve dynamic resolution may narrow the visible tool set from the verified
+channel and principal, setup readiness, work state, and effective watch
+revision. Every implementation still rechecks authorization and resource policy
+inside execution.
+
+A watch may grant only an approved subset of the first six families. It can
+never grant `publication.publish`; publishing remains separately authorized and
+requires explicit human approval on every call. Ignore and abstain are outcomes,
+not capabilities. Workspace setup, workspace-memory governance, and provider
+admission remain non-delegable control or adapter boundaries.
+
+Documentation is Paige's only mutable product domain. Provider delivery is a
+separate external side effect: it may send an allowed result under an approved
+target, delivery policy, idempotency key, and budget, but it cannot mutate
+documentation or stand in for publication approval. The exhaustive current and
+planned migration is maintained in `docs/internal/CAPABILITIES.md`.
 
 ## System Context
 
@@ -156,6 +192,10 @@ possible without reading or rewriting another agent's database.
   grant raw database access.
 - Provider adapters: authenticate and admit events before they can wake the
   model or access agent state.
+- Provider delivery: sends only to a policy-approved provider target and remains
+  separate from documentation drafting and publication.
+- Publication: accepts only a prepared checked draft for the configured working
+  documentation repository and pauses for explicit approval on every call.
 - Eve session routes: safe today because one runtime serves one agent; they
   require explicit agent ownership checks before a runtime can serve more than
   one agent.
@@ -193,18 +233,25 @@ identity record and startup assertion without adding tenant routing.
 - No model-facing or browser-facing input selects database or agent scope.
 - `workspace_id` is not a cross-agent security boundary.
 - Persistence and authorization failures fail closed.
+- Stable capability identifiers are resource-and-effect families and are not
+  current tool names or scenario verbs.
+- `publication.publish` is never grantable by a watch.
 
 ### Configurable
 
 - The current agent's database URL and database-scoped authentication token.
 - The working documentation repository, watched repositories, provider
   connections, behavior settings, watches, and policies stored for that agent.
+- The approved subset of non-publication capability families on each effective
+  watch revision.
 - Local SQLite versus a deployed libSQL-compatible database.
 
 ### Extensible
 
 - The app-owned persistence interface may support another SQLite/libSQL
   provider without changing agent workflows.
+- Model-facing tools may be consolidated or resolved dynamically while
+  preserving the stable capability-family and execution-policy contract.
 - A future authenticated agent-store resolver may replace deployment-bound
   database selection while preserving database-per-agent isolation.
 
@@ -212,6 +259,8 @@ identity record and startup assertion without adding tenant routing.
 
 - Drizzle query structure, connection reuse, migration implementation, indexes,
   and browser-safe read models.
+- Model-facing tool names, skill choreography, and compatibility wrappers while
+  they remain fully mapped in the checked capability inventory.
 - The canonical workspace id while only one workspace exists inside an agent.
 
 ### Deferred
@@ -233,6 +282,12 @@ identity record and startup assertion without adding tenant routing.
 - Failure safety: when database configuration, authentication, migration state,
   or schema is missing or invalid, durable workflows stop visibly, verified by
   `pnpm check` and readiness tests.
+- Least authority: when a channel, principal, setup state, or approved watch
+  revision cannot grant an operation, the model does not see or cannot execute
+  it, verified by capability-matrix tests and execution-time denial tests.
+- Publication safety: when a watch or scheduled turn requests publication, the
+  runtime refuses it; only a prepared draft resumed through explicit human
+  approval can publish, verified by approval and watch-policy tests.
 - Browser privacy: when an operator opens a list or detail page, the browser
   receives a typed projection without database credentials or internal scope
   identifiers, verified by control-plane boundary checks.
@@ -246,6 +301,9 @@ identity record and startup assertion without adding tenant routing.
 - `pnpm check:full` remains the handoff gate for database readiness, persistence
   failure, model-supplied scope rejection, server/browser package boundaries,
   and repository validation.
+- `pnpm capability:check` compiles Eve's authored surface and fails when current
+  tools, disabled framework tools, stable identifiers, or migration records
+  diverge. Both `pnpm check` and `pnpm check:full` include it.
 - Production deployment review verifies that the paired agent and web apps use
   the same database and that no other agent deployment uses its URL or token.
 - New model-facing tools must not accept `agentId`, `tenantId`, `workspaceId`, a
@@ -269,6 +327,11 @@ identity record and startup assertion without adding tenant routing.
   provider delivery are prohibited.
 - Working and watched repository authority remains independent from database
   access and preserves existing read/write boundaries.
+- Dynamic capability visibility never replaces authorization inside the tool or
+  service that performs the operation.
+- Provider delivery requires verified target scope, idempotency, and budgets;
+  publication additionally requires a prepared checked diff and explicit human
+  approval on every call.
 
 ## Operational Contract
 
