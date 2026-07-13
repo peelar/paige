@@ -234,7 +234,9 @@ second workflow engine. Its durable record is split by responsibility:
 - `watch_effective_revisions` owns immutable approved policy copies so admitted
   work stays bound to the revision it started with;
 - `watch_lifecycle_events` owns append-only creation, approval, pause, resume,
-  expiry, and deletion audit.
+  expiry, and deletion audit;
+- `watch_observation_claims` owns the minimal content-free idempotency state for
+  one effective revision, provider resource, and provider event occurrence.
 
 Deletion removes proposal and effective policy content but retains the watch
 identity and lifecycle audit tombstone. Natural-language goal edits and
@@ -268,7 +270,14 @@ admission and emits a provider-neutral envelope with the watch revision,
 channel, actor, occurrence, thread, permalink, structured provenance, and
 ephemeral text. Slack-specific payload fields do not cross that boundary. Bot
 and self-authored messages, edits, deletes, and unsupported subtypes are
-discarded even earlier. Accepted mentions create a separate
+discarded even earlier. Each normalized occurrence is then claimed by a
+deterministic workspace, effective-revision, provider-resource, and provider-
+event key before later processing. The first concurrent claimant wins and
+retries receive the durable existing result across process restarts. The row
+stores only routing identity, state, timestamps, an attempt number, and a
+bounded failure code: never raw text, prompts, secrets, permalinks, or actor
+data. A failed attempt can resume only through an explicit compare-and-set
+transition, capped at three attempts. Accepted mentions create a separate
 `slack_thread_presence` record and Chat SDK subscription for that thread. The
 record preserves the Slack workspace, channel, root timestamp, continuation
 token, inviter, activity, status, and expiry without becoming a docs signal.

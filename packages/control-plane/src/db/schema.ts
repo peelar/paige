@@ -191,6 +191,46 @@ export const watchLifecycleEvents = sqliteTable(
   ],
 );
 
+export const watchObservationClaims = sqliteTable(
+  "watch_observation_claims",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    watchId: text("watch_id")
+      .notNull()
+      .references(() => policyBoundWatches.id, { onDelete: "cascade" }),
+    effectiveRevisionId: text("effective_revision_id")
+      .notNull()
+      .references(() => watchEffectiveRevisions.id, { onDelete: "restrict" }),
+    provider: text("provider").notNull(),
+    resourceType: text("resource_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    status: text("status").notNull(),
+    attempt: integer("attempt").notNull().default(1),
+    failureCode: text("failure_code"),
+    claimedAt: text("claimed_at").notNull(),
+    failedAt: text("failed_at"),
+    completedAt: text("completed_at"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("watch_observation_claims_occurrence_idx").on(
+      table.workspaceId,
+      table.effectiveRevisionId,
+      table.provider,
+      table.resourceType,
+      table.resourceId,
+      table.providerEventId,
+    ),
+    index("watch_observation_claims_status_idx").on(
+      table.workspaceId,
+      table.status,
+      table.updatedAt,
+    ),
+  ],
+);
+
 export const connectorDeliveryVerifications = sqliteTable(
   "connector_delivery_verifications",
   {
@@ -883,6 +923,7 @@ export const schema = {
   slackThreadPresences,
   watchEffectiveRevisions,
   watchLifecycleEvents,
+  watchObservationClaims,
   workspaceMemoryEvents,
   workspaceMemoryRecords,
   workspaceMemorySources,

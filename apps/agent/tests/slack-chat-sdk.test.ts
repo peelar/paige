@@ -6,6 +6,7 @@ import type { Message, Thread, WebhookOptions } from "chat";
 import type {
   EphemeralWatchObservation,
   WatchEventAdmission,
+  WatchObservationClaimResult,
 } from "@docs-agent/control-plane/agent";
 
 import {
@@ -17,6 +18,7 @@ import {
 } from "../agent/lib/slack-chat-turn";
 import {
   SubscriptionFilteredSlackAdapter,
+  type ClaimNormalizedWatchObservationInput,
   type SlackWatchEventScope,
 } from "../agent/lib/subscription-filtered-slack-adapter";
 import type { SlackWatchObservationInput } from "../agent/lib/slack-watch-observation";
@@ -38,6 +40,9 @@ class TestSlackAdapter extends SubscriptionFilteredSlackAdapter {
     normalizeWatchEvent?: (
       input: SlackWatchObservationInput,
     ) => EphemeralWatchObservation | Promise<EphemeralWatchObservation>;
+    claimWatchObservation?: (
+      input: ClaimNormalizedWatchObservationInput,
+    ) => Promise<WatchObservationClaimResult>;
   } = {}) {
     super({ botToken: "xoxb-test", webhookVerifier: () => true }, options);
   }
@@ -167,11 +172,17 @@ assert.deepEqual(
 );
 
 const normalizedInputs: SlackWatchObservationInput[] = [];
+const claimedInputs: ClaimNormalizedWatchObservationInput[] = [];
+const normalizedObservation = {} as EphemeralWatchObservation;
 const normalizingWatchAdapter = new TestSlackAdapter({
   admitWatchEvent: async () => [{} as WatchEventAdmission],
   normalizeWatchEvent: async (input) => {
     normalizedInputs.push(input);
-    return {} as EphemeralWatchObservation;
+    return normalizedObservation;
+  },
+  claimWatchObservation: async (input) => {
+    claimedInputs.push(input);
+    return {} as WatchObservationClaimResult;
   },
 });
 await normalizingWatchAdapter.emit(event({ text: "normalize after admission" }));
@@ -182,6 +193,9 @@ assert.equal(
   "https://example.slack.com/archives/C123/p100000",
 );
 assert.equal(normalizedInputs[0]?.isSelf, false);
+assert.equal(claimedInputs.length, 1);
+assert.equal(claimedInputs[0]?.admission, normalizedInputs[0]?.admission);
+assert.equal(claimedInputs[0]?.observation, normalizedObservation);
 
 await watchFiltered.emit(event({ type: "app_mention", text: "@Paige direct path" }));
 await watchFiltered.emit(event({ channel: "D123", channel_type: "im", text: "DM path" }));

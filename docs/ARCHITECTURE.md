@@ -219,6 +219,14 @@ mentions, and unsupported subtypes never become watch observations. The
 envelope is candidate context only and does not create a signal, memory,
 conversation, response, or Eve turn.
 
+Before any later processing, the adapter claims each normalized occurrence in
+`watch_observation_claims`. Its deterministic identity binds the agent
+workspace, immutable effective revision, provider resource, and provider event
+id. Only the first claimant may continue; retries and concurrent delivery read
+the existing status. The checkpoint contains no message content, prompt,
+secret, permalink, or actor. Failed processing remains failed until an explicit
+compare-and-set retry advances the bounded attempt counter.
+
 ## Integration Boundaries
 
 - Database: control-plane services hide Drizzle/libSQL details from apps and

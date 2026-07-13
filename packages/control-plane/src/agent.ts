@@ -18,6 +18,7 @@ export * from "./repository-validation.ts";
 export { docsAgentDatabaseLocation } from "./db/client.ts";
 export * from "./watch-event-admission.ts";
 export * from "./watch-observation.ts";
+export * from "./watch-observation-claims.ts";
 export {
   WATCH_CAPABILITY_REGISTRY_VERSION,
   type WatchCapabilityRegistry,
