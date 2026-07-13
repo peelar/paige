@@ -10,7 +10,7 @@
   "scripts": {
     "build": "pnpm --filter @docs-agent/control-plane db:migrate:deployment && eve build",
     "check": "pnpm typecheck && pnpm test",
-    "dev": "pnpm --filter @docs-agent/control-plane db:migrate && eve dev",
+    "dev": "pnpm --filter @docs-agent/control-plane db:migrate && PORTLESS_PORT=1355 PORTLESS_HTTPS=0 portless agent.paige eve dev",
     "eval": "eve eval",
     "start": "pnpm --filter @docs-agent/control-plane db:migrate && eve start",
     "test:run-index:integration": "tsx scripts/check-product-run-integration.ts",

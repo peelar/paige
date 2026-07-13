@@ -10,7 +10,7 @@ import {
 } from "../src/local-state-pruning.ts";
 
 assert.equal(isPaigeDevCommand("node /usr/local/bin/pnpm dev"), true);
-assert.equal(isPaigeDevCommand("turbo run dev --filter=docs-agent"), true);
+assert.equal(isPaigeDevCommand("turbo run dev"), true);
 assert.equal(isPaigeDevCommand("pnpm prune:local"), false);
 
 const pruneRoot = await mkdtemp(join(tmpdir(), "paige-prune-check-"));

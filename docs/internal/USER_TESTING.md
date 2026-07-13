@@ -182,7 +182,7 @@ Run the local database and Eve health smoke with:
 pnpm status:smoke
 ```
 
-The smoke starts `pnpm dev --no-ui`, waits for `GET /eve/v1/health`, opens the
+The smoke starts `pnpm dev:agent --no-ui`, waits for `GET /eve/v1/health`, opens the
 real Status page, and asserts that the database is `verified` and Eve is
 `reachable`. It does not use readiness fixtures.
 

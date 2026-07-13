@@ -5,13 +5,13 @@ const repositoryRoot = resolve(import.meta.dirname, "..");
 const processes = [];
 
 try {
-  const agent = start("agent", ["dev", "--no-ui"]);
-  await waitForUrl("http://127.0.0.1:2000/eve/v1/health", agent);
+  const agent = start("agent", ["dev:agent", "--no-ui"]);
+  await waitForUrl("http://agent.paige.localhost:1355/eve/v1/health", agent);
 
-  const web = start("web", ["--filter", "@docs-agent/web", "start", "--port", "3100"]);
-  await waitForUrl("http://127.0.0.1:3100/status", web);
+  const web = start("web", ["dev:web"]);
+  await waitForUrl("http://paige.localhost:1355/status", web);
 
-  const response = await fetch("http://127.0.0.1:3100/status");
+  const response = await fetch("http://paige.localhost:1355/status");
   if (!response.ok) throw new Error(`Status page returned ${response.status}.`);
   const html = await response.text();
 
@@ -29,7 +29,6 @@ function start(label, args) {
     detached: true,
     env: {
       ...process.env,
-      DOCS_AGENT_EVE_URL: "http://127.0.0.1:2000",
       DOCS_AGENT_OPERATOR_ACCESS: "local",
       DOCS_AGENT_READINESS_TEST_SCENARIOS: "",
       FORCE_COLOR: "0",

@@ -54,11 +54,17 @@ pnpm install
 pnpm --filter @docs-agent/web exec playwright install chromium
 pnpm check
 pnpm eval --list
-pnpm dev --no-ui
+pnpm dev
 ```
 
-`pnpm dev --no-ui` starts the Eve app. Run `pnpm dev:web` in another terminal
-for the operator app.
+`pnpm dev` starts the Eve app and operator app together. Use
+`pnpm dev:agent --no-ui` or `pnpm dev:web` to run one app by itself.
+Portless keeps their local addresses stable while assigning internal ports:
+
+| App | Local address |
+| --- | --- |
+| Operator UI | <http://paige.localhost:1355> |
+| Eve agent | <http://agent.paige.localhost:1355> |
 
 ## Guides
 

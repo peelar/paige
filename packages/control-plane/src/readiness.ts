@@ -459,5 +459,5 @@ const probeFailureAction: Record<ReadinessItemId, string> = {
   "github-writeback": "Check the connector, app installation, repository grant, and permissions.",
   slack: "Check the Slack connector installation, then retry the provider check.",
   linear: "Check the Linear connector installation, then retry the provider check.",
-  "eve-runtime": "Start Paige with pnpm dev --no-ui and retry the health check.",
+  "eve-runtime": "Start Paige with pnpm dev:agent --no-ui and retry the health check.",
 };

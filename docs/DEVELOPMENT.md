@@ -18,7 +18,12 @@ The skill ships in `.agents/skills/setup`. To install it before cloning Paige:
 npx skills add peelar/docs-maintainer-agent --skill setup --agent codex --yes
 ```
 
-Start Paige with `pnpm dev`. The optional operator UI is `pnpm dev:web`.
+Start Paige's agent and operator UI together with `pnpm dev`. Use
+`pnpm dev:agent --no-ui` or `pnpm dev:web` to run one app by itself.
+The shared Portless proxy exposes the operator UI at
+<http://paige.localhost:1355> and Eve at
+<http://agent.paige.localhost:1355>, regardless of their assigned internal
+ports.
 Reset every local database, credential, connector link, and Eve runtime artifact
 with `pnpm prune:local`; it stops Paige dev processes but never discards source
 changes.

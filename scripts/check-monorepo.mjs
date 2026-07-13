@@ -7,6 +7,10 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const agentRoot = join(repositoryRoot, "apps", "agent");
 const packageJson = JSON.parse(readFileSync(join(repositoryRoot, "package.json"), "utf8"));
+const agentPackageJson = JSON.parse(readFileSync(join(agentRoot, "package.json"), "utf8"));
+const webPackageJson = JSON.parse(
+  readFileSync(join(repositoryRoot, "apps", "web", "package.json"), "utf8"),
+);
 const turboJson = JSON.parse(readFileSync(join(repositoryRoot, "turbo.json"), "utf8"));
 
 const workspaceSetupSkillPath = join(
@@ -70,6 +74,37 @@ for (const script of ["dev", "build", "typecheck", "test", "check"]) {
   if (!packageJson.scripts?.[script]?.includes("turbo run")) {
     throw new Error(`Root script ${script} must run through Turborepo.`);
   }
+}
+
+if (packageJson.scripts?.dev !== "pnpm dev:proxy && turbo run dev") {
+  throw new Error("Root pnpm dev must start Portless and every workspace development task.");
+}
+if (packageJson.scripts?.["dev:proxy"] !== "portless proxy start --no-tls --port 1355") {
+  throw new Error("Local development must use the shared Portless proxy on port 1355.");
+}
+if (
+  !packageJson.scripts?.["dev:agent"]?.includes("pnpm dev:proxy") ||
+  !packageJson.scripts?.["dev:agent"]?.includes("--filter=docs-agent")
+) {
+  throw new Error("The focused agent development command must filter to docs-agent.");
+}
+if (
+  !packageJson.scripts?.["dev:web"]?.includes("pnpm dev:proxy") ||
+  !packageJson.scripts?.["dev:web"]?.includes("--filter=@docs-agent/web")
+) {
+  throw new Error("The focused web development command must filter to @docs-agent/web.");
+}
+if (packageJson.devDependencies?.portless !== "0.15.1") {
+  throw new Error("The workspace must pin the Portless development proxy version.");
+}
+if (!agentPackageJson.scripts?.dev?.includes("portless agent.paige eve dev")) {
+  throw new Error("The Eve development server must use the agent.paige Portless route.");
+}
+if (
+  !webPackageJson.scripts?.dev?.includes("portless paige next dev") ||
+  !webPackageJson.scripts?.dev?.includes("portless get agent.paige")
+) {
+  throw new Error("The operator app must use Portless and address Eve through its named route.");
 }
 
 const agentBuildTask = turboJson.tasks?.["docs-agent#build"];
