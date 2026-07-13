@@ -345,7 +345,14 @@ function assertActionAllowed(
 }
 
 export function resolveRepositoryPath(repository: WorkingDocumentationRepository, path: string): string {
-  if (path.trim() === "" || path.startsWith("/") || path.includes("\\") || /[\0\r\n]/.test(path)) {
+  if (
+    path.trim() === "" ||
+    path.startsWith("/") ||
+    path.includes("\\") ||
+    path.includes("\0") ||
+    path.includes("\r") ||
+    path.includes("\n")
+  ) {
     throw new RepositoryPolicyError(`Use a repository-relative path: ${path}`);
   }
 

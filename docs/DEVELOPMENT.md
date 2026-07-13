@@ -28,7 +28,25 @@ Reset every local database, credential, connector link, and Eve runtime artifact
 with `pnpm prune:local`; it stops Paige dev processes but never discards source
 changes.
 
-Before handing over code changes, run `pnpm check`. Install Playwright's browser
-once if prompted: `pnpm --filter @docs-agent/web exec playwright install chromium`.
+Use `pnpm check` while editing. It lints the repository, then typechecks and
+runs deterministic Vitest suites only for affected packages. Turborepo caches
+unchanged work, and pnpm uses the Node 24.18.0 runtime declared in
+`devEngines` even when the ambient shell uses another Node version.
+
+Before handing over code changes, run `pnpm check:full`. That command owns the
+complete gate: lint, every typecheck and deterministic test, production builds,
+the Playwright browser suite, workspace discovery and migration smoke, and the
+local status smoke. Install Playwright's browser once if prompted:
+`pnpm --filter @docs-agent/web exec playwright install chromium`.
+
+Useful focused commands:
+
+```sh
+pnpm test
+pnpm --filter docs-agent test:watch
+pnpm --filter @docs-agent/control-plane test:watch
+pnpm test:e2e
+pnpm lint:fix
+```
 
 See [Deployment](./DEPLOYMENT.md) for production-specific setup.

@@ -10,9 +10,10 @@ package docs are unavailable, use <https://eve.dev/docs> as a fallback.
 
 - Do not add fail-open stubs or silent fallbacks that make broken required
   integrations look successful.
-- Before handing work over, run the repo validation command (`pnpm check`). Keep
-  all required validators wired into that command instead of relying on separate
-  remembered steps.
+- Use `pnpm check` for the fast affected-package feedback loop. Before handing
+  work over, run the complete repo validation command (`pnpm check:full`). Keep
+  all required handoff validators wired into that command instead of relying on
+  separate remembered steps.
 - Once a scope of work is complete, propose a commit message following conventional commit message conventions. End with "Commit? [Y/n]".
 - We'll be often using peelar/saleor-docs as the working documentation repository. It is our dogfooding project. Avoid overfitting to this repository. It's only an example we need to generalize from.
 

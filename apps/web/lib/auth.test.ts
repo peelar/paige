@@ -15,9 +15,14 @@ export const testAuthDatabase: Record<string, Array<Record<string, unknown>>> = 
   verification: [],
 };
 
+const testBaseURL = process.env.DOCS_AGENT_TEST_BASE_URL;
+if (!testBaseURL) {
+  throw new Error("DOCS_AGENT_TEST_BASE_URL is required in operator auth test mode.");
+}
+
 const testAuthOptions = buildGitHubAuthOptions({
   secret: "test-only-better-auth-secret-32-characters",
-  baseURL: "http://127.0.0.1:3100",
+  baseURL: testBaseURL,
   clientId: "test-github-client-id",
   clientSecret: "test-github-client-secret",
   approvedLogins: parseApprovedGitHubLogins("testoperator"),
@@ -65,7 +70,7 @@ export async function createTestOperatorSession(input: {
     headers.append("set-cookie", attributes.join("; "));
   }
   const cacheResponse = await testOperatorAuth.handler(new Request(
-    "http://127.0.0.1:3100/api/auth/get-session",
+    `${testBaseURL}/api/auth/get-session`,
     { headers: login.headers },
   ));
   for (const cookie of cacheResponse.headers.getSetCookie()) {

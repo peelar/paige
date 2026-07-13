@@ -564,8 +564,8 @@ waiting-for-input, failed, completed, and expired records.
 Run `pnpm --filter docs-agent test:run-index:integration` to start a real local
 Eve fixture session, record its stable run reference, project its lifecycle,
 and prove the product detail links to—but does not copy—the durable stream.
-`pnpm check` covers deterministic index behavior and desktop/mobile browser
-states.
+`pnpm check` covers deterministic index behavior. `pnpm check:full` also covers
+the representative desktop and mobile browser states.
 
 ## Approval Inbox
 
@@ -686,10 +686,10 @@ without duplicate item events.
 Use `docs_follow_up` in `schedule-status` mode to inspect completed counts and
 the last failure. A processor failure must be recorded and then fail the task
 visibly. Scheduled work must never call `publish_working_repository_pr`; later
-publication still requires a user-driven approval-gated session. The executable
-`check-docs-follow-ups.ts` covers persistence, earliest due projection,
-bounded/idempotent processing, signal updates, replay, explicit UTC, and durable
-failure information through `pnpm check`.
+publication still requires a user-driven approval-gated session. The Vitest
+case `packages/control-plane/tests/docs-follow-ups.test.ts` covers persistence,
+earliest due projection, bounded/idempotent processing, signal updates, replay,
+explicit UTC, and durable failure information through `pnpm check`.
 
 ## Substantial Owned Work
 
@@ -720,7 +720,7 @@ At draft readiness, Paige should record an approval-request milestone but must
 not call `publish_working_repository_pr` until approval is explicit. The
 `owned-docs-work.eval.ts` cases cover inline work, uninterrupted substantial
 work, park/resume, correction, quiet routine activity, and publication waiting.
-`check-owned-docs-work.ts` runs the deterministic idempotency, concurrency,
+`packages/control-plane/tests/owned-docs-work.test.ts` runs the deterministic idempotency, concurrency,
 milestone, artifact, session, correction, pause/resume, approval, completion,
 and abandonment contract through `pnpm check`.
 
@@ -740,7 +740,7 @@ followed after the tradeoff is understood; and missing public-behavior evidence
 should choose `wait-for-evidence` and produce no draft. Substantial choices must
 call `content_plan`; focused patches must not.
 
-The executable `check-editorial-recommendation.ts` keeps the typed handoff and
+The Vitest case `apps/agent/tests/editorial-recommendation.test.ts` keeps the typed handoff and
 safety behavior in `pnpm check`. It covers every supported intervention,
 duplicate-page challenge, focused-patch authoring without a plan, consolidation
 handoff, reaffirmed maintainer direction, recommendation revisions, and a
@@ -765,10 +765,10 @@ existing page should work without creating or displaying a plan.
 Repeat with missing evidence or an unresolved consequential product decision.
 The plan should return `continuesToDraft: false`; authoring must stop before any
 sandbox mutation. New files and other clearly substantial operations must also
-fail visibly when no matching ready plan exists. The executable
-`check-content-planning.ts` covers the small-patch skip, ready-plan continuation
-and revision, substantial-work enforcement, and blocker pause through
-`pnpm check`.
+fail visibly when no matching ready plan exists. The Vitest case
+`apps/agent/tests/content-planning.test.ts` covers the small-patch skip,
+ready-plan continuation and revision, substantial-work enforcement, and
+blocker pause through `pnpm check`.
 
 ## Multi-file Authoring Workspace
 
@@ -793,7 +793,7 @@ always approval-gated. Approved writeback supports text and binary additions or
 modifications, deletions, and moves/renames as one tree; an existing matching
 branch and PR are returned rather than published twice.
 
-The executable `check-authoring-workspace.ts` scenario creates a complete page,
+The Vitest case `apps/agent/tests/authoring-workspace.test.ts` creates a complete page,
 updates navigation and related content, adds a binary asset, copies, moves, and
 deletes files, inspects the draft across calls, runs repository build and diff
 checks, proves stale-base and traversal failures, verifies publish-tree entries,
@@ -804,7 +804,7 @@ and abandons back to a clean checkout. It runs through `pnpm check`.
 Issue #32 moved universal rules into `instructions/principles.md` and
 situational repository and provider-intake procedures into load-on-demand
 skills. `identity.md`, dynamic setup, and dynamic workspace-memory instructions
-remain unchanged. `check-instruction-boundaries.ts` keeps the monolith absent,
+remain unchanged. `apps/agent/tests/instruction-boundaries.test.ts` keeps the monolith absent,
 the identity byte-for-byte stable, the standing context below 220 words, and
 the three workflow skills present through `pnpm check`.
 

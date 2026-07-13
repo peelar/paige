@@ -8,7 +8,6 @@ import {
   behaviorSettingsSchema,
   behaviorSettingsStateSchema,
   DEFAULT_BEHAVIOR_SETTINGS,
-  participationSettingsSchema,
   saveBehaviorSettingsInputSchema,
   type BehaviorSettings,
   type BehaviorSettingsState,

@@ -1,4 +1,3 @@
-import type { OperatorMemoryDetail } from "@docs-agent/control-plane";
 import Link from "next/link";
 
 import { MemoryLifecycleActions } from "@/components/memory-lifecycle-actions";

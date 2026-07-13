@@ -5,6 +5,7 @@ node_modules
 .workflow-data
 .docs-agent
 .next
+apps/web/next-env.d.ts
 .output
 .nitro
 .turbo

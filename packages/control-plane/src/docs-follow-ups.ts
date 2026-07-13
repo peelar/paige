@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, lte } from "drizzle-orm";
 import { z } from "zod";
 
-import { withDocsAgentDatabase, type DocsAgentDatabase } from "./db/client.ts";
+import { withDocsAgentDatabase } from "./db/client.ts";
 import { docsFollowUpRuns, docsFollowUps, docsSignalEvents, docsSignals } from "./db/schema.ts";
 import { DEFAULT_WORKSPACE_ID } from "./setup-state.ts";
 

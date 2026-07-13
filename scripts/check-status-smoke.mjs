@@ -1,17 +1,26 @@
 import { spawn } from "node:child_process";
-import { resolve } from "node:path";
+import { mkdtemp, rm } from "node:fs/promises";
+import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dirname, "..");
 const processes = [];
+const port = await findAvailablePort();
+const portlessStateDirectory = await mkdtemp(
+  join(tmpdir(), "paige-status-smoke-portless-"),
+);
+const agentUrl = `http://agent.paige.localhost:${port}`;
+const webUrl = `http://paige.localhost:${port}`;
 
 try {
   const agent = start("agent", ["dev:agent", "--no-ui"]);
-  await waitForUrl("http://agent.paige.localhost:1355/eve/v1/health", agent);
+  await waitForUrl(`${agentUrl}/eve/v1/health`, agent);
 
   const web = start("web", ["dev:web"]);
-  await waitForUrl("http://paige.localhost:1355/status", web);
+  await waitForUrl(`${webUrl}/status`, web);
 
-  const response = await fetch("http://paige.localhost:1355/status");
+  const response = await fetch(`${webUrl}/status`);
   if (!response.ok) throw new Error(`Status page returned ${response.status}.`);
   const html = await response.text();
 
@@ -21,6 +30,11 @@ try {
   console.log("Local status smoke checks passed.");
 } finally {
   await Promise.all(processes.map(stop));
+  try {
+    await stopProxy();
+  } finally {
+    await rm(portlessStateDirectory, { recursive: true, force: true });
+  }
 }
 
 function start(label, args) {
@@ -33,6 +47,9 @@ function start(label, args) {
       DOCS_AGENT_READINESS_TEST_SCENARIOS: "",
       FORCE_COLOR: "0",
       NO_COLOR: "1",
+      PORTLESS_HTTPS: "0",
+      PORTLESS_PORT: String(port),
+      PORTLESS_STATE_DIR: portlessStateDirectory,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -46,6 +63,41 @@ function start(label, args) {
   child.stderr.on("data", append);
 
   return record;
+}
+
+async function stopProxy() {
+  const child = spawn("pnpm", ["exec", "portless", "proxy", "stop"], {
+    cwd: repositoryRoot,
+    env: {
+      ...process.env,
+      PORTLESS_STATE_DIR: portlessStateDirectory,
+    },
+    stdio: "ignore",
+  });
+  const exitCode = await new Promise((resolveExit, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code) => resolveExit(code ?? 1));
+  });
+  if (exitCode !== 0) throw new Error("Could not stop the isolated Portless proxy.");
+}
+
+function findAvailablePort() {
+  return new Promise((resolvePort, reject) => {
+    const server = createServer();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (address === null || typeof address === "string") {
+        server.close();
+        reject(new Error("Could not allocate a local status smoke port."));
+        return;
+      }
+      server.close((error) => {
+        if (error) reject(error);
+        else resolvePort(address.port);
+      });
+    });
+  });
 }
 
 async function waitForUrl(url, processRecord) {

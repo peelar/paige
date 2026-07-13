@@ -4,7 +4,7 @@ import { getVercelOidcToken } from "@vercel/oidc";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { withDocsAgentDatabase, type DocsAgentDatabase } from "./db/client.ts";
+import { withDocsAgentDatabase } from "./db/client.ts";
 import { approvalDecisions, approvalRequests, docsSignals } from "./db/schema.ts";
 import { getOperatorSignalDetail, redactMetadata } from "./signal-detail.ts";
 import { createProductRun } from "./product-runs.ts";
@@ -198,7 +198,6 @@ export async function failApprovalsForRunReference(input: { sessionId: string; r
     .where(and(eq(approvalRequests.workspaceId, DEFAULT_WORKSPACE_ID), eq(approvalRequests.sessionId, parsed.sessionId), eq(approvalRequests.runId, parsed.runId), eq(approvalRequests.status, "pending"))));
 }
 
-type Executor = Pick<DocsAgentDatabase, "select" | "insert" | "update">;
 async function getApprovalListItem(id: string, now = new Date().toISOString()) { const request = await requireRequest(id); const signalSummary = request.signalId === null ? null : (await withDocsAgentDatabase(async (db) => (await db.select({ summary: docsSignals.sourceSummary }).from(docsSignals).where(eq(docsSignals.id, request.signalId!)).limit(1))[0]?.summary ?? null)); return projectList(request, signalSummary, now); }
 async function requireRequest(id: string) { return withDocsAgentDatabase(async (db) => { const rows = await db.select().from(approvalRequests).where(and(eq(approvalRequests.workspaceId, DEFAULT_WORKSPACE_ID), eq(approvalRequests.id, id))).limit(1); if (rows[0] === undefined) throw new ApprovalInboxError("not-found", `Approval request not found: ${id}`); return rows[0]; }); }
 function projectList(request: typeof approvalRequests.$inferSelect, signalSummary: string | null, now: string) { return approvalListItemSchema.parse({ id: request.id, requestId: request.requestId, productRunId: request.productRunId, sessionId: request.sessionId, runId: request.runId, status: request.status, displayState: request.status === "pending" && request.expiresAt <= now ? "expired" : request.status, toolName: request.toolName, action: request.action, destination: request.destination, requester: request.requester, signal: request.signalId === null ? null : { id: request.signalId, summary: signalSummary ?? "Related signal unavailable" }, requestedAt: request.requestedAt, expiresAt: request.expiresAt, decidedAt: request.decidedAt, updatedAt: request.updatedAt }); }

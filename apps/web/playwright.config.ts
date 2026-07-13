@@ -1,7 +1,10 @@
 import { defineConfig } from "@playwright/test";
 
-const port = 3100;
-const authState = "/tmp/docs-agent-playwright-auth.json";
+const port = Number(process.env.PLAYWRIGHT_PORT);
+if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+  throw new Error("Run Playwright through pnpm test:e2e so it can reserve an available port.");
+}
+const authState = `/tmp/docs-agent-playwright-auth-${port}.json`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -18,6 +21,7 @@ export default defineConfig({
     command: `pnpm start --port ${port}`,
     env: {
       DOCS_AGENT_AUTH_TEST_MODE: "1",
+      DOCS_AGENT_TEST_BASE_URL: `http://127.0.0.1:${port}`,
       DOCS_AGENT_OPERATOR_ACCESS: "test",
       DOCS_AGENT_READINESS_TEST_SCENARIOS: "1",
       DOCS_AGENT_MEMORY_TEST_SCENARIOS: "1",
@@ -49,6 +53,7 @@ export default defineConfig({
       name: "mobile",
       dependencies: ["auth-setup"],
       testIgnore: /auth\.setup\.ts/,
+      testMatch: /shell\.spec\.ts/,
       use: {
         storageState: authState,
         viewport: { width: 390, height: 844 },

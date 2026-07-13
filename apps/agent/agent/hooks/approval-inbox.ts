@@ -1,6 +1,5 @@
 import { failApprovalsForRunReference, markApprovalAnsweredByCall, readPersistedSetupStatus, recordApprovalBatch } from "@docs-agent/control-plane/agent";
 import { defineHook, type HookContext } from "eve/hooks";
-import type { InputRequestedStreamEvent } from "eve/client";
 
 export default defineHook({
   events: {

@@ -17,7 +17,8 @@
     "test:run-index:integration": "tsx scripts/check-product-run-integration.ts",
     "test:approval-integration": "tsx scripts/check-approval-integration.ts",
     "test:validation-reporter-integration": "tsx scripts/check-validation-reporter-integration.ts",
-    "test": "tsx scripts/check-instruction-boundaries.ts && tsx scripts/check-repository-materialization.ts && tsx scripts/check-repository-workflow.ts && tsx scripts/check-setup-state-db.ts && tsx scripts/check-docs-profile.ts && tsx scripts/check-editorial-recommendation.ts && tsx scripts/check-authoring-workspace.ts && tsx scripts/check-content-planning.ts && tsx scripts/check-docs-signal-queue.ts && tsx scripts/check-docs-signal-lifecycle.ts && tsx scripts/check-docs-signal-capture.ts && tsx scripts/check-docs-signal-intake.ts && tsx scripts/check-docs-impact-decision.ts && tsx scripts/check-workflow-model.ts && tsx scripts/check-github-writeback.ts && tsx scripts/check-slack-chat-sdk.ts && tsx scripts/check-slack-context-retrieval.ts && tsx scripts/check-slack-docs-signal.ts && tsx scripts/check-linear-docs-signal.ts && tsx scripts/check-docs-signal-patch-handoff.ts && tsx scripts/check-docs-signal-workflow-safety.ts && tsx scripts/check-workspace-memory.ts && tsx scripts/check-control-plane-reporter.ts",
+    "test": "vitest run --dir tests --pool=forks --maxWorkers=4 --testTimeout=30000",
+    "test:watch": "vitest --dir tests --pool=forks --maxWorkers=4 --testTimeout=30000",
     "typecheck": "tsc"
   },
   "dependencies": {

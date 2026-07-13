@@ -6,27 +6,41 @@
   "scripts": {
     "brand:check": "node scripts/check-brand-name.mjs",
     "build": "turbo run build",
-    "check": "pnpm validation-graph:check && turbo run check && pnpm brand:check && pnpm monorepo:smoke && pnpm status:smoke",
+    "check": "pnpm validation-graph:check && pnpm lint && turbo run typecheck test --affected && pnpm brand:check && pnpm workspace:check",
+    "check:full": "pnpm validation-graph:check && pnpm lint && turbo run typecheck test build test:e2e && pnpm brand:check && pnpm monorepo:smoke && pnpm status:smoke",
     "db:generate": "pnpm --filter @docs-agent/control-plane db:generate",
     "db:migrate": "pnpm --filter @docs-agent/control-plane db:migrate",
-    "dev": "PORTLESS_PORT=1355 PORTLESS_HTTPS=0 portless",
-    "dev:agent": "PORTLESS_PORT=1355 PORTLESS_HTTPS=0 pnpm --filter docs-agent exec portless run --name agent.paige pnpm dev",
-    "dev:web": "PORTLESS_PORT=1355 PORTLESS_HTTPS=0 pnpm --filter @docs-agent/web exec portless run --name paige pnpm dev:portless",
+    "dev": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} portless",
+    "dev:agent": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} pnpm --filter docs-agent exec portless run --name agent.paige pnpm dev",
+    "dev:web": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} pnpm --filter @docs-agent/web exec portless run --name paige pnpm dev:portless",
     "eval": "pnpm --filter docs-agent eval",
+    "lint": "oxlint . --deny-warnings",
+    "lint:fix": "oxlint . --fix",
     "monorepo:smoke": "node scripts/check-monorepo.mjs",
     "paige": "pnpm --filter @docs-agent/control-plane paige",
     "prune:local": "pnpm --filter @docs-agent/control-plane prune:local",
     "status:smoke": "node scripts/check-status-smoke.mjs",
     "start": "pnpm --filter docs-agent start",
     "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
     "typecheck": "turbo run typecheck",
-    "validation-graph:check": "node scripts/check-validation-graph.mjs"
+    "validation-graph:check": "node scripts/check-validation-graph.mjs",
+    "workspace:check": "node scripts/check-monorepo.mjs --structure-only"
   },
   "devDependencies": {
+    "oxlint": "1.73.0",
     "portless": "0.15.1",
-    "turbo": "2.10.5"
+    "turbo": "2.10.5",
+    "vitest": "4.1.10"
   },
   "engines": {
     "node": "24.18.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.18.0",
+      "onFail": "download"
+    }
   }
 }

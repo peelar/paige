@@ -253,7 +253,7 @@ export async function prepareDocsSignalPatch(
 
 export function assertSignalCanEnterPatchHandoff(
   signal: DocsSignalDetail,
-  mode: "prepare-patch" | "no-patch",
+  _mode: "prepare-patch" | "no-patch",
 ): void {
   if (signal.status === "closed-not-docs-relevant") {
     throw new SignalPatchHandoffError("Refusing patch handoff for a closed not-docs-relevant signal.");

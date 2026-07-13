@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "check": "pnpm typecheck && pnpm test",
+    "check": "pnpm typecheck",
     "dev": "DOCS_AGENT_OPERATOR_ACCESS=local next dev --hostname 127.0.0.1",
     "dev:portless": "DOCS_AGENT_EVE_URL=$(portless get agent.paige) pnpm dev",
     "start": "next start --hostname 127.0.0.1",
-    "test": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "test:e2e": "node scripts/run-playwright.mjs",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@docs-agent/control-plane": "workspace:*",

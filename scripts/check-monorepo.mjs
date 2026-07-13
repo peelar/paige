@@ -52,6 +52,8 @@ const typescriptSourceRoots = [
   join(repositoryRoot, "apps", "agent", "agent"),
   join(repositoryRoot, "apps", "agent", "evals"),
   join(repositoryRoot, "apps", "agent", "scripts"),
+  join(repositoryRoot, "apps", "agent", "tests"),
+  join(controlPlaneRoot, "tests"),
 ];
 
 for (const filePath of walkFiles(controlPlaneRoot)) {
@@ -77,7 +79,10 @@ for (const script of ["build", "typecheck", "test", "check"]) {
   }
 }
 
-if (packageJson.scripts?.dev !== "PORTLESS_PORT=1355 PORTLESS_HTTPS=0 portless") {
+if (
+  packageJson.scripts?.dev !==
+  "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} portless"
+) {
   throw new Error("Root pnpm dev must start every app through the shared Portless proxy.");
 }
 if (
@@ -135,6 +140,9 @@ if (!agentBuildTask?.outputs?.includes(".vercel/output/**")) {
   throw new Error("Agent build must cache its Vercel Build Output API artifacts.");
 }
 
+if (process.argv.includes("--structure-only")) {
+  console.log("Workspace structure checks passed.");
+} else {
 const workspaceList = JSON.parse(
   run("workspace discovery", ["--recursive", "list", "--depth", "-1", "--json"]),
 );
@@ -236,6 +244,7 @@ try {
 }
 
 console.log("Monorepo smoke checks passed.");
+}
 
 function run(label, args, extraEnv = {}) {
   const result = spawnSync("pnpm", args, {

@@ -40,10 +40,11 @@ packages/
 ```
 
 The structural move should preserve current agent behavior and keep the root
-`pnpm check` command authoritative. Shared packages should be introduced from
-real reuse. The first expected boundary is database and control-plane services
-needed by both apps; the monorepo conversion should not extract the whole agent
-into speculative packages.
+`pnpm check` feedback loop and `pnpm check:full` handoff gate authoritative.
+Shared packages should be introduced from real reuse. The first expected
+boundary is database and control-plane services needed by both apps; the
+monorepo conversion should not extract the whole agent into speculative
+packages.
 
 See [ADR-0002](./adr/0002-turborepo-agent-and-web-apps.md).
 

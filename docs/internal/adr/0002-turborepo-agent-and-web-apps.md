@@ -30,7 +30,8 @@ deployable applications:
   need the code.
 
 Root development and validation commands run through Turborepo. `pnpm check`
-remains the complete repository handoff gate.
+is the fast affected-package feedback loop; `pnpm check:full` remains the
+complete repository handoff gate.
 
 The expected first shared boundary is database and control-plane services. The
 web app consumes typed server-side services rather than importing raw agent
