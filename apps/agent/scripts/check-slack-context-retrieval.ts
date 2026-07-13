@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import type { SlackEvent } from "@chat-adapter/slack";
 import { LibSqlChatStateAdapter } from "@docs-agent/control-plane/agent";
+import { migrateDocsAgentDatabase } from "@docs-agent/control-plane/testing";
 
 import {
   redactSlackSearchSecrets,
@@ -13,7 +14,6 @@ import {
   runWithStagedSlackSearchRequest,
   stageSlackSearchRequest,
 } from "../agent/lib/slack-context-retrieval";
-import { migrateDocsAgentDatabase } from "../agent/lib/db/client";
 
 const root = await mkdtemp(join(tmpdir(), "docs-agent-slack-search-"));
 const databasePath = join(root, "search.sqlite");

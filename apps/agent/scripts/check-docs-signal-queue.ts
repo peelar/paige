@@ -11,10 +11,10 @@ import {
   updateDocsSignalLifecycle,
 } from "../agent/lib/docs-signals";
 import {
+  docsSignals,
   migrateDocsAgentDatabase,
   withDocsAgentDatabase,
-} from "../agent/lib/db/client";
-import { docsSignals } from "../agent/lib/db/schema";
+} from "@docs-agent/control-plane/testing";
 
 delete process.env.DOCS_AGENT_DATABASE_URL;
 process.env.VERCEL = "1";

@@ -8,7 +8,9 @@ process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "linear-signals.sql
 delete process.env.VERCEL;
 delete process.env.NODE_ENV;
 
-const { migrateDocsAgentDatabase } = await import("../agent/lib/db/client");
+const { migrateDocsAgentDatabase } = await import(
+  "@docs-agent/control-plane/testing"
+);
 await migrateDocsAgentDatabase();
 
 const { captureLinearDocsSignal } = await import("../agent/lib/linear-docs-signal");

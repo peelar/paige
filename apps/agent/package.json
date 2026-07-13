@@ -22,16 +22,15 @@
   "dependencies": {
     "@chat-adapter/slack": "4.33.0",
     "@docs-agent/control-plane": "workspace:*",
-    "@libsql/client": "^0.17.4",
     "@vercel/connect": "0.3.2",
     "ai": "^7.0.22",
     "chat": "4.33.0",
-    "drizzle-orm": "^0.45.2",
     "eve": "^0.22.5",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "24.x",
+    "drizzle-orm": "^0.45.2",
     "microsandbox": "^0.5.10",
     "tsx": "^4.23.0",
     "typescript": "7.0.2"

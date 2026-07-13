@@ -8,7 +8,7 @@ import { sql } from "drizzle-orm";
 import {
   migrateDocsAgentDatabase,
   withDocsAgentDatabase,
-} from "../agent/lib/db/client";
+} from "@docs-agent/control-plane/testing";
 import { captureLinearDocsSignal } from "../agent/lib/linear-docs-signal";
 import { captureSlackDocsSignal } from "../agent/lib/slack-docs-signal";
 import {

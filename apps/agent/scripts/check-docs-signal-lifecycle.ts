@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { migrateDocsAgentDatabase } from "../agent/lib/db/client";
+import { migrateDocsAgentDatabase } from "@docs-agent/control-plane/testing";
 import {
   assertDocsSignalTransitionAllowed,
   docsSignalStatuses,

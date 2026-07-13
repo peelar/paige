@@ -9,8 +9,8 @@ import {
   migrateDocsAgentDatabase,
   resolveDocsAgentDatabaseConfig,
   withDocsAgentDatabase,
-} from "../agent/lib/db/client";
-import { workspaceSetup } from "../agent/lib/db/schema";
+  workspaceSetup,
+} from "@docs-agent/control-plane/testing";
 
 assert.equal(
   resolveDocsAgentDatabaseConfig({}).localFilePath,

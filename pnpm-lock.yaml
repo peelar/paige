@@ -20,9 +20,6 @@ importers:
       '@docs-agent/control-plane':
         specifier: workspace:*
         version: link:../../packages/control-plane
-      '@libsql/client':
-        specifier: ^0.17.4
-        version: 0.17.4
       '@vercel/connect':
         specifier: 0.3.2
         version: 0.3.2(@chat-adapter/slack@4.33.0(ai@7.0.22(zod@4.4.3))(zod@4.4.3))(ai@7.0.22(zod@4.4.3))(better-auth@1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(eve@0.22.5(@libsql/client@0.17.4)(ai@7.0.22(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10))
@@ -32,9 +29,6 @@ importers:
       chat:
         specifier: 4.33.0
         version: 4.33.0(ai@7.0.22(zod@4.4.3))(zod@4.4.3)
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@libsql/client@0.17.4)(kysely@0.29.3)
       eve:
         specifier: ^0.22.5
         version: 0.22.5(@libsql/client@0.17.4)(ai@7.0.22(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10)
@@ -45,6 +39,9 @@ importers:
       '@types/node':
         specifier: 24.x
         version: 24.13.2
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@libsql/client@0.17.4)(kysely@0.29.3)
       microsandbox:
         specifier: ^0.5.10
         version: 0.5.10

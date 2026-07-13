@@ -9,8 +9,13 @@ import {
   SLACK_FOLLOWED_THREAD_POLICY,
   SLACK_SILENT_REPLY,
 } from "../agent/lib/slack-chat-turn";
-import { migrateDocsAgentDatabase } from "../agent/lib/db/client";
 
+// Preserve the workspace package boundary when Eve bundles eval definitions.
+const controlPlaneTestingModule = "@docs-agent/control-plane/testing";
+let controlPlaneTestingPromise:
+  | Promise<typeof import("@docs-agent/control-plane/testing")>
+  | undefined;
+const { migrateDocsAgentDatabase } = await controlPlaneTesting();
 const evalDataDir = mkdtempSync(join(tmpdir(), "docs-agent-slack-participation-evals-"));
 process.env.DOCS_AGENT_DATABASE_URL = `file:${join(evalDataDir, "docs-agent.sqlite")}`;
 await migrateDocsAgentDatabase();
@@ -136,4 +141,9 @@ function usefulReply(reply: unknown, terms: string[]): boolean {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function controlPlaneTesting() {
+  controlPlaneTestingPromise ??= import(controlPlaneTestingModule);
+  return controlPlaneTestingPromise;
 }

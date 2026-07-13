@@ -155,7 +155,7 @@ try {
     "isolated database verification",
     [
       "--filter",
-      "docs-agent",
+      "@docs-agent/control-plane",
       "exec",
       "node",
       "--input-type=module",

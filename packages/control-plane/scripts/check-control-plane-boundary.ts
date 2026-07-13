@@ -111,10 +111,40 @@ try {
 
   const packageManifest = JSON.parse(
     await readFile(join(packageRoot, "package.json"), "utf8"),
-  ) as { exports?: Record<string, unknown>; scripts?: Record<string, string> };
+  ) as {
+    dependencies?: Record<string, string>;
+    exports?: Record<string, unknown>;
+    scripts?: Record<string, string>;
+  };
   assert.equal(packageManifest.exports?.["./agent"], "./src/agent.ts");
   assert.equal(packageManifest.exports?.["./testing"], "./src/testing.ts");
   assert.equal(packageManifest.scripts?.build, "pnpm typecheck");
+
+  const agentPackageManifest = JSON.parse(
+    await readFile(join(agentRoot, "package.json"), "utf8"),
+  ) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+  assert.equal(agentPackageManifest.dependencies?.["@libsql/client"], undefined);
+  assert.equal(agentPackageManifest.devDependencies?.["@libsql/client"], undefined);
+  assert.equal(agentPackageManifest.dependencies?.["drizzle-orm"], undefined);
+  assert.equal(
+    agentPackageManifest.devDependencies?.["drizzle-orm"],
+    packageManifest.dependencies?.["drizzle-orm"],
+  );
+
+  for (const databaseFacade of [
+    "client.ts",
+    "migrations.ts",
+    "schema-readiness.ts",
+    "schema.ts",
+  ]) {
+    await assert.rejects(
+      readFile(join(agentRoot, "agent", "lib", "db", databaseFacade), "utf8"),
+      { code: "ENOENT" },
+    );
+  }
 
   const agentMemoryShim = await readFile(
     join(agentRoot, "agent", "lib", "workspace-memory.ts"),

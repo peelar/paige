@@ -8,7 +8,9 @@ process.env.DOCS_AGENT_DATABASE_URL = `file:${join(tempRoot, "signal-safety.sqli
 delete process.env.VERCEL;
 delete process.env.NODE_ENV;
 
-const { migrateDocsAgentDatabase } = await import("../agent/lib/db/client");
+const { migrateDocsAgentDatabase } = await import(
+  "@docs-agent/control-plane/testing"
+);
 await migrateDocsAgentDatabase();
 
 const { captureSlackDocsSignal } = await import("../agent/lib/slack-docs-signal");
