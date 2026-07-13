@@ -32,10 +32,15 @@ import {
 } from "./docs-signals";
 import {
   formatUnknownError,
-  githubApiRequest,
   parseGitHubRepositoryUrl,
   type GitHubRepositorySlug,
 } from "./github-app-client";
+import {
+  createGitHubWritebackClient,
+  GitHubWritebackError,
+  type ChangedFileEntry,
+  type GitHubWritebackClient,
+} from "./github-writeback-client";
 
 const branchNameSchema = z
   .string()
@@ -102,71 +107,50 @@ export type PublishWorkingRepositoryPrOutput = z.infer<
   typeof publishWorkingRepositoryPrOutputSchema
 >;
 
-interface GitHubRefResponse {
-  ref: string;
-  object: {
-    sha: string;
-    type: string;
-  };
+export { GitHubWritebackError, type ChangedFileEntry } from "./github-writeback-client";
+
+export interface GitHubWritebackCoordinatorDependencies {
+  requireSetupReady: typeof requireSetupReady;
+  preflightGitHubWritebackSetup: typeof preflightGitHubWritebackSetup;
+  loadRepositoryWorkflowState: typeof loadRepositoryWorkflowState;
+  saveRepositoryWorkflowState: typeof saveRepositoryWorkflowState;
+  listChangedFiles: typeof listChangedFiles;
+  exportRepositoryDiff: typeof exportRepositoryDiff;
+  collectChangedFileEntries: typeof collectChangedFileEntries;
+  resolveGitHubToken: typeof resolveGitHubToken;
+  githubClient: GitHubWritebackClient;
+  getDocsSignal: typeof getDocsSignal;
+  transitionDocsSignalLifecycle: typeof transitionDocsSignalLifecycle;
 }
 
-interface GitHubGitCommitResponse {
-  sha: string;
-  tree: {
-    sha: string;
-  };
-}
-
-interface GitHubTreeResponse {
-  sha: string;
-}
-
-interface GitHubPullResponse {
-  number: number;
-  html_url: string;
-  draft?: boolean;
-}
-
-export type ChangedFileEntry = {
-  path: string;
-  mode: "100644" | "100755";
-  content: string;
-  contentBase64?: never;
-  deleted?: never;
-} | {
-  path: string;
-  mode: "100644" | "100755";
-  contentBase64: string;
-  content?: never;
-  deleted?: never;
-} | {
-  path: string;
-  mode: "100644" | "100755";
-  deleted: true;
-  content?: never;
-  contentBase64?: never;
+const defaultCoordinatorDependencies: GitHubWritebackCoordinatorDependencies = {
+  requireSetupReady,
+  preflightGitHubWritebackSetup,
+  loadRepositoryWorkflowState,
+  saveRepositoryWorkflowState,
+  listChangedFiles,
+  exportRepositoryDiff,
+  collectChangedFileEntries,
+  resolveGitHubToken,
+  githubClient: createGitHubWritebackClient(),
+  getDocsSignal,
+  transitionDocsSignalLifecycle,
 };
-
-export class GitHubWritebackError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "GitHubWritebackError";
-  }
-}
 
 export async function publishWorkingRepositoryPr(
   input: PublishWorkingRepositoryPrInput,
   ctx: ToolContext,
+  dependencies: GitHubWritebackCoordinatorDependencies = defaultCoordinatorDependencies,
 ): Promise<PublishWorkingRepositoryPrOutput> {
-  const setup = await requireSetupReady("github-writeback");
-  const setupStatus = await preflightGitHubWritebackSetup(ctx, setup);
+  const setup = await dependencies.requireSetupReady("github-writeback");
+  const setupStatus = await dependencies.preflightGitHubWritebackSetup(ctx, setup);
   if (!setupStatus.githubWritebackReady) {
     throw new GitHubWritebackError(
       `GitHub writeback setup is not ready: ${setupStatus.githubWriteback.preflight.message}`,
     );
   }
 
-  const state = await loadRepositoryWorkflowState();
+  const state = await dependencies.loadRepositoryWorkflowState();
   const repository = state.repositoryInput.workingDocumentationRepository;
 
   try {
@@ -181,13 +165,21 @@ export async function publishWorkingRepositoryPr(
 
     assertPreparedResultIsPublishable(preparedResult, repository);
 
-    const currentChangedFiles = await listChangedFiles(ctx, repository, state.actionProvenance);
-    const currentDiff = await exportRepositoryDiff(ctx, repository, state.actionProvenance);
+    const currentChangedFiles = await dependencies.listChangedFiles(
+      ctx,
+      repository,
+      state.actionProvenance,
+    );
+    const currentDiff = await dependencies.exportRepositoryDiff(
+      ctx,
+      repository,
+      state.actionProvenance,
+    );
     assertDiffMatchesPreparedResult(preparedResult, currentChangedFiles, currentDiff);
 
     await assertNoUnsupportedWorkingTreeState(ctx, repository);
 
-    const changedFileEntries = await collectChangedFileEntries(
+    const changedFileEntries = await dependencies.collectChangedFileEntries(
       ctx,
       repository,
       currentChangedFiles,
@@ -213,7 +205,7 @@ export async function publishWorkingRepositoryPr(
     );
     const originatingSignal = input.signalId === undefined
       ? undefined
-      : await readPublishableSignal(input.signalId);
+      : await readPublishableSignal(input.signalId, dependencies.getDocsSignal);
     const body = buildPullRequestBody({
       result: preparedResult,
       baseBranch,
@@ -223,8 +215,8 @@ export async function publishWorkingRepositoryPr(
       signal: originatingSignal,
     });
 
-    const token = await resolveGitHubToken(setup, slug);
-    const published = await createGitHubDraftPullRequest({
+    const token = await dependencies.resolveGitHubToken(setup, slug);
+    const published = await dependencies.githubClient.publishDraftPullRequest({
       token,
       slug,
       baseBranch,
@@ -242,11 +234,11 @@ export async function publishWorkingRepositoryPr(
         target: `${slug.owner}/${slug.repo}#${published.pullRequest.number}`,
       }),
     );
-    await saveRepositoryWorkflowState(state);
+    await dependencies.saveRepositoryWorkflowState(state);
 
     const updatedSignal = originatingSignal === undefined
       ? undefined
-      : await transitionDocsSignalLifecycle({
+      : await dependencies.transitionDocsSignalLifecycle({
           id: originatingSignal.id,
           status: "draft-pr-opened",
           reason: `Draft PR opened for prepared signal patch: ${published.pullRequest.url}`,
@@ -296,7 +288,7 @@ export async function publishWorkingRepositoryPr(
         reason: error instanceof Error ? error.message : String(error),
       }),
     );
-    await saveRepositoryWorkflowState(state);
+    await dependencies.saveRepositoryWorkflowState(state);
     throw error;
   }
 }
@@ -526,265 +518,6 @@ async function resolveGitHubToken(
   }
 }
 
-async function createGitHubDraftPullRequest(input: {
-  token: string;
-  slug: GitHubRepositorySlug;
-  baseBranch: string;
-  baseSha: string;
-  branchName: string;
-  commitMessage: string;
-  title: string;
-  body: string;
-  changedFiles: ChangedFileEntry[];
-  abortSignal: AbortSignal;
-}): Promise<{
-  treeSha: string;
-  commitSha: string;
-  pullRequest: PublishWorkingRepositoryPrOutput["pullRequest"];
-}> {
-  const { token, slug, abortSignal } = input;
-  const baseRef = await githubRequest<GitHubRefResponse | null>({
-    token,
-    method: "GET",
-    path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/ref/heads/${encodeGitRefPath(input.baseBranch)}`,
-    abortSignal,
-    notFound: null,
-  });
-
-  if (baseRef === null) {
-    throw new GitHubWritebackError(`Base branch does not exist on GitHub: ${input.baseBranch}.`);
-  }
-
-  if (baseRef.object.sha !== input.baseSha) {
-    throw new GitHubWritebackError(
-      `Base branch moved since the sandbox workflow ran. Expected ${input.baseSha}, found ${baseRef.object.sha}. Re-run the workflow before publishing.`,
-    );
-  }
-
-  const baseCommit = await githubRequest<GitHubGitCommitResponse>({
-    token,
-    method: "GET",
-    path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/commits/${encodePathPart(input.baseSha)}`,
-    abortSignal,
-  });
-  const baseTreeSha = getGitCommitTreeSha(baseCommit, "base");
-
-  const treeEntries = [];
-  for (const file of input.changedFiles) {
-    if (file.deleted) {
-      treeEntries.push({ path: file.path, mode: file.mode, type: "blob", sha: null });
-    } else if (file.contentBase64 !== undefined) {
-      const blob = await githubRequest<{ sha: string }>({
-        token, method: "POST",
-        path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/blobs`,
-        abortSignal, body: { content: file.contentBase64, encoding: "base64" },
-      });
-      treeEntries.push({ path: file.path, mode: file.mode, type: "blob", sha: blob.sha });
-    } else {
-      treeEntries.push({ path: file.path, mode: file.mode, type: "blob", content: file.content });
-    }
-  }
-
-  const tree = await githubRequest<GitHubTreeResponse>({
-    token,
-    method: "POST",
-    path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/trees`,
-    abortSignal,
-    body: {
-      base_tree: baseTreeSha,
-      tree: treeEntries,
-    },
-  });
-
-  const existingBranch = await githubRequest<GitHubRefResponse | null>({
-    token,
-    method: "GET",
-    path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/ref/heads/${encodeGitRefPath(input.branchName)}`,
-    abortSignal,
-    notFound: null,
-  });
-
-  if (existingBranch !== null) {
-    const existingCommit = await githubRequest<GitHubGitCommitResponse>({
-      token,
-      method: "GET",
-      path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/commits/${encodePathPart(existingBranch.object.sha)}`,
-      abortSignal,
-    });
-    const existingTreeSha = getGitCommitTreeSha(existingCommit, "existing branch");
-
-    if (existingTreeSha !== tree.sha) {
-      throw new GitHubWritebackError(
-        `Branch already exists on GitHub with different content: ${input.branchName}.`,
-      );
-    }
-
-    const existingPullRequest = await findExistingPullRequest({
-      token,
-      slug,
-      baseBranch: input.baseBranch,
-      branchName: input.branchName,
-      abortSignal,
-    });
-
-    if (existingPullRequest !== null) {
-      return {
-        treeSha: existingTreeSha,
-        commitSha: existingBranch.object.sha,
-        pullRequest: normalizePullResponse(existingPullRequest),
-      };
-    }
-
-    const pullRequest = await createPullRequest({
-      token,
-      slug,
-      baseBranch: input.baseBranch,
-      branchName: input.branchName,
-      title: input.title,
-      body: input.body,
-      abortSignal,
-    });
-
-    return {
-      treeSha: existingTreeSha,
-      commitSha: existingBranch.object.sha,
-      pullRequest: normalizePullResponse(pullRequest),
-    };
-  }
-
-  const commit = await githubRequest<GitHubGitCommitResponse>({
-    token,
-    method: "POST",
-    path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/commits`,
-    abortSignal,
-    body: {
-      message: input.commitMessage,
-      tree: tree.sha,
-      parents: [input.baseSha],
-    },
-  });
-
-  await githubRequest<GitHubRefResponse>({
-    token,
-    method: "POST",
-    path: `/repos/${encodePathPart(slug.owner)}/${encodePathPart(slug.repo)}/git/refs`,
-    abortSignal,
-    body: {
-      ref: `refs/heads/${input.branchName}`,
-      sha: commit.sha,
-    },
-  });
-
-  const pullRequest = await createPullRequest({
-    token,
-    slug,
-    baseBranch: input.baseBranch,
-    branchName: input.branchName,
-    title: input.title,
-    body: input.body,
-    abortSignal,
-  });
-
-  return {
-    treeSha: tree.sha,
-    commitSha: commit.sha,
-    pullRequest: normalizePullResponse(pullRequest),
-  };
-}
-
-function getGitCommitTreeSha(commit: GitHubGitCommitResponse, description: string): string {
-  if (typeof commit.tree?.sha !== "string" || commit.tree.sha.trim() === "") {
-    throw new GitHubWritebackError(
-      `GitHub ${description} commit response did not include a tree SHA.`,
-    );
-  }
-
-  return commit.tree.sha;
-}
-
-async function findExistingPullRequest(input: {
-  token: string;
-  slug: GitHubRepositorySlug;
-  baseBranch: string;
-  branchName: string;
-  abortSignal: AbortSignal;
-}): Promise<GitHubPullResponse | null> {
-  const pulls = await githubRequest<GitHubPullResponse[]>({
-    token: input.token,
-    method: "GET",
-    path:
-      `/repos/${encodePathPart(input.slug.owner)}/${encodePathPart(input.slug.repo)}/pulls` +
-      `?state=open&head=${encodeURIComponent(`${input.slug.owner}:${input.branchName}`)}` +
-      `&base=${encodeURIComponent(input.baseBranch)}&per_page=10`,
-    abortSignal: input.abortSignal,
-  });
-
-  return pulls[0] ?? null;
-}
-
-async function createPullRequest(input: {
-  token: string;
-  slug: GitHubRepositorySlug;
-  baseBranch: string;
-  branchName: string;
-  title: string;
-  body: string;
-  abortSignal: AbortSignal;
-}): Promise<GitHubPullResponse> {
-  return githubRequest<GitHubPullResponse>({
-    token: input.token,
-    method: "POST",
-    path: `/repos/${encodePathPart(input.slug.owner)}/${encodePathPart(input.slug.repo)}/pulls`,
-    abortSignal: input.abortSignal,
-    body: {
-      title: input.title,
-      body: input.body,
-      head: input.branchName,
-      base: input.baseBranch,
-      draft: true,
-    },
-  });
-}
-
-function normalizePullResponse(
-  pullRequest: GitHubPullResponse,
-): PublishWorkingRepositoryPrOutput["pullRequest"] {
-  return {
-    number: pullRequest.number,
-    url: pullRequest.html_url,
-    draft: pullRequest.draft ?? true,
-  };
-}
-
-async function githubRequest<T>(input: {
-  token: string;
-  method: "GET" | "POST";
-  path: string;
-  abortSignal: AbortSignal;
-  body?: unknown;
-  notFound?: null;
-}): Promise<T> {
-  const result = await githubApiRequest<T>({
-    token: input.token,
-    method: input.method,
-    path: input.path,
-    abortSignal: input.abortSignal,
-    body: input.body,
-  });
-
-  if (!result.ok && result.status === 404 && input.notFound === null) {
-    return null as T;
-  }
-
-  if (!result.ok) {
-    throw new GitHubWritebackError(
-      `GitHub ${input.method} ${input.path} failed with ${result.status}: ${truncateOneLine(result.message, 1_000)}`,
-    );
-  }
-
-  return result.body;
-}
-
 export function buildDefaultBranchName(
   baseBranch: string,
   baseSha: string,
@@ -861,8 +594,11 @@ export function buildPullRequestBody(input: {
   ].join("\n");
 }
 
-async function readPublishableSignal(signalId: string): Promise<DocsSignalDetail> {
-  const signal = await getDocsSignal({ id: signalId });
+async function readPublishableSignal(
+  signalId: string,
+  readSignal: typeof getDocsSignal,
+): Promise<DocsSignalDetail> {
+  const signal = await readSignal({ id: signalId });
   if (signal.status !== "patch-prepared") {
     throw new GitHubWritebackError(
       `Cannot publish signal ${signal.id} because its status is ${signal.status}, not patch-prepared.`,
@@ -941,14 +677,6 @@ function slugifyBranchSegment(value: string): string {
     .replace(/^-+|-+$/g, "");
 
   return slug === "" ? "base" : slug.slice(0, 48);
-}
-
-function encodePathPart(value: string): string {
-  return encodeURIComponent(value);
-}
-
-function encodeGitRefPath(value: string): string {
-  return value.split("/").map(encodeURIComponent).join("/");
 }
 
 function hashText(value: string): string {
