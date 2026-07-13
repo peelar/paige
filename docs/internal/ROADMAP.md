@@ -25,6 +25,13 @@ and its read-only assurance UI are complete. Instruction-boundary cleanup is
 implemented and awaits repository-backed eval proof in a configured Eve
 environment. Structured personality and participation settings are complete.
 
+The next product bet is policy-bound proactive attention. An operator should be
+able to delegate a bounded documentation goal over one approved provider
+resource while Paige composes its existing signal, evidence, repository,
+authoring, and follow-up capabilities. Watches keep source, action, retention,
+budget, delivery, and approval authority structured; release-channel review and
+docs-feedback triage are proof scenarios, not separate runtime workflows.
+
 The first delivery remains the local read-only baseline. Production
 authentication, guided setup, connector handoffs, workspace-memory review, run
 history, approvals, assurance, and behavior settings now build on it.
@@ -35,7 +42,8 @@ boundaries.
 
 This appetite still rules out multi-workspace accounts and roles, silent
 provider installation, a raw database or workflow-state editor, a custom
-tracing backend, broad context ingestion, and autonomous publishing.
+tracing backend, unbounded or implicit context ingestion outside approved watch
+scopes, arbitrary executable workflows, and autonomous publishing.
 
 ## Milestones
 
@@ -46,6 +54,7 @@ tracing backend, broad context ingestion, and autonomous publishing.
 | M2 | Safety and read-only source evidence | The repository workflow is covered for successful and fail-closed paths, and watched repositories can provide read-only release evidence. | #3, #8 |
 | M3 | Durable docs-signal workflows | Slack, Linear, watched scans, patch handoff, safety evals, and workspace memories use the app-owned database and shared docs-impact model. | #20, #28, #21, #22, #23, #24, #25, #26, #27, #29 |
 | M4 | Operator control plane first delivery | A local operator can see whether Paige is ready, browse the durable work queue, and inspect signal provenance, lifecycle, and artifacts. | #35, #36, #38, #39, #40, #41 |
+| M5 | Policy-bound proactive attention | An operator can configure and govern a bounded Slack watch; Paige evaluates event or scheduled observations and can stay silent, reply, or create docs work through generic capabilities while scope, retention, budgets, delivery, and actions remain enforced and auditable. | #57, #58, #59, #60, #61, #62 |
 
 ## M4 Slice Plan
 
@@ -81,6 +90,23 @@ one coherent draft to the next human boundary.
 | Complete | #55 Choose the right editorial intervention | Lets Paige patch, add, restructure, consolidate, remove, wait, or ask based on the reader problem. | #52, #53, #54 (complete) |
 | Complete | #56 Own substantial documentation work asynchronously | Carries investigation, planning, drafting, validation, and continuation as one durable work item. | #41, #53, #54, #55 (complete) |
 
+### Policy-Bound Watches
+
+This epic gives Paige a reusable proactive-attention primitive without adding a
+release-channel, docs-feedback, or other purpose-specific workflow. The watch
+contract is provider-neutral; Slack is the first event adapter and the two
+channel use cases prove the same runtime.
+
+Tracked by #57.
+
+| Order | Issue | Why Next | Depends On |
+| --- | --- | --- | --- |
+| 1 | #58 Persist a bounded watch contract | Establishes the policy and audit source of truth before any provider event can be admitted. | #28, #38 (complete) |
+| 2 | #59 Admit configured Slack events as observations | Extends the existing pre-model privacy boundary only for approved watch scopes. | #58, #33, #34 |
+| 3 | #60 Execute watch goals with composable docs capabilities | Makes the model compose generic actions while runtime policy constrains authority, timing, and delivery. | #58, #59, #32 |
+| 4 | #61 Configure and govern watches | Adds preview, approval, lifecycle management, and reapproval for authority expansion over shared services. | #58; authenticated web management also needs #37 |
+| 5 | #62 Prove one runtime across release and docs-feedback channels | Demonstrates that materially different goals need configuration and eval fixtures, not separate workflow code. | #59, #60, #61 |
+
 ### Later Backlog
 
 | Order | Issue | Why Later | Depends On |
@@ -108,7 +134,7 @@ one coherent draft to the next human boundary.
   control-plane delivery is proven.
 - Operator mutations for signal priority, lifecycle, and next action.
 - Notifications, usage, retention, and data-management controls beyond the
-  bounded scheduled follow-up workflow.
+  bounded scheduled follow-up and watch policies.
 - Broader source and context repository access beyond watched release scans.
 - Discord, Notion, support systems, or other team surfaces.
 - Scheduled stale-doc detection beyond explicitly configured scans.

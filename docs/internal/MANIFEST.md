@@ -42,9 +42,12 @@ warranted, runs checks, exports a diff, and can push an approved branch or draft
 PR back to the same working repository.
 
 The current product also captures explicit Slack threads and Linear Agent
-Sessions as durable docs signals. This does not make the agent a broad chat bot
-or ticketing assistant. The configured working documentation repository remains
-the only mutable target, and writeback remains approval gated.
+Sessions as durable docs signals. The next product slice adds explicitly
+configured, policy-bound watches so an operator can delegate ongoing attention
+to one provider resource without introducing a purpose-specific workflow. This
+does not make the agent a broad chat bot or ticketing assistant. The configured
+working documentation repository remains the only mutable target, and
+writeback remains approval gated.
 
 The authenticated web control plane shows setup readiness, the docs-signal work
 queue, provenance and lifecycle, memories, runs, approvals, assurance, and
@@ -86,6 +89,14 @@ workflow status. Signals let the agent join context that arrives over time
 instead of treating each Slack mention, Linear issue, release, or repository scan
 as an isolated prompt.
 
+**Watches** are durable, explicitly approved delegations of attention over one
+provider resource. A watch combines a bounded natural-language documentation
+goal with structured trigger, evaluation, delivery, action, context, retention,
+budget, lifecycle, and expiry policy. Provider events become ephemeral
+observations first; only plausible documentation work is promoted into a
+durable docs signal with provenance. A watch cannot expand its own provider,
+repository, delivery, retention, mutation, or publishing authority.
+
 **Watched repositories** are optional, read-only GitHub repositories configured
 alongside the working documentation repository. They are source evidence, not
 docs targets. The first supported scan uses GitHub release signals for
@@ -104,12 +115,12 @@ docs change.
 
 ## Not MVP
 
-- Chat SDK adapter work or multi-surface chat routing.
-- Ambient ingestion of all Slack, Linear, Discord, Notion, support, or community
-  traffic. The next Slack and Linear scope is explicit mention, delegation, or
-  configured scan only.
+- Unbounded or implicit ingestion of all Slack, Linear, Discord, Notion,
+  support, or community traffic. Proactive attention is limited to explicitly
+  configured and approved provider resources.
 - Continuous monitoring of arbitrary repositories, releases, support channels,
-  or community discussions.
+  or community discussions outside policy-bound watches and configured
+  read-only repository scans.
 - Broad source or context repository integration beyond configured read-only
   watched repository release scans.
 - Broad docs platform support beyond Docusaurus-style Markdown and MDX.
@@ -169,6 +180,7 @@ into the place where work is being discussed:
 
 - by mentioning it in a Slack thread;
 - by delegating or mentioning it in a Linear issue or Agent Session;
+- by configuring a policy-bound watch over one approved provider resource;
 - by asking it to scan configured release or source signals.
 
 The agent captures structured external context, records provenance, identifies
@@ -221,6 +233,14 @@ a domain projection over Eve execution, not a separate workflow engine.
 - Signals from Slack, Linear, watched repositories, and release context can be
   joined so the agent does not lose context between discovery, verification,
   patch preparation, and final writeback.
+- An operator can preview and approve a provider-resource watch whose goal,
+  trigger, evaluation, delivery, allowed actions, retention, budgets, and expiry
+  are explicit and auditable.
+- Watched provider events outside an active scope are rejected before model
+  processing or raw-content persistence, while ignored admitted observations do
+  not become docs signals, workspace memories, or user-visible replies.
+- Release-channel and docs-feedback scenarios use the same watch runtime and
+  generic docs capabilities rather than purpose-specific workflow tools.
 - A local operator can tell whether Paige is ready, browse the
   durable docs-signal queue, and inspect signal evidence and lifecycle without
   reading SQLite or runtime logs.
