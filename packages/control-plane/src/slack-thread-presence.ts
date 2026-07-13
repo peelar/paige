@@ -3,8 +3,14 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gt, lte } from "drizzle-orm";
 import { z } from "zod";
 
-import { withDocsAgentDatabase } from "./db/client.ts";
-import { slackThreadPresences } from "./db/schema.ts";
+import {
+  withDocsAgentDatabase,
+  type DocsAgentDatabase,
+} from "./db/client.ts";
+import {
+  docsSignalSources,
+  slackThreadPresences,
+} from "./db/schema.ts";
 import { DEFAULT_WORKSPACE_ID } from "./setup-state.ts";
 
 export const SLACK_THREAD_PRESENCE_TTL_MS = 7 * 24 * 60 * 60 * 1_000;
@@ -66,6 +72,21 @@ const resolveForSignalInputSchema = z.object({
   signalId: z.string().trim().min(1),
   nowMs: z.number().int().optional(),
 });
+
+const resolveSignalSourcesInputSchema = z.object({
+  signalId: z.string().trim().min(1),
+  nowMs: z.number().int().optional(),
+});
+
+const slackSignalSourceMetadataSchema = z.object({
+  channelId: z.string().trim().min(1),
+  threadTs: z.string().trim().min(1),
+});
+
+type SlackThreadPresenceDatabaseExecutor = Pick<
+  DocsAgentDatabase,
+  "select" | "update"
+>;
 
 export async function enrollSlackThreadPresence(
   input: z.input<typeof enrollInputSchema>,
@@ -181,24 +202,65 @@ export async function resolveSlackThreadPresenceForSignal(
   input: z.input<typeof resolveForSignalInputSchema>,
 ): Promise<SlackThreadPresence | null> {
   const value = resolveForSignalInputSchema.parse(input);
-  const now = value.nowMs ?? Date.now();
-  return withDocsAgentDatabase(async (db) => {
-    const rows = await db
-      .update(slackThreadPresences)
-      .set({
-        status: "resolved",
-        endedAt: now,
-        endReason: `docs-signal-resolved:${value.signalId}`,
-      })
-      .where(
-        and(
-          eq(slackThreadPresences.workspaceId, DEFAULT_WORKSPACE_ID),
-          eq(slackThreadPresences.channelId, value.channelId),
-          eq(slackThreadPresences.threadTs, value.threadTs),
-          eq(slackThreadPresences.status, "active"),
-        ),
-      )
-      .returning();
-    return rows[0] ? slackThreadPresenceSchema.parse(rows[0]) : null;
-  });
+  return withDocsAgentDatabase((db) =>
+    resolveSlackThreadPresence(db, {
+      ...value,
+      nowMs: value.nowMs ?? Date.now(),
+    })
+  );
+}
+
+export async function resolveSlackThreadPresencesForSignalSources(
+  db: SlackThreadPresenceDatabaseExecutor,
+  input: z.input<typeof resolveSignalSourcesInputSchema>,
+): Promise<SlackThreadPresence[]> {
+  const value = resolveSignalSourcesInputSchema.parse(input);
+  const nowMs = value.nowMs ?? Date.now();
+  const sources = await db
+    .select({ metadata: docsSignalSources.metadata })
+    .from(docsSignalSources)
+    .where(
+      and(
+        eq(docsSignalSources.signalId, value.signalId),
+        eq(docsSignalSources.provider, "slack"),
+      ),
+    );
+  const resolved: SlackThreadPresence[] = [];
+
+  for (const source of sources) {
+    const metadata = slackSignalSourceMetadataSchema.safeParse(source.metadata);
+    if (!metadata.success) continue;
+
+    const presence = await resolveSlackThreadPresence(db, {
+      ...metadata.data,
+      signalId: value.signalId,
+      nowMs,
+    });
+    if (presence !== null) resolved.push(presence);
+  }
+
+  return resolved;
+}
+
+async function resolveSlackThreadPresence(
+  db: SlackThreadPresenceDatabaseExecutor,
+  input: z.infer<typeof resolveForSignalInputSchema> & { nowMs: number },
+): Promise<SlackThreadPresence | null> {
+  const rows = await db
+    .update(slackThreadPresences)
+    .set({
+      status: "resolved",
+      endedAt: input.nowMs,
+      endReason: `docs-signal-resolved:${input.signalId}`,
+    })
+    .where(
+      and(
+        eq(slackThreadPresences.workspaceId, DEFAULT_WORKSPACE_ID),
+        eq(slackThreadPresences.channelId, input.channelId),
+        eq(slackThreadPresences.threadTs, input.threadTs),
+        eq(slackThreadPresences.status, "active"),
+      ),
+    )
+    .returning();
+  return rows[0] ? slackThreadPresenceSchema.parse(rows[0]) : null;
 }
