@@ -108,11 +108,24 @@ Tracked by #57.
 
 | Order | Issue | Why Next | Depends On |
 | --- | --- | --- | --- |
-| 1 | #58 Persist a bounded watch contract | Establishes the policy and audit source of truth before any provider event can be admitted. | #28, #38 (complete) |
-| 2 | #59 Admit configured Slack events as observations | Extends the existing pre-model privacy boundary only for approved watch scopes. | #58, #33, #34 |
-| 3 | #60 Execute watch goals with composable docs capabilities | Makes the model compose generic actions while runtime policy constrains authority, timing, and delivery. | #58, #59, #32 |
-| 4 | #61 Configure and govern watches | Adds preview, approval, lifecycle management, and reapproval for authority expansion over shared services. | #58; authenticated web management also needs #37 |
-| 5 | #62 Prove one runtime across release and docs-feedback channels | Demonstrates that materially different goals need configuration and eval fixtures, not separate workflow code. | #59, #60, #61 |
+| Gate | #63 Record Paige's capability contract and migration baseline | Settles stable capability identifiers and migration destinations before persistence can encode them. This is supervised work, not part of the bounded loop. | None; ADR-0004 is accepted |
+| Tracking | #58 Persist a bounded watch contract | Tracks the six persistence and policy slices without acting as an implementation task itself. | #63, #64–#69 |
+| 1 | #64 Persist and retrieve a proposed policy-bound watch | Establishes the durable proposed-watch and revision boundary. | #63, #28, #38 (complete) |
+| 2 | #65 Preview and validate an effective watch policy | Resolves defaults and rejects invalid authority before activation. | #64 |
+| 3 | #66 Approve a watch as an immutable effective revision | Gives admission and execution a frozen approved policy reference. | #65 |
+| 4 | #67 Add audited lifecycle controls for policy-bound watches | Makes pause, resume, expiry, and deletion explicit and concurrency-safe. | #66 |
+| 5 | #68 Require fresh approval for watch goal and authority changes | Prevents edits from silently widening observation or action authority. | #67 |
+| 6 | #69 Fail closed when watch persistence or workspace readiness is unavailable | Completes persistence readiness, failure coverage, and contract documentation. | #68 |
+| Tracking | #59 Admit configured Slack events as observations | Tracks the six provider-admission slices without acting as an implementation task itself. | Starts after #66; admission continues after #69 |
+| 7 | #70 Represent admitted provider events as ephemeral observations | Establishes the provider-neutral, privacy-bounded handoff contract. | #66 |
+| 8 | #71 Admit Slack events only for active configured watches | Extends the pre-model boundary only for explicitly active watch scopes. | #69, #70, #33, #34 |
+| 9 | #72 Normalize supported Slack watch events and reject unsafe subtypes | Keeps bot output, self-authored events, and unsupported subtypes outside observation processing. | #71 |
+| 10 | #73 Deduplicate watched Slack events across retries and restarts | Adds a minimal durable claim without retaining raw provider content. | #72 |
+| 11 | #74 Assemble bounded windows of admitted watch observations | Supports per-event and bounded-window handoff without unbounded ingestion. | #73 |
+| 12 | #75 Recheck watch authority and budgets before observation dispatch | Freezes the final admission boundary without starting the later watch-turn executor. | #74 |
+| 13 | #60 Execute watch goals with composable docs capabilities | Makes the model compose generic actions while runtime policy constrains authority, timing, and delivery. | #58, #59, #32 implementation, CR2, CR3, CR4, CR6, CR7 |
+| 14 | #61 Configure and govern watches | Adds preview, approval, lifecycle management, and reapproval for authority expansion over shared services. | #58; authenticated web management also needs #37 |
+| 15 | #62 Prove one runtime across release and docs-feedback channels | Demonstrates that materially different goals need configuration and eval fixtures, not separate workflow code. | #59, #60, #61 |
 
 ### Later Backlog
 
