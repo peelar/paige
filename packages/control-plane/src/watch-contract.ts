@@ -9,7 +9,7 @@ const scheduleSchema = z.object({
   timeZone: z.string().trim().min(1).max(100),
 }).strict();
 
-export const watchLifecycleStateSchema = z.enum(["proposed"]);
+export const watchLifecycleStateSchema = z.enum(["proposed", "active"]);
 
 export const watchCapabilityFamilySchema = z.enum([
   "knowledge.read",
@@ -159,6 +159,39 @@ export const policyBoundWatchSchema = z.object({
   updatedAt: z.string().datetime({ offset: true }),
 });
 
+export const approveWatchProposalInputSchema = z.object({
+  watchId: z.string().uuid(),
+  proposalRevisionId: z.string().uuid(),
+  expectedProposalRevision: z.number().int().positive(),
+  decision: z.literal("approved"),
+  idempotencyKey: z.string().trim().min(1).max(500),
+}).strict();
+
+export const effectiveWatchRevisionSchema = z.object({
+  id: z.string().uuid(),
+  watchId: z.string().uuid(),
+  proposalRevisionId: z.string().uuid(),
+  contractVersion: z.literal(WATCH_POLICY_CONTRACT_VERSION),
+  policy: proposedWatchPolicySchema,
+  approvedBy: watchActorSchema,
+  approvedAt: z.string().datetime({ offset: true }),
+});
+
+export const activePolicyBoundWatchSchema = z.object({
+  id: z.string().uuid(),
+  workspaceId: identifierSchema,
+  lifecycleState: z.literal("active"),
+  effectiveRevision: effectiveWatchRevisionSchema,
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
+export const approveWatchProposalResultSchema = z.object({
+  created: z.boolean(),
+  replayed: z.boolean(),
+  watch: activePolicyBoundWatchSchema,
+});
+
 export type ProposedWatchPolicy = z.infer<typeof proposedWatchPolicySchema>;
 export type ProposedWatchRevision = z.infer<typeof proposedWatchRevisionSchema>;
 export type PolicyBoundWatch = z.infer<typeof policyBoundWatchSchema>;
@@ -166,3 +199,7 @@ export type WatchActor = z.infer<typeof watchActorSchema>;
 export type WatchCapabilityFamily = z.infer<typeof watchCapabilityFamilySchema>;
 export type WatchPolicyPreview = z.infer<typeof watchPolicyPreviewSchema>;
 export type WatchPolicyDraft = z.infer<typeof watchPolicyDraftSchema>;
+export type ActivePolicyBoundWatch = z.infer<typeof activePolicyBoundWatchSchema>;
+export type ApproveWatchProposalResult = z.infer<
+  typeof approveWatchProposalResultSchema
+>;
