@@ -4,10 +4,13 @@ packages:
 
 minimumReleaseAgeExclude:
   - "@ai-sdk/*"
+  - "@chat-adapter/*"
   - "@rolldown/*"
+  - "@turbo/*"
   - "@vercel/*"
   - "@workflow/*"
   - ai
+  - chat
   - experimental-ai-sdk-code-mode
   - eve
   - next
@@ -18,6 +21,7 @@ minimumReleaseAgeExclude:
   - turbo
   - workflow
 allowBuilds:
+  esbuild: false
   sharp: false
 # Compatibility for eve releases with an incomplete runtime manifest.
 packageExtensions:

@@ -2,7 +2,7 @@
   "name": "docs-agent-workspace",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@11.12.0",
   "scripts": {
     "brand:check": "node scripts/check-brand-name.mjs",
     "build": "turbo run build",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "portless": "0.15.1",
-    "turbo": "2.10.4"
+    "turbo": "2.10.5"
   },
   "engines": {
     "node": "24.18.0"
