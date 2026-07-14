@@ -760,6 +760,35 @@ work, park/resume, correction, quiet routine activity, and publication waiting.
 milestone, artifact, session, correction, pause/resume, approval, completion,
 and abandonment contract through `pnpm check`.
 
+## Internal Working Documents
+
+Ask Paige to keep a durable internal note for documentation work that must
+survive the current Eve session. She should load the
+`internal-working-document` skill and use `internal_document`, not workspace
+memory, owned docs work, a public repository draft, or hidden conversation
+history.
+
+For the live proof, give a `living-summary` document both a superseded
+hypothesis and the current source evidence. Paige should keep the current
+conclusion and omit the obsolete one. Give a `chronological-log` two dated
+decisions and confirm both remain. Both behaviors must use the same tool and
+`docs_work.manage` authority. The deterministic service test separately proves
+cross-session read, compare-and-swap update, and revision history behavior.
+
+Run the executable behavior proof with:
+
+```sh
+pnpm eval internal-working-documents --skip-report --verbose
+```
+
+The control-plane test `packages/control-plane/tests/internal-documents.test.ts`
+covers server-owned authority and provenance, workspace isolation, typed
+attachment authority, atomic relationship deduplication, retries, cross-session
+reads, historical revisions, optimistic concurrency, lifecycle, UTF-8 content
+bounds, revision bounds, and retention expiry. Database migration parity,
+capability inventory, `pnpm check`, and `pnpm check:full` cover the remaining
+handoff contract.
+
 ## Editorial Intervention Choice
 
 After current-docs verification and `get_docs_profile`, ask Paige to choose an

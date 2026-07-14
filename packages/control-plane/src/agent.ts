@@ -2,6 +2,7 @@ export * from "./docs-signal-lifecycle.ts";
 export * from "./docs-signals.ts";
 export * from "./docs-profile.ts";
 export * from "./docs-follow-ups.ts";
+export * from "./internal-documents.ts";
 export * from "./owned-docs-work.ts";
 export * from "./owned-docs-work-contract.ts";
 export * from "./libsql-chat-state.ts";

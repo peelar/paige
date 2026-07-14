@@ -1,7 +1,7 @@
 # Architecture
 
 Status: Accepted
-Last Reviewed: 2026-07-13
+Last Reviewed: 2026-07-14
 
 ## Sources
 
@@ -183,6 +183,36 @@ No current module is a SaaS registry, tenant router, or database provisioner.
 
 Deleting, exporting, restoring, or retaining one agent's product state must be
 possible without reading or rewriting another agent's database.
+
+### Internal Working Documents
+
+Internal working documents are app-owned documentation-work resources, not Eve
+session memory, workspace memory, public documentation, or sandbox drafts.
+`internal_documents` stores the workspace-scoped identity, kind, editing
+profile, lifecycle, current revision, and finite retention boundary.
+`internal_document_revisions` stores at most 100 immutable full Markdown
+snapshots of at most 64 KiB each, with server-owned actor, Eve session/run,
+operation, timestamp, and bounded source-reference provenance.
+`internal_document_attachments` stores typed relationships to authorized
+Paige-owned resources. The first registered relationship is one continuity
+document per policy-bound watch; adding another owning resource extends the
+server-side authority registry rather than adding a capability family or
+workflow-specific tool.
+
+The shared internal-document service owns create, read, optimistic update,
+attachment lookup, atomic create-and-attach, later attachment, archive, and
+retention expiry. Workspace, actor, session, run, and operation identity never
+come from model input. Unique relationship and operation indexes make retries
+and concurrent attachment idempotent. Retention is finite and capped at 365
+days. Expiry removes revision content and attachments while leaving a bounded
+tombstone so expired provider-derived content cannot remain available through
+the capability.
+
+The model uses one general `internal_document` surface inside
+`docs_work.manage`. A load-on-demand skill may vary editing procedure through
+profiles such as `living-summary` or `chronological-log`, but profiles do not
+change authority or add tools. Documents must not store hidden reasoning,
+secrets, or raw provider content merely to extend its retention.
 
 ### Policy-Bound Watch Persistence
 

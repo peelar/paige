@@ -1,6 +1,7 @@
 import "server-only";
 
 export * from "./docs-follow-ups.ts";
+export * from "./internal-documents.ts";
 export * from "./libsql-chat-state.ts";
 export * from "./slack-thread-presence.ts";
 export * from "./validation-results.ts";

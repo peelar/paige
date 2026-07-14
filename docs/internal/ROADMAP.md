@@ -123,9 +123,11 @@ Tracked by #57.
 | 10 | #73 Deduplicate watched Slack events across retries and restarts | Adds a minimal durable claim without retaining raw provider content. | #72 |
 | 11 | #74 Assemble bounded windows of admitted watch observations | Supports per-event and bounded-window handoff without unbounded ingestion. | #73 |
 | 12 | #75 Recheck watch authority and budgets before observation dispatch | Freezes the final admission boundary without starting the later watch-turn executor. | #74 |
-| 13 | #60 Execute watch goals with composable docs capabilities | Makes the model compose generic actions while runtime policy constrains authority, timing, and delivery. | #58, #59, #32 implementation, CR2, CR3, CR4, CR6, CR7 |
-| 14 | #61 Configure and govern watches | Adds preview, approval, lifecycle management, and reapproval for authority expansion over shared services. | #58; authenticated web management also needs #37 |
-| 15 | #62 Prove one runtime across release and docs-feedback channels | Demonstrates that materially different goals need configuration and eval fixtures, not separate workflow code. | #59, #60, #61 |
+| 13 | #76 Add durable internal working documents | Establishes the generic `docs_work.manage` resource needed for cross-session agent-authored continuity without a watch-specific journal. | #63 (complete), #38 (complete) |
+| 14 | #60 Execute watch goals with composable docs capabilities | Makes the model compose generic actions while runtime policy constrains authority, timing, and delivery. | #58, #59, #32 implementation, CR2, CR3, CR4, CR6 including #76, CR7 |
+| 15 | #77 Preserve watch findings across sessions | Applies the generic document primitive and a watch-execution skill to one continuity document per watch. | #76, #60 execution foundation |
+| 16 | #61 Configure and govern watches | Adds preview, approval, lifecycle management, and reapproval for authority expansion over shared services. | #58; authenticated web management also needs #37 |
+| 17 | #62 Prove one runtime across release and docs-feedback channels | Demonstrates that materially different goals need configuration and eval fixtures, not separate workflow code. | #59, #60, #61 |
 
 ### Later Backlog
 

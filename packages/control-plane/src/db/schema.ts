@@ -191,6 +191,118 @@ export const watchLifecycleEvents = sqliteTable(
   ],
 );
 
+export const internalDocuments = sqliteTable(
+  "internal_documents",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    title: text("title").notNull(),
+    kind: text("kind").notNull(),
+    editingProfile: text("editing_profile").notNull(),
+    lifecycleState: text("lifecycle_state").notNull(),
+    currentRevision: integer("current_revision").notNull(),
+    creationOperationKey: text("creation_operation_key").notNull(),
+    retentionExpiresAt: text("retention_expires_at").notNull(),
+    archivedAt: text("archived_at"),
+    expiredAt: text("expired_at"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("internal_documents_creation_operation_idx").on(
+      table.workspaceId,
+      table.creationOperationKey,
+    ),
+    index("internal_documents_lifecycle_idx").on(
+      table.workspaceId,
+      table.lifecycleState,
+      table.updatedAt,
+    ),
+    index("internal_documents_retention_idx").on(
+      table.workspaceId,
+      table.retentionExpiresAt,
+    ),
+  ],
+);
+
+export const internalDocumentRevisions = sqliteTable(
+  "internal_document_revisions",
+  {
+    id: text("id").primaryKey(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => internalDocuments.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id").notNull(),
+    revision: integer("revision").notNull(),
+    operationKey: text("operation_key").notNull(),
+    action: text("action").notNull(),
+    summary: text("summary").notNull(),
+    content: text("content").notNull(),
+    actorType: text("actor_type").notNull(),
+    actorId: text("actor_id").notNull(),
+    sessionId: text("session_id").notNull(),
+    runId: text("run_id").notNull(),
+    sourceReferences: text("source_references", { mode: "json" })
+      .$type<unknown>()
+      .notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("internal_document_revisions_revision_idx").on(
+      table.workspaceId,
+      table.documentId,
+      table.revision,
+    ),
+    uniqueIndex("internal_document_revisions_operation_idx").on(
+      table.workspaceId,
+      table.documentId,
+      table.operationKey,
+    ),
+    index("internal_document_revisions_created_idx").on(
+      table.workspaceId,
+      table.documentId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const internalDocumentAttachments = sqliteTable(
+  "internal_document_attachments",
+  {
+    id: text("id").primaryKey(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => internalDocuments.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id").notNull(),
+    resourceType: text("resource_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    relationship: text("relationship").notNull(),
+    operationKey: text("operation_key").notNull(),
+    actorType: text("actor_type").notNull(),
+    actorId: text("actor_id").notNull(),
+    sessionId: text("session_id").notNull(),
+    runId: text("run_id").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("internal_document_attachments_relationship_idx").on(
+      table.workspaceId,
+      table.resourceType,
+      table.resourceId,
+      table.relationship,
+    ),
+    uniqueIndex("internal_document_attachments_operation_idx").on(
+      table.workspaceId,
+      table.operationKey,
+    ),
+    index("internal_document_attachments_document_idx").on(
+      table.workspaceId,
+      table.documentId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const watchObservationClaims = sqliteTable(
   "watch_observation_claims",
   {
@@ -1005,6 +1117,9 @@ export const schema = {
   docsSignalOwnedWork,
   docsSignalSources,
   docsSignals,
+  internalDocumentAttachments,
+  internalDocumentRevisions,
+  internalDocuments,
   productRunSteps,
   productRunTraceLinks,
   productRuns,
