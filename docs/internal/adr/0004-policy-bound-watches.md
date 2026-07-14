@@ -64,6 +64,25 @@ model may compose existing documentation capabilities only through actions
 allowed by the watch and their existing tool policies. Repository writeback and
 publishing remain separately approval gated.
 
+Each watch has one attached internal working document that provides continuity
+across those Eve sessions. The document is a general agent-document resource,
+not a watch-specific storage primitive. On the first occurrence where it is
+absent, Paige creates it through the generic documentation-work capability and
+attaches it to the watch. Later occurrences receive the same document reference.
+The document follows the watch across effective revisions; its changes retain
+the occurrence and revision provenance needed to distinguish historical context
+from the current contract.
+
+A watch execution skill defines how Paige uses that document. At minimum it
+must tell Paige to consult the document before evaluating new context, preserve
+only findings that are useful to future occurrences, distinguish evidence from
+hypotheses and open questions, keep source references, revise superseded
+conclusions instead of accumulating duplicate run summaries, and leave the
+document unchanged when the occurrence adds no durable knowledge. It must not
+copy raw provider content merely to extend its retention. These are workflow
+instructions, not additional authority; the skill uses the same general
+document operations available under `docs_work.manage`.
+
 Release-readiness review, docs-feedback triage, and future documentation goals
 may be offered as examples or templates. They must use the same watch contract
 and runtime rather than introduce privileged workflow types, purpose-specific
@@ -91,7 +110,10 @@ message, or report an active watch through a fail-open fallback.
 - Provider adapters stay specific where provider authentication, permissions,
   events, and delivery semantics differ.
 - The app-owned database needs watch, audit, idempotency, and bounded-window
-  state separate from docs signals and Chat SDK conversations.
+  state, plus an explicit relationship to its internal working document,
+  separate from docs signals and Chat SDK conversations.
+- Watch continuity remains inspectable product state rather than relying on
+  hidden conversation history or one long-lived Eve session.
 - Evals should prove outcomes and safety invariants across different watch
   configurations rather than require one exact tool sequence.
 - Channel admission, raw-content lifetime, event volume, token use, duplicate
@@ -106,7 +128,7 @@ message, or report an active watch through a fail-open fallback.
 - [Project roadmap](../ROADMAP.md)
 - [Repository model](../REPOSITORY_MODEL.md)
 - [Workflow model](../WORKFLOWS.md)
-- [ADR-0006: Use Stable Capability Families For Model Authority](./0006-stable-capability-families.md)
+- [ADR-0006: Use Stable Capability Families And Composable Resource Primitives](./0006-stable-capability-families.md)
 - [Capability contract and migration inventory](../CAPABILITIES.md)
 - [Epic #57: Give Paige policy-bound watches for proactive docs attention](https://github.com/peelar/paige/issues/57)
 - [Issue #58: Persist a bounded watch contract](https://github.com/peelar/paige/issues/58)

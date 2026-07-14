@@ -1,7 +1,7 @@
 # Capability Contract And Migration Inventory
 
 Status: Accepted
-Last Reviewed: 2026-07-13
+Last Reviewed: 2026-07-14
 
 This document maps Paige's current and planned execution surface to the stable
 authority families accepted in ADR-0006. Capability identifiers are durable
@@ -19,7 +19,7 @@ in this document.
 | --- | --- | --- | --- |
 | `knowledge.read` | Read bounded, provenance-bearing workspace evidence. | Policy subset | Source scope, privacy, retention, and output bounds are checked at execution. |
 | `repository.read` | Materialize, inspect, search, and run named read-oriented checks against configured repositories. | Policy subset | Repository identity, allowed actions, paths, refs, network, and setup readiness are checked at execution. |
-| `docs_work.manage` | Read and update durable documentation signals, plans, recommendations, milestones, blockers, artifacts, and outcomes. | Policy subset | The current agent database, workspace scope, lifecycle, and concurrency rules are checked at execution. |
+| `docs_work.manage` | Create, read, and update durable internal working documents, documentation signals, plans, recommendations, milestones, blockers, artifacts, and outcomes. | Policy subset | The current agent database, workspace and resource scope, lifecycle, provenance, bounds, and concurrency rules are checked at execution. |
 | `draft.edit` | Create, inspect, validate, or abandon reversible working-documentation changes in the sandbox. | Policy subset | Only the configured working documentation repository may change and publication is not included. |
 | `follow_up.schedule` | Create, inspect, cancel, and claim bounded signal-linked follow-up work. | Policy subset | Due time, occurrence, item limits, lifecycle, and idempotency are checked at execution. |
 | `provider.deliver` | Deliver an allowed result to one preapproved provider target. | Policy subset | Verified provider identity, target, delivery mode, budgets, idempotency, and effective policy are checked at execution. |
@@ -102,7 +102,7 @@ conditional is resolved by Eve per session and is not an authority grant.
 | --- | --- | --- | --- | --- | --- |
 | #58 and #64-#69 watch contract | Typed policy and lifecycle input to capability resolution, not a model-facing capability. | Provider admission, watch execution, and operator governance. | Proposed watches, immutable effective revisions, audit events, lifecycle, expiry, and readiness. | Control-plane policy, persistence, concurrency, and fail-closed tests. | Permanent runtime boundary; trackers close when child slices ship. |
 | #59 and #70-#75 provider observation admission | Non-delegable provider adapter that may supply bounded observations to `knowledge.read`. | Slack event adapter and later watch execution. | Ephemeral raw observations plus minimal dedupe claims and bounded windows. | Admission, subtype rejection, privacy, dedupe, restart, window, and budget tests. | Provider-specific adapter remains; purpose-specific workflow wrappers must not be added. |
-| #60 watch goal execution | Dynamic composition of the approved subset of `knowledge.read`, `repository.read`, `docs_work.manage`, `draft.edit`, `follow_up.schedule`, and `provider.deliver`. | Eve watch turns. | Eve session and run, effective watch revision reference, docs work, and allowed artifacts. | Capability-matrix, execution, budget, behavior, and failure evals. | No permanent compatibility wrapper; execution must converge on canonical capabilities from CR2-CR7. |
+| #60 watch goal execution | Dynamic composition of the approved subset of `knowledge.read`, `repository.read`, `docs_work.manage`, `draft.edit`, `follow_up.schedule`, and `provider.deliver`, with watch procedure supplied by a skill. | Eve watch turns. | Eve session and run, effective watch revision reference, one attached internal working document per watch, docs work, and allowed artifacts. | Capability-matrix, generic-document, skill-routing, execution, budget, behavior, and failure evals. | No permanent compatibility wrapper or watch-journal tool; execution must converge on canonical capabilities from CR2-CR7. |
 | #61 watch configuration and governance | Non-delegable operator control plane over typed watch services. | Authenticated operator app and setup flows. | Proposed and effective watches, previews, approvals, lifecycle, and audit history. | Service, authorization, browser, reapproval, and fail-closed tests. | Permanent governance boundary aligned with CR9; no raw prompt or generic tool editor. |
 | #62 release and docs-feedback proof | Eval fixtures and templates using one watch runtime. | Behavioral regression suite and product examples. | Eval artifacts and bounded fixture configuration only. | Cross-scenario behavior, policy, delivery, and no-purpose-specific-tool assertions. | Fixtures remain while useful; they never become production tool names or authority values. |
 
