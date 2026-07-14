@@ -9,14 +9,24 @@ import {
   findInternalDocumentByAttachmentInputSchema,
   internalDocumentMutationResultSchema,
   internalDocumentSchema,
+  internalDocumentSourceReferencesSchema,
   readInternalDocument,
   readInternalDocumentInputSchema,
+  resolveWatchContinuityContext,
   updateInternalDocument,
   updateInternalDocumentInputSchema,
+  watchContinuityAttachment,
+  watchContinuitySourceReferences,
+  type WatchContinuityContext,
 } from "@docs-agent/control-plane/agent";
 import { defineDynamic, defineTool } from "eve/tools";
 import { z } from "zod";
-import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
+import {
+  requireCapabilityToolExecution,
+  resolveDynamicCapabilities,
+  watchDispatchClaimFromAuth,
+} from "../lib/capability-resolution";
+import { PAIGE_WATCH_CAPABILITY_REGISTRY } from "../lib/slack-watch-admission";
 
 const inputSchema = z.discriminatedUnion("mode", [
   createInternalDocumentInputSchema.extend({ mode: z.literal("create") }),
@@ -38,6 +48,14 @@ const outputSchema = z.union([
   }).strict(),
 ]);
 
+type InternalDocumentToolInput = z.infer<typeof inputSchema>;
+type InternalDocumentSourceReferences = z.infer<
+  typeof internalDocumentSourceReferencesSchema
+>;
+type ResolvedWatchContinuity = WatchContinuityContext & {
+  document: NonNullable<WatchContinuityContext["document"]>;
+};
+
 export default defineDynamic({ events: { "step.started": async (event, context) => {
   if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("internal_document")) return null;
   return defineTool({
@@ -47,6 +65,21 @@ export default defineDynamic({ events: { "step.started": async (event, context) 
   outputSchema,
   async execute(input, ctx) {
     await requireCapabilityToolExecution("internal_document", ctx);
+    const watchClaim = watchDispatchClaimFromAuth(ctx.session.auth);
+    const continuity = watchClaim === null
+      ? null
+      : await resolveWatchContinuityContext(watchClaim.reservationId, {
+          capabilityRegistry: PAIGE_WATCH_CAPABILITY_REGISTRY,
+        }, {
+          sessionId: ctx.session.id,
+          runId: ctx.session.turn.id,
+        }, { claimToken: watchClaim.claimToken });
+    if (continuity !== null && continuity.document === null) {
+      throw new Error("The current watch has no docs_work.manage continuity authority.");
+    }
+    const scopedInput = continuity?.document === null || continuity === null
+      ? input
+      : scopeWatchInternalDocumentInput(input, continuity as ResolvedWatchContinuity);
     const commandContext = {
       authority: "docs_work.manage" as const,
       actor: { type: "agent" as const, id: "paige-agent" },
@@ -55,63 +88,63 @@ export default defineDynamic({ events: { "step.started": async (event, context) 
       operationKey: ctx.callId,
     };
 
-    switch (input.mode) {
+    switch (scopedInput.mode) {
       case "create":
         return {
           mode: "create" as const,
           ...(await createInternalDocument({
-            title: input.title,
-            kind: input.kind,
-            editingProfile: input.editingProfile,
-            content: input.content,
-            retentionDays: input.retentionDays,
-            attachment: input.attachment,
-            sourceReferences: input.sourceReferences,
+            title: scopedInput.title,
+            kind: scopedInput.kind,
+            editingProfile: scopedInput.editingProfile,
+            content: scopedInput.content,
+            retentionDays: scopedInput.retentionDays,
+            attachment: scopedInput.attachment,
+            sourceReferences: scopedInput.sourceReferences,
           }, commandContext)),
         };
       case "read":
         return {
           mode: "read" as const,
           document: await readInternalDocument({
-            documentId: input.documentId,
-            revision: input.revision,
+            documentId: scopedInput.documentId,
+            revision: scopedInput.revision,
           }, commandContext),
         };
       case "update":
         return {
           mode: "update" as const,
           ...(await updateInternalDocument({
-            documentId: input.documentId,
-            expectedRevision: input.expectedRevision,
-            content: input.content,
-            changeSummary: input.changeSummary,
-            sourceReferences: input.sourceReferences,
+            documentId: scopedInput.documentId,
+            expectedRevision: scopedInput.expectedRevision,
+            content: scopedInput.content,
+            changeSummary: scopedInput.changeSummary,
+            sourceReferences: scopedInput.sourceReferences,
           }, commandContext)),
         };
       case "find":
         return {
           mode: "find" as const,
           document: await findInternalDocumentByAttachment({
-            attachment: input.attachment,
+            attachment: scopedInput.attachment,
           }, commandContext),
         };
       case "attach":
         return {
           mode: "attach" as const,
           ...(await attachInternalDocument({
-            documentId: input.documentId,
-            expectedRevision: input.expectedRevision,
-            attachment: input.attachment,
+            documentId: scopedInput.documentId,
+            expectedRevision: scopedInput.expectedRevision,
+            attachment: scopedInput.attachment,
           }, commandContext)),
         };
       case "archive":
         return {
           mode: "archive" as const,
           ...(await archiveInternalDocument({
-            documentId: input.documentId,
-            expectedRevision: input.expectedRevision,
-            reason: input.reason,
-            sourceReferences: input.sourceReferences,
+            documentId: scopedInput.documentId,
+            expectedRevision: scopedInput.expectedRevision,
+            reason: scopedInput.reason,
+            sourceReferences: scopedInput.sourceReferences,
           }, commandContext)),
         };
     }
@@ -121,3 +154,53 @@ export default defineDynamic({ events: { "step.started": async (event, context) 
   },
   });
 } } });
+
+export function scopeWatchInternalDocumentInput(
+  input: InternalDocumentToolInput,
+  continuity: ResolvedWatchContinuity,
+): InternalDocumentToolInput {
+  const attachment = watchContinuityAttachment(continuity.runtime.watchId);
+  const sourceReferences = (references: InternalDocumentSourceReferences) => mergeWatchSourceReferences(
+      watchContinuitySourceReferences(continuity.runtime),
+      references,
+    );
+
+  switch (input.mode) {
+    case "create":
+      return { ...input, attachment, sourceReferences: sourceReferences(input.sourceReferences) };
+    case "find":
+      return { ...input, attachment };
+    case "read":
+      requireContinuityDocument(input.documentId, continuity.document.id);
+      return input;
+    case "update":
+      requireContinuityDocument(input.documentId, continuity.document.id);
+      return { ...input, sourceReferences: sourceReferences(input.sourceReferences) };
+    case "attach":
+      requireContinuityDocument(input.documentId, continuity.document.id);
+      return { ...input, attachment };
+    case "archive":
+      throw new Error("An active watch occurrence cannot archive its continuity document.");
+  }
+}
+
+function mergeWatchSourceReferences(
+  required: InternalDocumentSourceReferences,
+  supplied: InternalDocumentSourceReferences,
+): InternalDocumentSourceReferences {
+  const seen = new Set<string>();
+  return internalDocumentSourceReferencesSchema.parse(
+    [...required, ...supplied].filter((reference) => {
+      const key = JSON.stringify([reference.kind, reference.id, reference.url ?? null]);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 20),
+  );
+}
+
+function requireContinuityDocument(actual: string, expected: string): void {
+  if (actual !== expected) {
+    throw new Error("A watch occurrence may access only its attached continuity document.");
+  }
+}

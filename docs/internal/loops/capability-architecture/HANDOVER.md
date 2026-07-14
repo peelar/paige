@@ -101,3 +101,9 @@
   retry-race proof can run locally, but live watch eval proof is not attempted
   while the diagnosed Eve microsandbox session-start blocker remains unchanged.
   Do not retry the live evaluator without a concrete upstream startup fix.
+- #77 - Assumed: continuity is materialized on the first occurrence whose exact
+  revision grants `docs_work.manage`, uses that revision's `auditDays` as its
+  finite retention, stays attached to the stable watch across replacement
+  revisions, and cannot be archived or redirected by an active watch turn;
+  Blocker: the read, update, revise-in-place, and no-op eval is committed but was
+  not executed because the Eve microsandbox session-start blocker is unchanged.

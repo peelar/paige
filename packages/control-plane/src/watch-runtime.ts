@@ -79,6 +79,7 @@ export const watchRuntimeContextSchema = z.object({
   delivery: z.unknown(),
   capabilityGrants: z.array(capabilityFamilySchema.exclude(["publication.publish"])),
   deliveriesPerDay: z.number().int().min(0).max(1_000),
+  auditRetentionDays: z.number().int().min(1).max(365),
   expiresAt: z.string().datetime({ offset: true }),
 }).strict();
 
@@ -218,6 +219,7 @@ export async function resolveWatchRuntimeContext(
         delivery: policy.delivery,
         capabilityGrants: authority.capabilityGrants,
         deliveriesPerDay: policy.budgets.deliveriesPerDay,
+        auditRetentionDays: policy.retention.auditDays,
         expiresAt: policy.expiresAt,
       });
     });

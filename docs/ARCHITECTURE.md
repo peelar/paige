@@ -403,6 +403,16 @@ families, prohibits publication, and ends with the internal `[[SILENT]]`
 sentinel so ordinary assistant output is never a delivery path. Redacted
 capability resolutions and action outcomes retain ids, selected tool or no-op,
 status, and bounded result codes, but no prompt or raw provider content.
+
+When the exact watch revision grants `docs_work.manage`, turn start atomically
+creates or resolves one `living-summary` internal document attached to the
+stable watch identity. Fresh Eve sessions and replacement effective revisions
+receive the same document reference. Watch turns may read and optimistically
+revise only that attachment; the executor adds the current watch, occurrence,
+effective revision, session, and run provenance to every change. The document
+uses the approved audit-retention period, cannot be archived by an active watch
+occurrence, and is left unchanged when the occurrence adds no durable finding.
+Raw provider content is not copied into it automatically.
 Eve's framework `web_fetch` and provider-managed `web_search` retain their
 ordinary behavior outside watch contexts; dynamic overrides hide them on a
 watch resolver failure or unless the exact claim grants `knowledge.read`, and

@@ -13,6 +13,8 @@ import {
 import {
   docsFollowUps,
   docsSignals,
+  internalDocumentAttachments,
+  internalDocuments,
   watchActionOutcomes,
   watchDispatchReservations,
   watchProviderDeliveries,
@@ -21,6 +23,7 @@ import {
 import {
   approveWatchProposal,
   createProposedWatch,
+  editWatchProposal,
 } from "../src/policy-bound-watches.ts";
 import { DEFAULT_WORKSPACE_ID } from "../src/setup-state.ts";
 import type {
@@ -46,6 +49,7 @@ import {
   recordWatchTerminalOutcome,
   releaseWatchTurnDispatch,
 } from "../src/watch-runtime.ts";
+import { resolveWatchContinuityContext } from "../src/watch-continuity.ts";
 import {
   prepareWatchWorkspace,
   READY_WATCH_CAPABILITY_REGISTRY,
@@ -83,6 +87,134 @@ test("a watch turn records a redacted no-op and clears its raw handoff", async (
       memories: 0,
       signals: 0,
     });
+  });
+});
+
+test("watch continuity resolves one attached document across sessions and effective revisions", async () => {
+  await withTemporaryDatabase(async () => {
+    const active = await createActiveWatch(policy({
+      capabilityGrants: ["docs_work.manage"],
+      retention: { rawObservationSeconds: 1_800, auditDays: 45 },
+    }));
+    const first = await prepareAndClaimEvent(
+      active,
+      "A raw provider observation that must not be copied automatically.",
+      "continuity-a-77",
+    );
+    const [firstSession, concurrentSession] = await Promise.all([
+      resolveWatchContinuityContext(
+        first.dispatch.reservation.id,
+        runtimeContext(NOW),
+        { sessionId: "session-continuity-a", runId: "turn-continuity-a", now: NOW },
+        { claimToken: first.claimToken },
+      ),
+      resolveWatchContinuityContext(
+        first.dispatch.reservation.id,
+        runtimeContext(NOW),
+        { sessionId: "session-continuity-race", runId: "turn-continuity-race", now: NOW },
+        { claimToken: first.claimToken },
+      ),
+    ]);
+    assert.ok(firstSession.document !== null);
+    assert.ok(concurrentSession.document !== null);
+    assert.equal(firstSession.document.id, concurrentSession.document.id);
+    assert.equal(firstSession.document.currentRevision, 1);
+    assert.equal(firstSession.document.editingProfile, "living-summary");
+    assert.equal(
+      firstSession.document.retentionExpiresAt,
+      new Date(NOW.getTime() + 45 * 86_400_000).toISOString(),
+    );
+    assert.doesNotMatch(
+      firstSession.document.content ?? "",
+      /raw provider observation/u,
+    );
+    assert.deepEqual(
+      firstSession.document.revisions[0]?.sourceReferences.map(({ kind, id }) => ({ kind, id })),
+      [
+        { kind: "policy-bound-watch", id: active.id },
+        { kind: "watch-effective-revision", id: active.effectiveRevision.id },
+        { kind: "watch-occurrence", id: first.dispatch.reservation.id },
+      ],
+    );
+    assert.equal(
+      [
+        "session-continuity-a/turn-continuity-a",
+        "session-continuity-race/turn-continuity-race",
+      ].includes([
+        firstSession.document.revisions[0]?.sessionId,
+        firstSession.document.revisions[0]?.runId,
+      ].join("/")),
+      true,
+    );
+
+    await recordWatchTerminalOutcome({
+      reservationId: first.dispatch.reservation.id,
+      claimToken: first.claimToken,
+      sessionId: "session-continuity-a",
+      turnId: "turn-continuity-a",
+      status: "succeeded",
+    });
+    const edited = await editWatchProposal({
+      watchId: active.id,
+      expectedProposalRevision: 1,
+      policy: {
+        ...active.effectiveRevision.policy,
+        goal: "Preserve the same continuity while applying a replacement effective revision.",
+      },
+    }, {
+      ...runtimeContext(NOW),
+      operator: OPERATOR,
+    });
+    const replacement = (await approveWatchProposal({
+      watchId: active.id,
+      proposalRevisionId: edited.watch.latestProposal.id,
+      expectedProposalRevision: edited.watch.latestProposal.revision,
+      decision: "approved",
+      idempotencyKey: `approve-${edited.watch.latestProposal.id}`,
+    }, {
+      ...runtimeContext(NOW),
+      operator: OPERATOR,
+    })).watch;
+    assert.notEqual(replacement.effectiveRevision.id, active.effectiveRevision.id);
+    const second = await prepareAndClaimEvent(
+      replacement,
+      "A later occurrence starts a fresh Eve session.",
+      "continuity-b-77",
+    );
+    const laterSession = await resolveWatchContinuityContext(
+      second.dispatch.reservation.id,
+      runtimeContext(NOW),
+      { sessionId: "session-continuity-b", runId: "turn-continuity-b", now: NOW },
+      { claimToken: second.claimToken },
+    );
+    assert.ok(laterSession.document !== null);
+    assert.equal(laterSession.document.id, firstSession.document.id);
+    assert.equal(laterSession.document.currentRevision, 1);
+    assert.equal(laterSession.runtime.effectiveRevisionId, replacement.effectiveRevision.id);
+
+    const counts = await withDocsAgentDatabase(async (db) => ({
+      attachments: (await db.select().from(internalDocumentAttachments)).length,
+      documents: (await db.select().from(internalDocuments)).length,
+    }));
+    assert.deepEqual(counts, { attachments: 1, documents: 1 });
+  });
+});
+
+test("watch continuity does not create document authority when docs work is not granted", async () => {
+  await withTemporaryDatabase(async () => {
+    const active = await createActiveWatch(policy({ capabilityGrants: ["knowledge.read"] }));
+    const claimed = await prepareAndClaimEvent(active, "Read-only occurrence.", "continuity-denied-77");
+    const continuity = await resolveWatchContinuityContext(
+      claimed.dispatch.reservation.id,
+      runtimeContext(NOW),
+      { sessionId: "session-no-docs-work", runId: "turn-no-docs-work", now: NOW },
+      { claimToken: claimed.claimToken },
+    );
+    assert.equal(continuity.document, null);
+    assert.equal(
+      (await withDocsAgentDatabase((db) => db.select().from(internalDocuments))).length,
+      0,
+    );
   });
 });
 

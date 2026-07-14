@@ -97,6 +97,19 @@ assert.match(watched, /sourced answer, explicit abstention, recommendation, or d
 assert.match(watched, /`knowledge\.read` and `repository\.read` capabilities/);
 assert.doesNotMatch(watched, /scan_watched_repositories|Start with a documentation impact report/);
 
+const watchExecution = await readFile(
+  join(skillsRoot, "watch-execution.ts"),
+  "utf8",
+);
+assert.match(watchExecution, /defineDynamic/);
+assert.match(watchExecution, /"turn\.started"/);
+assert.match(watchExecution, /read that exact document.*before evaluating/s);
+assert.match(watchExecution, /separate evidence, hypotheses, and open questions/);
+assert.match(watchExecution, /revise superseded conclusions in place/);
+assert.match(watchExecution, /Leave an existing continuity document unchanged/);
+assert.match(watchExecution, /Never copy raw provider content/);
+assert.match(watchExecution, /Publication is never available to a watch/);
+
 const obsoleteWorkflowNames = [
   "run_docs_maintenance_scenario",
   "prepare_configured_working_repository",

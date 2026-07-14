@@ -155,6 +155,41 @@ test("internal working documents", async () => {
       (error) => hasCode(error, "concurrent-update"),
     );
 
+    const concurrentlyEdited = await createInternalDocument(
+      documentInput("Concurrent edits"),
+      command("create-concurrent-edits", "session-a", "run-concurrent-edits", baseNow),
+    );
+    const editResults = await Promise.allSettled([
+      updateInternalDocument({
+        documentId: concurrentlyEdited.document.id,
+        expectedRevision: 1,
+        content: "# Current state\n\nConcurrent edit A succeeded.",
+        changeSummary: "Apply concurrent edit A.",
+        sourceReferences: [{ kind: "watch-occurrence", id: "occurrence-a" }],
+      }, command("concurrent-edit-a", "session-a", "run-edit-a", baseNow)),
+      updateInternalDocument({
+        documentId: concurrentlyEdited.document.id,
+        expectedRevision: 1,
+        content: "# Current state\n\nConcurrent edit B succeeded.",
+        changeSummary: "Apply concurrent edit B.",
+        sourceReferences: [{ kind: "watch-occurrence", id: "occurrence-b" }],
+      }, command("concurrent-edit-b", "session-b", "run-edit-b", baseNow)),
+    ]);
+    assert.equal(editResults.filter(({ status }) => status === "fulfilled").length, 1);
+    assert.equal(editResults.filter(({ status }) => status === "rejected").length, 1);
+    const rejectedEdit = editResults.find(({ status }) => status === "rejected");
+    assert.equal(
+      rejectedEdit?.status === "rejected" && hasCode(rejectedEdit.reason, "concurrent-update"),
+      true,
+    );
+    const preservedEdit = await readInternalDocument(
+      { documentId: concurrentlyEdited.document.id },
+      command("read-concurrent-edit", "session-c", "run-read-edit", baseNow),
+    );
+    assert.equal(preservedEdit.currentRevision, 2);
+    assert.match(preservedEdit.content ?? "", /Concurrent edit [AB] succeeded/u);
+    assert.equal(preservedEdit.revisions.length, 2);
+
     await assert.rejects(
       createInternalDocument(
         {
