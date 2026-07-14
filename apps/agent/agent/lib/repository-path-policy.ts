@@ -1,6 +1,5 @@
 import type { ToolContext } from "eve/tools";
 
-import type { ResolvedWorkingDocumentationRepository } from "./repository-contract";
 import {
   quoteShellArgument as sh,
   RepositoryPolicyError,
@@ -11,7 +10,7 @@ export type RepositoryPathExpectation = "file" | "directory" | "file-or-create";
 
 export async function assertSafeRepositoryPath(
   ctx: ToolContext,
-  repository: ResolvedWorkingDocumentationRepository,
+  repository: { sandboxPath: string },
   relativePath: string,
   expected: RepositoryPathExpectation,
 ): Promise<void> {

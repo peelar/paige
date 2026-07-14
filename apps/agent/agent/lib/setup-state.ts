@@ -114,6 +114,14 @@ export function buildSetupInstructions(status: SetupStatus): string {
     );
   }
 
+  if (status.contextRepositories.length > 0) {
+    lines.push(
+      `Configured context repositories for read-only workspace knowledge: ${status.contextRepositories
+        .map((repository) => `${repository.name} (${repository.repositoryUrl})`)
+        .join(", ")}.`,
+    );
+  }
+
   if (!status.githubWritebackReady) {
     lines.push(
       "If the user requests GitHub draft PR writeback, finish GitHub writeback setup first by calling `get_setup_status` with `checkGitHubWriteback: true` or `configure_github_writeback`.",

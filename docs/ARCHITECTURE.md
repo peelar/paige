@@ -228,6 +228,26 @@ profiles such as `living-summary` or `chronological-log`, but profiles do not
 change authority or add tools. Documents must not store hidden reasoning,
 secrets, or raw provider content merely to extend its retention.
 
+### Workspace Knowledge Sources
+
+Workspace setup is the registry authority for configured knowledge sources.
+The registry derives stable workspace-owned descriptors for the working
+documentation repository, watched repositories, and context repositories. A
+descriptor records kind, access and allowed read actions, repository/ref/path
+policy where applicable, display and provenance labels, evidence class,
+public-claim suitability, freshness or resolved revision, provider/auth
+readiness, retention, model-output bounds, and the untrusted-data boundary.
+
+`workspace_knowledge` is the bounded read surface for listing that registry,
+searching one or more configured repository sources, and reading line ranges.
+The working documentation repository remains the only mutable repository;
+watched and context repositories materialize only under their dedicated
+`sandbox-read` paths and cannot reach authoring or GitHub writeback. Duplicate
+or conflicting results retain source identity and evidence class. Repository
+text never grants authority, and obvious credentials are redacted before model
+output. Missing auth, unavailable repositories, and unresolved refs are visible
+failures. Request-scoped Slack search remains a separate provider boundary.
+
 ### Policy-Bound Watch Persistence
 
 Policy-bound watches use the same typed control-plane and agent-owned database

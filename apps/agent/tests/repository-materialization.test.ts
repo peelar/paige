@@ -4,14 +4,17 @@ import type { SandboxCommandResult } from "eve/sandbox";
 import type { ToolContext } from "eve/tools";
 
 import {
+  contextRepositorySchema,
   watchedRepositorySchema,
   workingDocumentationRepositorySchema,
+  type ContextRepository,
   type WatchedRepository,
   type WorkingDocumentationRepository,
 } from "../agent/lib/repository-contract";
 import {
   assertRepositoryMaterializationAllowed,
   cloneRepositoryCheckout,
+  readOnlyRepositoryMaterializationPolicy,
   resolveRepositoryCommit,
   type RepositoryActionRecord,
   watchedRepositoryMaterializationPolicy,
@@ -57,10 +60,29 @@ const watchedRepository = watchedRepositorySchema.parse({
   sandboxPath: "/workspace/watched/product-core",
   provenanceLabel: "watched-repository:example/core",
 });
+const contextRepository = contextRepositorySchema.parse({
+  id: "product-decisions",
+  name: "Product decisions",
+  description: "Read-only decision evidence.",
+  source: { type: "github-url", url: "https://github.com/example/decisions.git" },
+  ref: "main",
+  sandboxPath: "/workspace/context/product-decisions",
+  provenanceLabel: "context-repository:example/decisions",
+});
 
 assert.doesNotThrow(() =>
   assertRepositoryMaterializationAllowed(
     workingRepositoryMaterializationPolicy(workingRepository),
+  ),
+);
+assert.doesNotThrow(() =>
+  assertRepositoryMaterializationAllowed(
+    readOnlyRepositoryMaterializationPolicy({
+      sourceKind: "context-repository",
+      repository: contextRepository,
+      requestedRef: "main",
+      access: { mode: "public-github" },
+    }),
   ),
 );
 assert.doesNotThrow(() =>
@@ -93,7 +115,7 @@ assert.throws(
         { mode: "public-github" },
       ),
     ),
-  /Watched repository sandbox path must stay under \/workspace\/watched/,
+  /Read-only watched-repository sandbox path must stay under \/workspace\/watched/,
 );
 assert.throws(
   () =>
@@ -107,7 +129,22 @@ assert.throws(
         { mode: "public-github" },
       ),
     ),
-  /Watched repository action is not allowed: clone/,
+  /Read-only repository action is not allowed: clone/,
+);
+assert.throws(
+  () =>
+    assertRepositoryMaterializationAllowed(
+      readOnlyRepositoryMaterializationPolicy({
+        sourceKind: "context-repository",
+        repository: {
+          ...contextRepository,
+          sandboxPath: "/workspace/watched/product-decisions",
+        } as ContextRepository,
+        requestedRef: "main",
+        access: { mode: "public-github" },
+      }),
+    ),
+  /Read-only context-repository sandbox path must stay under \/workspace\/context/,
 );
 
 {

@@ -13,11 +13,19 @@ const passedValidation = {
       pathFilters: [],
       signals: ["releases"],
     }],
+    contextRepositories: [{
+      repositoryUrl: "https://github.com/example/decisions",
+      ref: "main",
+      pathFilters: [],
+      evidenceClass: "maintainer-confirmed-product-decision",
+      canSupportPublicDocsClaim: true,
+    }],
   },
   checks: [
     { id: "repository", status: "passed", message: "Repository and main are accessible." },
     { id: "github-writeback", status: "passed", message: "GitHub writeback is ready." },
     { id: "watched-repositories", status: "passed", message: "Read-only policy is intact." },
+    { id: "context-repositories", status: "passed", message: "Context policy is intact." },
   ],
 } as const;
 
@@ -56,9 +64,11 @@ test("validates before saving and refreshes canonical readiness", async ({ page 
     .fill("https://github.com/example/new-docs");
   await onboarding.locator('textarea[name="watchedRepositories"]')
     .fill("https://github.com/example/product");
+  await onboarding.locator('textarea[name="contextRepositories"]')
+    .fill("https://github.com/example/decisions");
   await onboarding.getByRole("button", { name: "Validate setup" }).click();
 
-  await expect(onboarding.locator('[data-onboarding-status="passed"]')).toHaveCount(3);
+  await expect(onboarding.locator('[data-onboarding-status="passed"]')).toHaveCount(4);
   await expect(onboarding.getByText("Nothing was saved.")).toHaveCount(0);
   const save = onboarding.getByRole("button", { name: "Save validated setup" });
   await expect(save).toBeVisible();
@@ -73,6 +83,13 @@ test("validates before saving and refreshes canonical readiness", async ({ page 
       defaultRef: "main",
       pathFilters: [],
       signals: ["releases"],
+    }],
+    contextRepositories: [{
+      repositoryUrl: "https://github.com/example/decisions",
+      ref: "main",
+      pathFilters: [],
+      evidenceClass: "maintainer-confirmed-product-decision",
+      canSupportPublicDocsClaim: true,
     }],
   });
 });

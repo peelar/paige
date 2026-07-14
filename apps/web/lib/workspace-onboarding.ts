@@ -22,6 +22,7 @@ export async function resolveWorkspaceOnboardingInitialState(
         repositoryUrl: "https://github.com/example/docs",
         githubConnector: "github/docs-agent",
         watchedRepositories: [],
+        contextRepositories: [],
       }),
       error: null,
     };
@@ -34,6 +35,7 @@ export async function resolveWorkspaceOnboardingInitialState(
       draft: workspaceOnboardingDraftSchema.parse({
         repositoryUrl: "",
         watchedRepositories: [],
+        contextRepositories: [],
       }),
       error:
         "Workspace setup could not be loaded. Restore database access and run the committed migrations before saving changes.",

@@ -22,6 +22,8 @@ const configure = parseSetupCommand([
   "ExampleOperator",
   "--watched-repository",
   "https://github.com/example/product",
+  "--context-repository",
+  "https://github.com/example/decisions",
 ]);
 assert.equal(configure.kind, "configure");
 if (configure.kind === "configure") {
@@ -30,6 +32,11 @@ if (configure.kind === "configure") {
   assert.equal(configure.input.watchedRepositories.length, 1);
   assert.equal(configure.input.watchedRepositories[0]?.importance, "medium");
   assert.deepEqual(configure.input.watchedRepositories[0]?.signals, ["releases"]);
+  assert.equal(configure.input.contextRepositories.length, 1);
+  assert.equal(
+    configure.input.contextRepositories[0]?.repositoryUrl,
+    "https://github.com/example/decisions",
+  );
   assert.equal(configure.operatorLogin, "ExampleOperator");
 }
 

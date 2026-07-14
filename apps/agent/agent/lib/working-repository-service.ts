@@ -3,7 +3,6 @@ import { createHash } from "node:crypto";
 import type { ToolContext } from "eve/tools";
 import { z } from "zod";
 
-import type { ResolvedWorkingDocumentationRepository } from "./repository-contract";
 import {
   joinSandboxPath,
   quoteShellArgument as sh,
@@ -85,17 +84,26 @@ export type WorkingRepositoryValidatorResult = z.infer<
 
 type RepositoryMaterialization = DocsMaintenanceWorkflowResult["materialization"];
 
+export type RepositoryInspectionTarget = {
+  source: { url: string };
+  ref: string;
+  docsRoot: string;
+  sandboxPath: string;
+  allowedActions: readonly string[];
+  provenanceLabel: string;
+};
+
 export class WorkingRepositoryService {
   readonly reference: WorkingRepositoryReference;
   private readonly ctx: ToolContext;
-  private readonly repository: ResolvedWorkingDocumentationRepository;
+  private readonly repository: RepositoryInspectionTarget;
   private readonly actionProvenance: RepositoryActionRecord[];
   private validationProfile: WorkingRepositoryValidationProfile | undefined;
   private readonly onValidationProfile?: (profile: WorkingRepositoryValidationProfile) => void;
 
   constructor(input: {
     ctx: ToolContext;
-    repository: ResolvedWorkingDocumentationRepository;
+    repository: RepositoryInspectionTarget;
     materialization: RepositoryMaterialization;
     actionProvenance: RepositoryActionRecord[];
     validationProfile?: WorkingRepositoryValidationProfile;
@@ -568,7 +576,7 @@ export class WorkingRepositoryService {
   }
 
   private assertActionAllowed(
-    action: ResolvedWorkingDocumentationRepository["allowedActions"][number],
+    action: "read" | "search" | "export-diff" | "run-checks",
     operation: string,
     target?: string,
   ): void {

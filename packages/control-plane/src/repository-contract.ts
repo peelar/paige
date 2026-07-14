@@ -5,6 +5,7 @@ export const WORKING_DOCUMENTATION_REPOSITORY_PROVENANCE_LABEL =
   "working-documentation-repository";
 export const DEFAULT_WORKING_DOCUMENTATION_REPOSITORY_REF = "main";
 export const WATCHED_REPOSITORY_SANDBOX_PATH_PREFIX = "/workspace/watched";
+export const CONTEXT_REPOSITORY_SANDBOX_PATH_PREFIX = "/workspace/context";
 
 export const GITHUB_SANDBOX_NETWORK_ALLOWLIST = [
   "github.com",
@@ -75,6 +76,15 @@ const watchedRepositoryProvenanceLabelSchema = z
     "Use a watched-repository:<owner>/<repo> label.",
   );
 
+const contextRepositoryProvenanceLabelSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .regex(
+    /^context-repository:[a-z0-9_.-]+\/[a-z0-9_.-]+$/,
+    "Use a context-repository:<owner>/<repo> label.",
+  );
+
 const repositoryIdSchema = z
   .string()
   .trim()
@@ -135,16 +145,27 @@ export const workingDocumentationRepositorySchema = z.object({
 });
 
 export const contextRepositorySchema = z.object({
+  id: repositoryIdSchema,
+  name: z.string().trim().min(1),
+  description: z.string().trim().min(1),
   source: githubRepositorySourceSchema,
   ref: z.string().trim().min(1),
-  sandboxPath: sandboxPathSchema,
+  sandboxPath: sandboxPathSchema.refine(
+    (path) => path.startsWith(`${CONTEXT_REPOSITORY_SANDBOX_PATH_PREFIX}/`),
+    `Use an absolute path under ${CONTEXT_REPOSITORY_SANDBOX_PATH_PREFIX}.`,
+  ),
   accessMode: z.literal("sandbox-read").default("sandbox-read"),
   pathFilters: z.array(repositoryRelativePathSchema).default([]),
+  evidenceClass: z.enum([
+    "source-code-or-merged-change",
+    "maintainer-confirmed-product-decision",
+  ]).default("source-code-or-merged-change"),
+  canSupportPublicDocsClaim: z.boolean().default(true),
   allowedActions: z
     .array(contextRepositoryActionSchema)
     .nonempty()
     .default(["clone", "read", "search", "inspect-diff"]),
-  provenanceLabel: provenanceLabelSchema,
+  provenanceLabel: contextRepositoryProvenanceLabelSchema,
 });
 
 export const watchedRepositorySchema = z.object({

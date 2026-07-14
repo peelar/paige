@@ -26,6 +26,7 @@ Options:
   --ref <ref>                    Working repository ref (default: main)
   --docs-root <path>             Docs root; omit to infer it after checkout
   --watched-repository <url>     Read-only evidence repository; repeat as needed
+  --context-repository <url>     Read-only workspace context; repeat as needed
   -h, --help                     Show this help`;
 
 export function parseSetupCommand(args: string[]): SetupCommand {
@@ -57,6 +58,7 @@ export function parseSetupCommand(args: string[]): SetupCommand {
       ref: { type: "string" },
       "docs-root": { type: "string" },
       "watched-repository": { type: "string", multiple: true },
+      "context-repository": { type: "string", multiple: true },
     },
   });
 
@@ -79,6 +81,9 @@ export function parseSetupCommand(args: string[]): SetupCommand {
       githubConnector,
       watchedRepositories: (values["watched-repository"] ?? []).map(
         (watchedRepositoryUrl) => ({ repositoryUrl: watchedRepositoryUrl }),
+      ),
+      contextRepositories: (values["context-repository"] ?? []).map(
+        (contextRepositoryUrl) => ({ repositoryUrl: contextRepositoryUrl }),
       ),
     }),
   };

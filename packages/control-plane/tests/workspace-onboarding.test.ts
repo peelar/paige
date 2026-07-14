@@ -38,6 +38,14 @@ try {
       importance: "high" as const,
       signals: ["releases", "pull-requests"] as const,
     }],
+    contextRepositories: [{
+      repositoryUrl: "https://github.com/example/decisions",
+      name: "Product decisions",
+      description: "Maintainer-confirmed decision records",
+      ref: "accepted",
+      pathFilters: ["decisions/**"],
+      evidenceClass: "maintainer-confirmed-product-decision" as const,
+    }],
   };
   const preflightStates: unknown[] = [];
   const readyDependencies = {
@@ -100,6 +108,18 @@ try {
     "run-readonly-checks",
   ]);
   assert.equal(watched?.provenanceLabel, "watched-repository:example/product");
+  const context = saved.state.workingRepositoryInput?.contextRepositories[0];
+  assert.equal(context?.accessMode, "sandbox-read");
+  assert.deepEqual(context?.allowedActions, [
+    "clone",
+    "read",
+    "search",
+    "inspect-diff",
+    "run-readonly-checks",
+  ]);
+  assert.equal(context?.provenanceLabel, "context-repository:example/decisions");
+  assert.equal(context?.ref, "accepted");
+  assert.equal(context?.evidenceClass, "maintainer-confirmed-product-decision");
 
   const persisted = await readPersistedSetupStatus();
   assert.equal(persisted.state?.workingRepositoryInput?.workingDocumentationRepository.source.url, input.repositoryUrl);
@@ -120,6 +140,7 @@ try {
     docsRoot: "docs",
     githubConnector: "github/docs-agent",
     watchedRepositories: [],
+    contextRepositories: [],
   });
   const paths: string[] = [];
   await validateWorkingRepositoryAccess({

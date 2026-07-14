@@ -14,6 +14,7 @@ export * from "./behavior-settings.ts";
 export { failApprovalsForRunReference, markApprovalAnsweredByCall, recordApprovalBatch, recordApprovalBatchInputSchema } from "./approval-inbox.ts";
 export { recordConnectorDeliveryVerification } from "./connector-handoffs.ts";
 export * from "./repository-contract.ts";
+export * from "./workspace-knowledge-contract.ts";
 export * from "./setup-state.ts";
 export * from "./repository-validation.ts";
 export { docsAgentDatabaseLocation } from "./db/client.ts";

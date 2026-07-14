@@ -28,6 +28,15 @@ export function WorkspaceOnboarding({
     ),
     [initialDraft.watchedRepositories],
   );
+  const existingContext = useMemo(
+    () => new Map(
+      initialDraft.contextRepositories.map((repository) => [
+        normalizeUrl(repository.repositoryUrl),
+        repository,
+      ]),
+    ),
+    [initialDraft.contextRepositories],
+  );
   const [repositoryUrl, setRepositoryUrl] = useState(initialDraft.repositoryUrl);
   const [ref, setRef] = useState(initialDraft.ref);
   const [docsRoot, setDocsRoot] = useState(initialDraft.docsRoot ?? "");
@@ -36,6 +45,9 @@ export function WorkspaceOnboarding({
   );
   const [watchedRepositoryUrls, setWatchedRepositoryUrls] = useState(
     initialDraft.watchedRepositories.map(({ repositoryUrl: url }) => url).join("\n"),
+  );
+  const [contextRepositoryUrls, setContextRepositoryUrls] = useState(
+    initialDraft.contextRepositories.map(({ repositoryUrl: url }) => url).join("\n"),
   );
   const [validation, setValidation] = useState<WorkspaceOnboardingValidation>();
   const [pending, setPending] = useState<"validate" | "save">();
@@ -60,12 +72,24 @@ export function WorkspaceOnboarding({
         pathFilters: [],
         signals: ["releases" as const],
       });
+    const contextRepositories = contextRepositoryUrls
+      .split("\n")
+      .map((url) => url.trim())
+      .filter(Boolean)
+      .map((url) => existingContext.get(normalizeUrl(url)) ?? {
+        repositoryUrl: url,
+        ref: "main",
+        pathFilters: [],
+        evidenceClass: "source-code-or-merged-change" as const,
+        canSupportPublicDocsClaim: true,
+      });
     return {
       repositoryUrl,
       ref: ref.trim() || "main",
       docsRoot: docsRoot.trim() || undefined,
       githubConnector: githubConnector.trim() || undefined,
       watchedRepositories,
+      contextRepositories,
     };
   }
 
@@ -103,13 +127,18 @@ export function WorkspaceOnboarding({
   }
 
   async function save() {
+    if (validation?.readyForPersistence !== true) {
+      setMessage("Validate the current setup before saving it.");
+      return;
+    }
+    const validatedInput = validation.input;
     setPending("save");
     setMessage(null);
     try {
       const response = await fetch("/api/operator/workspace-setup", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload()),
+        body: JSON.stringify(validatedInput),
       });
       const body = await response.json() as {
         error?: string;
@@ -241,6 +270,22 @@ export function WorkspaceOnboarding({
               }}
               placeholder={"https://github.com/owner/product\nhttps://github.com/owner/sdk"}
               value={watchedRepositoryUrls}
+            />
+          </Field>
+
+          <Field
+            help="Optional, one GitHub URL per line. Context sources keep stable provenance and can never receive patches or writeback."
+            label="Context repositories"
+          >
+            <textarea
+              className={cn(inputClassName, "min-h-32 resize-y py-3")}
+              name="contextRepositories"
+              onChange={(event) => {
+                setContextRepositoryUrls(event.target.value);
+                changed();
+              }}
+              placeholder={"https://github.com/owner/architecture\nhttps://github.com/owner/decisions"}
+              value={contextRepositoryUrls}
             />
           </Field>
 

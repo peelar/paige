@@ -37,16 +37,30 @@ export const workspaceOnboardingWatchedRepositorySchema = z.object({
     .default(["releases"]),
 });
 
+export const workspaceOnboardingContextRepositorySchema = z.object({
+  repositoryUrl: z.string().trim().min(1),
+  name: optionalText,
+  description: optionalText,
+  ref: z.string().trim().min(1).default(DEFAULT_WORKING_DOCUMENTATION_REPOSITORY_REF),
+  pathFilters: z.array(z.string().trim().min(1)).default([]),
+  evidenceClass: z.enum([
+    "source-code-or-merged-change",
+    "maintainer-confirmed-product-decision",
+  ]).default("source-code-or-merged-change"),
+  canSupportPublicDocsClaim: z.boolean().default(true),
+});
+
 export const workspaceOnboardingInputSchema = z.object({
   repositoryUrl: z.string().trim().min(1),
   ref: z.string().trim().min(1).default(DEFAULT_WORKING_DOCUMENTATION_REPOSITORY_REF),
   docsRoot: optionalText,
   githubConnector: optionalText,
   watchedRepositories: z.array(workspaceOnboardingWatchedRepositorySchema).default([]),
+  contextRepositories: z.array(workspaceOnboardingContextRepositorySchema).default([]),
 });
 
 export const workspaceOnboardingCheckSchema = z.object({
-  id: z.enum(["repository", "github-writeback", "watched-repositories"]),
+  id: z.enum(["repository", "github-writeback", "watched-repositories", "context-repositories"]),
   status: z.enum(["passed", "blocked"]),
   message: z.string(),
 });
@@ -94,6 +108,15 @@ export async function readWorkspaceOnboardingDraft(): Promise<WorkspaceOnboardin
       defaultRef: repository.defaultRef,
       pathFilters: repository.pathFilters,
       signals: repository.signals,
+    })),
+    contextRepositories: (repositoryInput?.contextRepositories ?? []).map((repository) => ({
+      repositoryUrl: repository.source.url,
+      name: repository.name,
+      description: repository.description,
+      ref: repository.ref,
+      pathFilters: repository.pathFilters,
+      evidenceClass: repository.evidenceClass,
+      canSupportPublicDocsClaim: repository.canSupportPublicDocsClaim,
     })),
   });
 }
@@ -165,6 +188,13 @@ export async function validateWorkspaceOnboarding(
       message: parsed.data.watchedRepositories.length === 0
         ? "No watched repositories will be configured."
         : `${parsed.data.watchedRepositories.length} watched repositories retain sandbox-read access and read-only actions.`,
+    },
+    {
+      id: "context-repositories" as const,
+      status: "passed" as const,
+      message: parsed.data.contextRepositories.length === 0
+        ? "No context repositories will be configured."
+        : `${parsed.data.contextRepositories.length} context repositories retain sandbox-read access and read-only actions.`,
     },
   ];
 
@@ -245,6 +275,38 @@ export function buildWorkspaceOnboardingState(
     throw new Error("Watched repositories must resolve to unique repository identities.");
   }
 
+  const contextRepositories = parsed.contextRepositories.map((repository) => {
+    const slug = parseGitHubRepositoryUrl(repository.repositoryUrl);
+    const normalizedOwner = slug.owner.toLowerCase();
+    const normalizedRepo = slug.repo.toLowerCase();
+    const id = `${normalizedOwner}-${normalizedRepo}`
+      .replace(/[^a-z0-9-]+/gu, "-")
+      .replace(/^-+|-+$/gu, "");
+    return {
+      id,
+      name: repository.name ?? slug.repo,
+      description: repository.description ?? `${slug.owner}/${slug.repo} workspace context`,
+      source: { type: "github-url" as const, url: repository.repositoryUrl },
+      ref: repository.ref,
+      sandboxPath: `/workspace/context/${id}`,
+      accessMode: "sandbox-read" as const,
+      allowedActions: [
+        "clone",
+        "read",
+        "search",
+        "inspect-diff",
+        "run-readonly-checks",
+      ] as const,
+      pathFilters: repository.pathFilters,
+      evidenceClass: repository.evidenceClass,
+      canSupportPublicDocsClaim: repository.canSupportPublicDocsClaim,
+      provenanceLabel: `context-repository:${normalizedOwner}/${normalizedRepo}`,
+    };
+  });
+  if (new Set(contextRepositories.map(({ id }) => id)).size !== contextRepositories.length) {
+    throw new Error("Context repositories must resolve to unique repository identities.");
+  }
+
   return setupStateSchema.parse({
     version: SETUP_STATE_VERSION,
     workingRepositoryInput: repositoryInputSchema.parse({
@@ -254,6 +316,7 @@ export function buildWorkspaceOnboardingState(
         docsRoot: parsed.docsRoot,
       },
       watchedRepositories,
+      contextRepositories,
     }),
     githubWriteback: { connector: parsed.githubConnector },
   });

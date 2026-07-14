@@ -1,7 +1,8 @@
 # Repository Model
 
 The agent works from one required **working documentation repository**, optional
-read-only **watched repositories**, and zero or more external evidence sources.
+read-only **watched repositories** and **context repositories**, and zero or more
+external evidence sources.
 The working documentation repository is the only mutable target. Everything else
 is evidence for the documentation impact report or for a durable docs signal that
 may later trigger verification and patch work.
@@ -116,9 +117,21 @@ repository, fake diff, or false-success report.
 
 ## Context Repositories
 
-Context repositories are the broad future abstraction for additional repository
-evidence. The current implementation uses the narrower watched repository
-contract below.
+Context repositories are configured GitHub-hosted knowledge sources that are not
+delegations of proactive attention. Each has a stable source id, display and
+provenance labels, requested ref, optional path filters, explicit evidence
+class, and `sandbox-read` access under `/workspace/context/<id>`. They expose
+only clone, list, search, read, diff inspection, and explicitly safe read-only
+checks. They can never enter authoring, branching, commit, publication, or
+writeback paths.
+
+The `workspace_knowledge` capability lists the configured source registry and
+performs bounded search or line-range reads without starting a release scan or
+documentation workflow. Every excerpt preserves source identity, requested ref
+and resolved revision, path, evidence class, and an untrusted-data marker.
+Obvious credential material is redacted before model output. Missing provider
+access, stale or missing refs, and unavailable repositories are visible source
+failures rather than empty successful evidence.
 
 ## Watched Repositories
 
@@ -359,10 +372,10 @@ The web flow first validates the working repository, requested ref, optional
 docs root, GitHub App installation, repository grant, and writeback permissions;
 failed checks never produce a ready setup. A successful save appends a full
 setup snapshot to `workspace_setup_events` with the authenticated operator id
-and normalized GitHub login. Watched repositories are reconstructed on the
-server with sandbox-read access, the fixed read-only action set, and their
-provenance label before persistence. The browser cannot turn one into a
-writeback target.
+and normalized GitHub login. Watched and context repositories are reconstructed
+on the server with sandbox-read access, fixed read-only action sets, stable
+identities, and their provenance labels before persistence. The browser cannot
+turn either into a writeback target.
 
 The signal database should start small but support the near-term M3 workflows:
 

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import {
   WORKING_REPOSITORY_SANDBOX_NETWORK_ALLOWLIST,
+  type ContextRepository,
   type WatchedRepository,
   type WorkingDocumentationRepository,
 } from "./repository-contract";
@@ -19,9 +20,10 @@ export const repositoryActionRecordSchema = z.object({
 
 export type RepositoryActionRecord = z.infer<typeof repositoryActionRecordSchema>;
 
-export type WatchedRepositoryCheckoutAccess =
+export type ReadOnlyRepositoryCheckoutAccess =
   | { mode: "github-app"; token: string }
   | { mode: "public-github" };
+export type WatchedRepositoryCheckoutAccess = ReadOnlyRepositoryCheckoutAccess;
 
 export type WorkingRepositoryMaterializationPolicy = {
   authority: "working-documentation";
@@ -30,17 +32,25 @@ export type WorkingRepositoryMaterializationPolicy = {
   requestedRef: string;
 };
 
-export type WatchedRepositoryMaterializationPolicy = {
-  authority: "watched-evidence";
+export type ReadOnlyRepository = WatchedRepository | ContextRepository;
+
+export type ReadOnlyRepositoryMaterializationPolicy = {
+  authority: "read-only-evidence";
+  sourceKind: "watched-repository" | "context-repository";
   accessMode: "sandbox-read";
-  repository: WatchedRepository;
+  repository: ReadOnlyRepository;
   requestedRef: string;
-  access: WatchedRepositoryCheckoutAccess;
+  access: ReadOnlyRepositoryCheckoutAccess;
+};
+
+export type WatchedRepositoryMaterializationPolicy = ReadOnlyRepositoryMaterializationPolicy & {
+  sourceKind: "watched-repository";
+  repository: WatchedRepository;
 };
 
 export type RepositoryMaterializationPolicy =
   | WorkingRepositoryMaterializationPolicy
-  | WatchedRepositoryMaterializationPolicy;
+  | ReadOnlyRepositoryMaterializationPolicy;
 
 const PRIVATE_SUBNETS = [
   "10.0.0.0/8",
@@ -73,11 +83,25 @@ export function watchedRepositoryMaterializationPolicy(
   access: WatchedRepositoryCheckoutAccess,
 ): WatchedRepositoryMaterializationPolicy {
   return {
-    authority: "watched-evidence",
+    authority: "read-only-evidence",
+    sourceKind: "watched-repository",
     accessMode: "sandbox-read",
     repository,
     requestedRef,
     access,
+  };
+}
+
+export function readOnlyRepositoryMaterializationPolicy(input: {
+  sourceKind: "watched-repository" | "context-repository";
+  repository: ReadOnlyRepository;
+  requestedRef: string;
+  access: ReadOnlyRepositoryCheckoutAccess;
+}): ReadOnlyRepositoryMaterializationPolicy {
+  return {
+    authority: "read-only-evidence",
+    accessMode: "sandbox-read",
+    ...input,
   };
 }
 
@@ -88,7 +112,7 @@ export function assertRepositoryMaterializationAllowed(
     if (policy.authority === "working-documentation") {
       throw new RepositoryPolicyError("Repository action is not allowed: clone");
     }
-    throw new Error("Watched repository action is not allowed: clone");
+    throw new Error("Read-only repository action is not allowed: clone");
   }
 
   const path = policy.repository.sandboxPath;
@@ -99,12 +123,15 @@ export function assertRepositoryMaterializationAllowed(
     return;
   }
 
+  const requiredPrefix = policy.sourceKind === "watched-repository"
+    ? "/workspace/watched/"
+    : "/workspace/context/";
   if (
-    !path.startsWith("/workspace/watched/") ||
+    !path.startsWith(requiredPrefix) ||
     path.includes("\\") ||
     path.split("/").includes("..")
   ) {
-    throw new Error(`Watched repository sandbox path must stay under /workspace/watched: ${path}`);
+    throw new Error(`Read-only ${policy.sourceKind} sandbox path must stay under ${requiredPrefix}: ${path}`);
   }
 }
 
@@ -116,8 +143,8 @@ export async function cloneRepositoryCheckout(
   assertRepositoryMaterializationAllowed(policy);
 
   const sandbox = await ctx.getSandbox();
-  if (policy.authority === "watched-evidence") {
-    await configureWatchedRepositoryAccess(ctx, policy, actionProvenance);
+  if (policy.authority === "read-only-evidence") {
+    await configureReadOnlyRepositoryAccess(ctx, policy, actionProvenance);
   }
 
   await sandbox.removePath({
@@ -165,7 +192,7 @@ export async function cloneRepositoryCheckout(
     const reason = summarizeCommandFailure(clone);
     actionProvenance.push(
       recordRepositoryAction(policy.repository, "clone", "failure", {
-        target: policy.authority === "watched-evidence"
+        target: policy.authority === "read-only-evidence"
           ? `${policy.repository.source.url}#${policy.requestedRef}`
           : undefined,
         reason,
@@ -176,7 +203,7 @@ export async function cloneRepositoryCheckout(
 
   actionProvenance.push(
     recordRepositoryAction(policy.repository, "clone", "success", {
-      target: policy.authority === "watched-evidence"
+      target: policy.authority === "read-only-evidence"
         ? `${policy.repository.sandboxPath}#${policy.requestedRef}`
         : policy.repository.sandboxPath,
     }),
@@ -196,7 +223,7 @@ export async function resolveRepositoryCommit(
 }
 
 export function recordRepositoryAction(
-  repository: WorkingDocumentationRepository | WatchedRepository,
+  repository: { provenanceLabel: string },
   action: string,
   status: RepositoryActionRecord["status"],
   details: Omit<RepositoryActionRecord, "action" | "status" | "provenanceLabel"> = {},
@@ -228,9 +255,9 @@ export function normalizeRepositoryUrl(value: string): string {
   return value.trim().replace(/\.git$/, "").replace(/\/$/, "").toLowerCase();
 }
 
-async function configureWatchedRepositoryAccess(
+async function configureReadOnlyRepositoryAccess(
   ctx: ToolContext,
-  policy: WatchedRepositoryMaterializationPolicy,
+  policy: ReadOnlyRepositoryMaterializationPolicy,
   actionProvenance: RepositoryActionRecord[],
 ): Promise<void> {
   const sandbox = await ctx.getSandbox();
@@ -256,7 +283,7 @@ async function configureWatchedRepositoryAccess(
   actionProvenance.push(
     recordRepositoryAction(policy.repository, "broker-github-token", "success", {
       target: "github.com",
-      reason: "Using GitHub App access for watched repository materialization.",
+      reason: `Using GitHub App access for ${policy.sourceKind} materialization.`,
     }),
   );
 }
@@ -265,7 +292,10 @@ function cloneFailure(policy: RepositoryMaterializationPolicy, reason: string): 
   if (policy.authority === "working-documentation") {
     return new Error(`Failed to clone working documentation repository: ${reason}`);
   }
-  return new Error(`Failed to clone watched repository ${policy.repository.id}: ${reason}`);
+  const label = policy.sourceKind === "watched-repository"
+    ? "watched repository"
+    : "context repository";
+  return new Error(`Failed to clone ${label} ${policy.repository.id}: ${reason}`);
 }
 
 function truncate(value: string, maxLength: number): string {

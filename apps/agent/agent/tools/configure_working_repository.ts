@@ -14,13 +14,14 @@ const outputSchema = z.object({
   docsRoot: z.string().optional(),
   sandboxPath: z.string(),
   watchedRepositories: z.number(),
+  contextRepositories: z.number(),
   materialized: z.boolean(),
   actionProvenance: z.array(repositoryActionRecordSchema),
 });
 
 export default defineTool({
   description:
-    "Validate and persist the working documentation repository setup without cloning it. The first working_repository operation materializes the configured checkout implicitly.",
+    "Validate and persist the working documentation repository plus optional read-only watched and context repositories without cloning them. The first read operation materializes the selected configured checkout implicitly.",
   inputSchema: repositoryInputSchema,
   outputSchema,
   async execute(input, ctx) {
@@ -37,6 +38,7 @@ export default defineTool({
       docsRoot: repository.docsRoot,
       sandboxPath: repository.sandboxPath,
       watchedRepositories: repositoryInput.watchedRepositories.length,
+      contextRepositories: repositoryInput.contextRepositories.length,
       materialized: false,
       actionProvenance,
     };
@@ -51,6 +53,7 @@ export default defineTool({
         docsRoot: output.docsRoot,
         sandboxPath: output.sandboxPath,
         watchedRepositories: output.watchedRepositories,
+        contextRepositories: output.contextRepositories,
         materialized: output.materialized,
       },
     };

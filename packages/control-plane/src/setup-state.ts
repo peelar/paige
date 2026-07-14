@@ -12,6 +12,7 @@ import { workspaceSetup, workspaceSetupEvents } from "./db/schema.ts";
 import {
   repositoryInputSchema,
   type RepositoryInput,
+  type ContextRepository,
   type WatchedRepository,
   type WorkingDocumentationRepository,
 } from "./repository-contract.ts";
@@ -39,6 +40,12 @@ const watchedRepositoryRequiredActions = [
   "read",
   "search",
 ] as const satisfies readonly WatchedRepository["allowedActions"][number][];
+
+const contextRepositoryRequiredActions = [
+  "clone",
+  "read",
+  "search",
+] as const satisfies readonly ContextRepository["allowedActions"][number][];
 
 const githubWritebackSetupSchema = z
   .object({
@@ -94,6 +101,15 @@ export const setupStatusSchema = z.object({
       defaultRef: z.string(),
       sandboxPath: z.string(),
       signals: z.array(z.string()),
+    }),
+  ),
+  contextRepositories: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      repositoryUrl: z.string(),
+      ref: z.string(),
+      sandboxPath: z.string(),
     }),
   ),
   githubWriteback: z.object({
@@ -265,6 +281,7 @@ export function evaluateSetupState(state: SetupState | null): SetupStatus {
         },
       },
       watchedRepositories: [],
+      contextRepositories: [],
       issues: [
         {
           code: "setup-state-missing",
@@ -350,6 +367,23 @@ export function evaluateSetupState(state: SetupState | null): SetupStatus {
     }
   }
 
+  const contextRepositories = repositoryInputResult?.success
+    ? repositoryInputResult.data.contextRepositories
+    : [];
+  for (const contextRepository of contextRepositories) {
+    for (const action of contextRepositoryRequiredActions) {
+      if (!contextRepository.allowedActions.includes(action)) {
+        issues.push({
+          code: "working-repository-action-missing",
+          capability: "docs-maintenance",
+          message: `Context repository ${contextRepository.id} is missing required read-only action: ${action}.`,
+          nextAction:
+            "Re-run workspace setup with a complete context repository configuration.",
+        });
+      }
+    }
+  }
+
   const connector = resolveGitHubConnector(state);
   if (connector.trim() === "") {
     issues.push({
@@ -390,6 +424,13 @@ export function evaluateSetupState(state: SetupState | null): SetupStatus {
       sandboxPath: watchedRepository.sandboxPath,
       signals: watchedRepository.signals,
     })),
+    contextRepositories: contextRepositories.map((contextRepository) => ({
+      id: contextRepository.id,
+      name: contextRepository.name,
+      repositoryUrl: contextRepository.source.url,
+      ref: contextRepository.ref,
+      sandboxPath: contextRepository.sandboxPath,
+    })),
     githubWriteback: {
       connectorConfigured: connector.trim() !== "",
       connector,
@@ -419,6 +460,7 @@ function buildInvalidSetupStatus(message: string): SetupStatus {
       },
     },
     watchedRepositories: [],
+    contextRepositories: [],
     issues: [
       {
         code: "setup-state-invalid",
@@ -456,7 +498,7 @@ export function repositoryInputForSetup(input: RepositoryInput): RepositoryInput
   return {
     workingDocumentationRepository: parsed.workingDocumentationRepository,
     watchedRepositories: parsed.watchedRepositories,
-    contextRepositories: [],
+    contextRepositories: parsed.contextRepositories,
     externalContext: [],
   };
 }

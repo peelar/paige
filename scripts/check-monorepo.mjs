@@ -191,6 +191,7 @@ for (const evalId of [
   "identity",
   "saleor-docs-user-tests",
   "watched-repositories",
+  "workspace-knowledge-sources",
   "workspace-memory",
 ]) {
   if (!evalList.includes(evalId)) {

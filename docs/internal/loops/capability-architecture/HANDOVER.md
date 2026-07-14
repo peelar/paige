@@ -22,3 +22,11 @@
   do not retry without a concrete Eve session-start fix. Keep #81 open until
   live focused-patch, multi-file, correction, and failed-validation proof can
   execute.
+- #82 - Assumed: context repositories default to source-code or merged-change
+  evidence; maintainer-confirmed decisions require explicit configuration. If
+  a GitHub connector is configured, token resolution fails closed instead of
+  falling back to anonymous access.
+- #82 - Blocker: the answer-only workspace-knowledge eval is committed and
+  deterministically discovered, but was not executed because the inherited
+  Eve microsandbox session-start blocker is unchanged. Keep #82 open until the
+  live current-docs plus read-only-source proof can execute.
