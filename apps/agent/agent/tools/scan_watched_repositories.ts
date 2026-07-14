@@ -1,17 +1,23 @@
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 
 import {
   scanWatchedRepositories,
   scanWatchedRepositoriesInputSchema,
   scanWatchedRepositoriesResultSchema,
 } from "../lib/watched-repository-workflow";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("scan_watched_repositories")) return null;
+  return defineTool({
   description:
     "Scan configured watched repositories for recent release signals, verify candidates in read-only sandbox checkouts, compare them against the working documentation repository, and return a documentation impact report. This tool never writes to watched repositories and never publishes PRs.",
   inputSchema: scanWatchedRepositoriesInputSchema,
   outputSchema: scanWatchedRepositoriesResultSchema,
-  execute: scanWatchedRepositories,
+  async execute(input, ctx) {
+    await requireCapabilityToolExecution("scan_watched_repositories", ctx);
+    return scanWatchedRepositories(input, ctx);
+  },
   toModelOutput(output) {
     return {
       type: "json",
@@ -43,4 +49,5 @@ export default defineTool({
       },
     };
   },
-});
+  });
+} } });

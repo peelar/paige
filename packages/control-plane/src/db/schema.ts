@@ -921,6 +921,34 @@ export const productRuns = sqliteTable(
   ],
 );
 
+export const capabilityResolutionEvents = sqliteTable(
+  "capability_resolution_events",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    sessionId: text("session_id").notNull(),
+    turnId: text("turn_id").notNull(),
+    contextClass: text("context_class").notNull(),
+    status: text("status").notNull(),
+    capabilityFamilies: text("capability_families", { mode: "json" })
+      .$type<string[]>()
+      .notNull(),
+    toolNames: text("tool_names", { mode: "json" }).$type<string[]>().notNull(),
+    reasonCodes: text("reason_codes", { mode: "json" }).$type<string[]>().notNull(),
+    reservationId: text("reservation_id"),
+    watchId: text("watch_id"),
+    effectiveRevisionId: text("effective_revision_id"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("capability_resolution_events_session_idx").on(
+      table.workspaceId,
+      table.sessionId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const productRunSteps = sqliteTable(
   "product_run_steps",
   {
@@ -1100,6 +1128,7 @@ export const validationCases = sqliteTable(
 export const schema = {
   approvalDecisions,
   approvalRequests,
+  capabilityResolutionEvents,
   validationCases,
   validationRuns,
   chatSdkKeyValues,

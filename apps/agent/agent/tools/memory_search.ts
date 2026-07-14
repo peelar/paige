@@ -1,17 +1,23 @@
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 
 import {
   searchWorkspaceMemory,
   searchWorkspaceMemoryInputSchema,
   searchWorkspaceMemoryResultSchema,
 } from "../lib/workspace-memory";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("memory_search")) return null;
+  return defineTool({
   description:
     "Search active or selected workspace memories by exact text and tags. Use this as routing and triage context only; it is not source evidence for public docs claims.",
   inputSchema: searchWorkspaceMemoryInputSchema,
   outputSchema: searchWorkspaceMemoryResultSchema,
-  execute: searchWorkspaceMemory,
+  async execute(input, ctx) {
+    await requireCapabilityToolExecution("memory_search", ctx);
+    return searchWorkspaceMemory(input);
+  },
   toModelOutput(output) {
     return {
       type: "json",
@@ -39,4 +45,5 @@ export default defineTool({
       },
     };
   },
-});
+  });
+} } });

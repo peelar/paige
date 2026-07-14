@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { capabilityFamilySchema } from "./capability-contract.ts";
+
 export const WATCH_POLICY_CONTRACT_VERSION = 1;
 
 const identifierSchema = z.string().trim().min(1).max(200);
@@ -17,13 +19,8 @@ export const watchLifecycleStateSchema = z.enum([
   "deleted",
 ]);
 
-export const watchCapabilityFamilySchema = z.enum([
-  "knowledge.read",
-  "repository.read",
-  "docs_work.manage",
-  "draft.edit",
-  "follow_up.schedule",
-  "provider.deliver",
+export const watchCapabilityFamilySchema = capabilityFamilySchema.exclude([
+  "publication.publish",
 ]);
 
 export const watchSourceSchema = z.object({

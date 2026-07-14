@@ -67,10 +67,24 @@ than current tool names or scenario workflows. The accepted identifiers are:
   documentation draft.
 
 Capability identifiers are durable policy terms, not promises of availability.
-Eve dynamic resolution may narrow the visible tool set from the verified
-channel and principal, setup readiness, work state, and effective watch
-revision. Every implementation still rechecks authorization and resource policy
-inside execution.
+All authored capability tools resolve at Eve step start, and capability-gated
+skills resolve at turn start. The resolver cross-checks the verified channel,
+current and initiating principals, setup and provider readiness, prepared-draft
+identity, pending approval state, and the current exact watch revision and
+grants. Missing, mismatched, corrupt, or unavailable authority removes the
+surface; there is no static privileged fallback. Every implementation rechecks
+authorization and resource policy inside execution. Watch execution carries
+only an opaque server-issued dispatch reservation id and re-reads the ready
+reservation, active watch, exact effective revision, expiry, source, and grants
+again before each tool call.
+
+Each decision is recorded in the agent database as a redacted, replay-safe
+capability-resolution event containing only session and turn ids, context
+class, stable capability families, tool names, bounded reason codes, and stable
+watch runtime ids. Operator approval resume is a separate inspectable context:
+it may restore only the exact publication call for a still-prepared checked
+draft when the current Vercel OIDC runtime retains the original verified human
+initiator. Schedule and watch principals can never use that path.
 
 A watch may grant only an approved subset of the first six families. It can
 never grant `publication.publish`; publishing remains separately authorized and

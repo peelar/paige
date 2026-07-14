@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const agentRoot = join(repositoryRoot, "apps", "agent");
@@ -32,7 +32,28 @@ const manifest = JSON.parse(
     "utf8",
   ),
 );
+const compileMetadata = JSON.parse(
+  readFileSync(
+    join(agentRoot, ".eve", "compile", "compile-metadata.json"),
+    "utf8",
+  ),
+);
+assert.equal(
+  compileMetadata.status,
+  "ready",
+  "Eve discovery and compilation must succeed before the capability manifest is trusted.",
+);
 const inventory = readFileSync(inventoryPath, "utf8");
+const requireFromAgent = createRequire(join(agentRoot, "package.json"));
+const eveRoot = dirname(requireFromAgent.resolve("eve/package.json"));
+const { transformDynamicToolExecute } = await import(pathToFileURL(join(
+  eveRoot,
+  "dist",
+  "src",
+  "internal",
+  "workflow-bundle",
+  "dynamic-tool-transform.js",
+)).href);
 
 const stableFamilies = parseTable(inventory, "Stable Capability Families", 4);
 assert.deepEqual(
@@ -61,8 +82,8 @@ assert.match(
 
 const authoredRows = parseTable(inventory, "Current Authored Tool Migration", 8);
 const authoredNames = authoredRows.map((row) => codeValue(row[0])).toSorted();
-const manifestToolNames = manifest.tools
-  .map((tool) => tool.name)
+const manifestToolNames = manifest.dynamicTools
+  .map((tool) => tool.slug)
   .toSorted();
 assert.deepEqual(
   authoredNames,
@@ -74,6 +95,41 @@ assert.equal(
   authoredNames.length,
   "The authored capability migration inventory contains duplicate tools.",
 );
+assert.equal(
+  authoredNames.length,
+  23,
+  "The accepted authored capability surface must contain all 23 dynamic tools.",
+);
+assert.deepEqual(
+  manifest.tools,
+  [],
+  "Authored capability tools must not retain a static privileged fallback.",
+);
+for (const tool of manifest.dynamicTools) {
+  assert.deepEqual(
+    tool.eventNames,
+    ["step.started"],
+    `${tool.slug} must resolve at step start so current authority is re-read.`,
+  );
+  const sourcePath = join(agentRoot, "agent", tool.logicalPath);
+  const source = readFileSync(sourcePath, "utf8");
+  assert.match(source, /defineDynamic\s*\(/u, `${tool.slug} must be dynamic.`);
+  assert.match(source, /["']step\.started["']/u, `${tool.slug} must resolve at step start.`);
+  assert.match(source, /return\s+defineTool\s*\(/u, `${tool.slug} must construct its tool in the resolver.`);
+  assert.match(source, /async\s+execute\s*\(/u, `${tool.slug} must define execute inline for Eve replay serialization.`);
+  assert.match(
+    source,
+    new RegExp(`requireCapabilityToolExecution\\(["']${tool.slug}["'],\\s*ctx\\)`),
+    `${tool.slug} must re-check authority inside execute.`,
+  );
+  const replaySource = await transformDynamicToolExecute(sourcePath, source);
+  assert.ok(
+    replaySource,
+    `${tool.slug} inline execute must survive Eve's replay transform.`,
+  );
+  assert.match(replaySource.code, /__executeStepFn:/u);
+  assert.match(replaySource.code, /eve:dynamic-tool\/\//u);
+}
 assert.ok(
   authoredNames.includes("working_repository"),
   "The canonical working_repository capability must be present in the compiled manifest.",
@@ -117,10 +173,28 @@ for (const removedMutationTool of [
   );
 }
 assert.deepEqual(
-  manifest.dynamicTools,
+  manifest.skills,
   [],
-  "Dynamic tools need an explicit inventory and resolver-matrix check before they can ship.",
+  "Capability-gated procedures must not retain a static skill fallback.",
 );
+assert.deepEqual(
+  manifest.dynamicSkills.map((skill) => skill.slug).toSorted(),
+  [
+    "docs-maintenance",
+    "docs-signal-intake",
+    "internal-working-document",
+    "watched-repository-scan",
+    "workspace-knowledge",
+  ],
+  "The five capability-gated procedures must remain dynamic skills.",
+);
+for (const skill of manifest.dynamicSkills) {
+  assert.deepEqual(
+    skill.eventNames,
+    ["turn.started"],
+    `${skill.slug} must resolve at turn start.`,
+  );
+}
 assert.deepEqual(
   manifest.connections,
   [],
@@ -142,8 +216,6 @@ assert.equal(
   "The experimental Workflow tool needs an explicit capability decision before it can ship.",
 );
 
-const requireFromAgent = createRequire(join(agentRoot, "package.json"));
-const eveRoot = dirname(requireFromAgent.resolve("eve/package.json"));
 const defaultHarness = readFileSync(
   join(eveRoot, "docs", "concepts", "default-harness.md"),
   "utf8",
@@ -187,8 +259,8 @@ const loadSkill = frameworkRows.find(
   (row) => codeValue(row[0]) === "load_skill",
 );
 assert.equal(
-  manifest.skills.length > 0 ? loadSkill?.[1] : "no-skills",
-  manifest.skills.length > 0 ? "Active" : "no-skills",
+  manifest.skills.length + manifest.dynamicSkills.length > 0 ? loadSkill?.[1] : "no-skills",
+  manifest.skills.length + manifest.dynamicSkills.length > 0 ? "Active" : "no-skills",
   "load_skill status must reflect the compiled skill surface.",
 );
 
@@ -218,7 +290,7 @@ assert.match(
 );
 
 console.log(
-  `Capability inventory checks passed for ${manifestToolNames.length} authored and ${frameworkNames.length} framework tools.`,
+  `Capability inventory checks passed for ${manifestToolNames.length} dynamic authored tools, ${manifest.dynamicSkills.length} dynamic skills, and ${frameworkNames.length} framework tools.`,
 );
 
 function parseTable(markdown, heading, columnCount) {

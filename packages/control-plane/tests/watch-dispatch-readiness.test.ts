@@ -28,6 +28,7 @@ import type {
 } from "../src/watch-contract.ts";
 import {
   prepareWatchDispatch,
+  resolveWatchDispatchCapabilityAuthority,
   WatchDispatchReadinessError,
 } from "../src/watch-dispatch-readiness.ts";
 import { claimWatchObservation } from "../src/watch-observation-claims.ts";
@@ -91,6 +92,55 @@ test("dispatch readiness returns exact approved authority and idempotently reser
     assert.doesNotMatch(
       JSON.stringify(ready),
       /team_id|bot_id|rawPayload|subtype/u,
+    );
+  });
+});
+
+test("capability resolution re-reads the ready reservation and current exact watch authority", async () => {
+  await withTemporaryDatabase(async () => {
+    const active = await createActiveWatch(policy({
+      source: source("C-CAPABILITY-85"),
+      capabilityGrants: ["knowledge.read", "docs_work.manage"],
+    }));
+    const handoff = await createHandoff(active, "resolve exact authority", "585");
+    const ready = await prepareWatchDispatch(handoff, readinessContext(NOW));
+
+    const authority = await resolveWatchDispatchCapabilityAuthority(
+      ready.reservation.id,
+      { capabilityRegistry: READY_WATCH_CAPABILITY_REGISTRY, now: NOW },
+    );
+    assert.deepEqual(authority, {
+      reservationId: ready.reservation.id,
+      watchId: active.id,
+      effectiveRevisionId: active.effectiveRevision.id,
+      capabilityGrants: ["knowledge.read", "docs_work.manage"],
+    });
+
+    await assert.rejects(
+      () => resolveWatchDispatchCapabilityAuthority(
+        "f".repeat(64),
+        { capabilityRegistry: READY_WATCH_CAPABILITY_REGISTRY, now: NOW },
+      ),
+      errorWithCode("authority-unavailable"),
+    );
+
+    await mutateWatchLifecycle({
+      watchId: active.id,
+      action: "pause",
+      expectedStateRevision: active.stateRevision,
+      operationKey: "pause-capability-resolution-85",
+      reason: "Prove executor-time authority is current.",
+    }, {
+      capabilityRegistry: READY_WATCH_CAPABILITY_REGISTRY,
+      operator: OPERATOR,
+      now: NOW,
+    });
+    await assert.rejects(
+      () => resolveWatchDispatchCapabilityAuthority(
+        ready.reservation.id,
+        { capabilityRegistry: READY_WATCH_CAPABILITY_REGISTRY, now: NOW },
+      ),
+      errorWithCode("authority-unavailable"),
     );
   });
 });

@@ -1,17 +1,23 @@
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 
 import {
   getWorkspaceMemory,
   getWorkspaceMemoryInputSchema,
   workspaceMemoryDetailSchema,
 } from "../lib/workspace-memory";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("memory_get")) return null;
+  return defineTool({
   description:
     "Read one workspace memory with provenance sources and lifecycle events. Use full provenance before relying on a memory for routing or triage.",
   inputSchema: getWorkspaceMemoryInputSchema,
   outputSchema: workspaceMemoryDetailSchema,
-  execute: getWorkspaceMemory,
+  async execute(input, ctx) {
+    await requireCapabilityToolExecution("memory_get", ctx);
+    return getWorkspaceMemory(input);
+  },
   toModelOutput(output) {
     return {
       type: "json",
@@ -41,4 +47,5 @@ export default defineTool({
       },
     };
   },
-});
+  });
+} } });

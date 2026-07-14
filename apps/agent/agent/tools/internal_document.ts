@@ -14,8 +14,9 @@ import {
   updateInternalDocument,
   updateInternalDocumentInputSchema,
 } from "@docs-agent/control-plane/agent";
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 import { z } from "zod";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
 const inputSchema = z.discriminatedUnion("mode", [
   createInternalDocumentInputSchema.extend({ mode: z.literal("create") }),
@@ -37,12 +38,15 @@ const outputSchema = z.union([
   }).strict(),
 ]);
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("internal_document")) return null;
+  return defineTool({
   description:
     "Create, read, update, find, attach, or archive a bounded internal Paige working document. Use this for explicit, inspectable documentation-work state that must survive Eve sessions; it is not workspace memory, hidden reasoning, or a public documentation draft. To revise an existing document, read it and then update that same documentId with its currentRevision; never create a second document for the same working purpose. Document kind and editing profile guide the applicable skill but do not add authority.",
   inputSchema,
   outputSchema,
   async execute(input, ctx) {
+    await requireCapabilityToolExecution("internal_document", ctx);
     const commandContext = {
       authority: "docs_work.manage" as const,
       actor: { type: "agent" as const, id: "paige-agent" },
@@ -115,4 +119,5 @@ export default defineTool({
   toModelOutput(output) {
     return { type: "json", value: output };
   },
-});
+  });
+} } });

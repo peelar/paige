@@ -1,4 +1,4 @@
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 import { cachedDocsProfileSchema } from "@docs-agent/control-plane/agent";
 import { z } from "zod";
 
@@ -10,6 +10,7 @@ import {
   runWorkingRepositoryOperationSerially,
   workingRepositoryOperationKey,
 } from "../lib/working-repository-lifecycle";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
 const inputSchema = z.object({
   taskPaths: z.array(z.string().trim().min(1)).max(5).default([]),
@@ -20,11 +21,14 @@ const outputSchema = z.object({
   taskExamples: z.array(z.object({ path: z.string(), excerpt: z.string() })),
 });
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("get_docs_profile")) return null;
+  return defineTool({
   description: "Read or refresh the current repository docs profile and load up to five task-relevant pages. Use before writing so repository-wide conventions and nearby examples both inform the work.",
   inputSchema,
   outputSchema,
   async execute(input, ctx) {
+    await requireCapabilityToolExecution("get_docs_profile", ctx);
     const setup = await requireSetupReady("docs-maintenance");
     const configuredRepository = setup.workingRepositoryInput.workingDocumentationRepository;
     const operationKey = workingRepositoryOperationKey(ctx.session.id, configuredRepository);
@@ -49,4 +53,5 @@ export default defineTool({
       return { profile, taskExamples };
     });
   },
-});
+  });
+} } });

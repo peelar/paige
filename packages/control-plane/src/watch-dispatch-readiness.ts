@@ -17,6 +17,7 @@ import {
 import { DEFAULT_WORKSPACE_ID } from "./setup-state.ts";
 import {
   effectiveWatchRevisionSchema,
+  watchCapabilityFamilySchema,
   type EffectiveWatchRevision,
 } from "./watch-contract.ts";
 import { watchProviderAuthorizationSchema } from "./watch-event-admission.ts";
@@ -59,6 +60,17 @@ export type WatchDispatchReadyHandoff = z.infer<
 >;
 export type WatchDispatchReadinessContext = z.infer<
   typeof watchDispatchReadinessContextSchema
+>;
+
+export const watchDispatchCapabilityAuthoritySchema = z.object({
+  reservationId: z.string().regex(/^[a-f0-9]{64}$/u),
+  watchId: z.string().uuid(),
+  effectiveRevisionId: z.string().uuid(),
+  capabilityGrants: z.array(watchCapabilityFamilySchema).max(6),
+}).strict();
+
+export type WatchDispatchCapabilityAuthority = z.infer<
+  typeof watchDispatchCapabilityAuthoritySchema
 >;
 
 export class WatchDispatchReadinessError extends Error {
@@ -232,6 +244,142 @@ export async function prepareWatchDispatch(
     throw new WatchDispatchReadinessError(
       "storage-unavailable",
       "Watch dispatch readiness could not read or reserve required durable state.",
+      { cause: error },
+    );
+  }
+}
+
+/**
+ * Resolve an opaque, server-issued dispatch reservation back to its current
+ * effective watch authority. Callers do not supply watch, revision, provider,
+ * workspace, or capability values.
+ */
+export async function resolveWatchDispatchCapabilityAuthority(
+  reservationIdInput: string,
+  context: unknown,
+): Promise<WatchDispatchCapabilityAuthority> {
+  const reservationId = z.string().regex(/^[a-f0-9]{64}$/u).parse(reservationIdInput);
+  const readyContext = await requireWatchServiceReady(context);
+  const now = readyContext.now ?? new Date();
+
+  try {
+    return await withDocsAgentDatabase(async (db) => {
+      const rows = await db.select({
+        reservationWorkspaceId: watchDispatchReservations.workspaceId,
+        reservationStatus: watchDispatchReservations.status,
+        reservationWatchId: watchDispatchReservations.watchId,
+        reservationEffectiveRevisionId: watchDispatchReservations.effectiveRevisionId,
+        reservationProvider: watchDispatchReservations.provider,
+        reservationResourceType: watchDispatchReservations.resourceType,
+        reservationResourceId: watchDispatchReservations.resourceId,
+        lifecycleState: policyBoundWatches.lifecycleState,
+        currentEffectiveRevisionId: policyBoundWatches.effectiveRevisionId,
+        effectiveRevisionId: watchEffectiveRevisions.id,
+        effectiveWatchId: watchEffectiveRevisions.watchId,
+        proposalRevisionId: watchEffectiveRevisions.proposalRevisionId,
+        contractVersion: watchEffectiveRevisions.contractVersion,
+        policy: watchEffectiveRevisions.policy,
+        approvedById: watchEffectiveRevisions.approvedById,
+        approvedByLogin: watchEffectiveRevisions.approvedByLogin,
+        approvedAt: watchEffectiveRevisions.approvedAt,
+      }).from(watchDispatchReservations).innerJoin(
+        policyBoundWatches,
+        and(
+          eq(policyBoundWatches.workspaceId, watchDispatchReservations.workspaceId),
+          eq(policyBoundWatches.id, watchDispatchReservations.watchId),
+        ),
+      ).leftJoin(
+        watchEffectiveRevisions,
+        and(
+          eq(watchEffectiveRevisions.workspaceId, watchDispatchReservations.workspaceId),
+          eq(watchEffectiveRevisions.watchId, watchDispatchReservations.watchId),
+          eq(watchEffectiveRevisions.id, watchDispatchReservations.effectiveRevisionId),
+        ),
+      ).where(and(
+        eq(watchDispatchReservations.workspaceId, DEFAULT_WORKSPACE_ID),
+        eq(watchDispatchReservations.id, reservationId),
+      )).limit(1);
+      const row = rows[0];
+      if (
+        row === undefined ||
+        row.reservationWorkspaceId !== DEFAULT_WORKSPACE_ID ||
+        row.reservationStatus !== "ready" ||
+        row.lifecycleState !== "active" ||
+        row.currentEffectiveRevisionId !== row.reservationEffectiveRevisionId ||
+        row.effectiveRevisionId !== row.reservationEffectiveRevisionId ||
+        row.effectiveWatchId !== row.reservationWatchId ||
+        row.proposalRevisionId === null ||
+        row.contractVersion === null ||
+        row.policy === null ||
+        row.approvedById === null ||
+        row.approvedByLogin === null ||
+        row.approvedAt === null
+      ) {
+        throw new WatchDispatchReadinessError(
+          "authority-unavailable",
+          "The watch dispatch reservation has no current effective authority.",
+        );
+      }
+
+      const revision = effectiveWatchRevisionSchema.safeParse({
+        id: row.effectiveRevisionId,
+        watchId: row.effectiveWatchId,
+        proposalRevisionId: row.proposalRevisionId,
+        contractVersion: row.contractVersion,
+        policy: row.policy,
+        approvedBy: { id: row.approvedById, githubLogin: row.approvedByLogin },
+        approvedAt: row.approvedAt,
+      });
+      if (!revision.success) {
+        throw new WatchDispatchReadinessError(
+          "authority-unavailable",
+          "The watch dispatch reservation references invalid effective authority.",
+        );
+      }
+      const policy = revision.data.policy;
+      if (
+        policy.source.provider !== row.reservationProvider ||
+        policy.source.resource.type !== row.reservationResourceType ||
+        policy.source.resource.id !== row.reservationResourceId ||
+        policy.expiresAt === null ||
+        now.getTime() >= new Date(policy.expiresAt).getTime()
+      ) {
+        throw new WatchDispatchReadinessError(
+          "authority-unavailable",
+          "The watch dispatch reservation is outside its current source or expiry authority.",
+        );
+      }
+      try {
+        previewWatchPolicy({
+          contractVersion: revision.data.contractVersion,
+          lifecycleState: "proposed",
+          policy,
+        }, {
+          availableCapabilities: availableWatchCapabilities(readyContext),
+          now,
+        });
+      } catch (error) {
+        if (error instanceof WatchPolicyValidationError) {
+          throw new WatchDispatchReadinessError(
+            "authority-unavailable",
+            "The watch dispatch reservation's effective policy is no longer usable.",
+          );
+        }
+        throw error;
+      }
+
+      return watchDispatchCapabilityAuthoritySchema.parse({
+        reservationId,
+        watchId: revision.data.watchId,
+        effectiveRevisionId: revision.data.id,
+        capabilityGrants: policy.capabilityGrants,
+      });
+    });
+  } catch (error) {
+    if (error instanceof WatchDispatchReadinessError) throw error;
+    throw new WatchDispatchReadinessError(
+      "storage-unavailable",
+      "Watch capability authority could not be resolved from durable dispatch state.",
       { cause: error },
     );
   }

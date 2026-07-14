@@ -5,7 +5,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { withDocsAgentDatabase } from "./db/client.ts";
-import { approvalDecisions, approvalRequests, docsSignals } from "./db/schema.ts";
+import { approvalDecisions, approvalRequests, docsSignals, productRuns } from "./db/schema.ts";
 import { getOperatorSignalDetail, redactMetadata } from "./signal-detail.ts";
 import { createProductRun } from "./product-runs.ts";
 import { resolveEveRuntimeUrl } from "./provider-config.ts";
@@ -189,6 +189,55 @@ export async function markApprovalAnsweredByCall(input: { sessionId: string; run
   const now = new Date().toISOString();
   return withDocsAgentDatabase((db) => db.update(approvalRequests).set({ status: "stale", resumeHandle: null, updatedAt: now })
     .where(and(eq(approvalRequests.workspaceId, DEFAULT_WORKSPACE_ID), eq(approvalRequests.sessionId, parsed.sessionId), eq(approvalRequests.runId, parsed.runId), eq(approvalRequests.callId, parsed.callId), eq(approvalRequests.status, "pending"))));
+}
+
+export async function hasApprovedToolResume(input: {
+  sessionId: string;
+  runId: string;
+  callId: string;
+  toolName: string;
+  now?: string;
+}): Promise<boolean> {
+  const parsed = z.object({
+    sessionId: text,
+    runId: text,
+    callId: text,
+    toolName: text,
+    now: z.string().datetime({ offset: true }).optional(),
+  }).parse(input);
+  const now = parsed.now ?? new Date().toISOString();
+  return withDocsAgentDatabase(async (db) => {
+    const rows = await db.select({
+      request: approvalRequests,
+      trigger: productRuns.trigger,
+    }).from(approvalRequests).innerJoin(
+      productRuns,
+      eq(productRuns.id, approvalRequests.productRunId),
+    ).where(and(
+      eq(approvalRequests.workspaceId, DEFAULT_WORKSPACE_ID),
+      eq(approvalRequests.sessionId, parsed.sessionId),
+      eq(approvalRequests.runId, parsed.runId),
+      eq(approvalRequests.callId, parsed.callId),
+      eq(approvalRequests.toolName, parsed.toolName),
+    )).limit(1);
+    const row = rows[0];
+    if (
+      row === undefined ||
+      row.trigger === "schedule" ||
+      row.request.expiresAt <= now ||
+      !["deciding", "approved"].includes(row.request.status)
+    ) return false;
+
+    const decisions = await db.select().from(approvalDecisions).where(and(
+      eq(approvalDecisions.workspaceId, DEFAULT_WORKSPACE_ID),
+      eq(approvalDecisions.approvalRequestId, row.request.id),
+      eq(approvalDecisions.decision, "approve"),
+    )).orderBy(desc(approvalDecisions.createdAt)).limit(1);
+    const decision = decisions[0];
+    if (decision === undefined) return false;
+    return (row.request.status === "deciding" && decision.status === "submitting") ||
+      (row.request.status === "approved" && decision.status === "submitted");
+  });
 }
 
 export async function failApprovalsForRunReference(input: { sessionId: string; runId: string }) {

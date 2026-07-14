@@ -1,4 +1,4 @@
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 import { z } from "zod";
 
 import {
@@ -18,6 +18,7 @@ import {
   runWorkingRepositoryOperationSerially,
   workingRepositoryOperationKey,
 } from "../lib/working-repository-lifecycle";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
 const workingRepositoryValidatorIdSchema = z.string().trim().min(1).max(160);
 const workingRepositoryValidatorIdListSchema = z
@@ -229,12 +230,15 @@ export function workingRepositoryModelOutput(output: z.infer<typeof outputSchema
   return { type: "json" as const, value: output };
 }
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("working_repository")) return null;
+  return defineTool({
   description:
     "Inspect the configured working documentation repository through one policy-aware read capability. It materializes setup implicitly, lists safe paths, searches bounded text, reads line ranges, and returns bounded binary metadata with a full-file SHA-256 hash and null content. Use that hash as the authoring precondition for existing text or binary files. Validators mode optionally lists ids and does not run checks. run_validators is atomic read-only inspection: it discovers and persists the current source-bound trusted profile, executes only requested ids from that profile, accepts no command, and does not mutate the repository.",
   inputSchema,
   outputSchema,
   async execute(input, ctx) {
+    await requireCapabilityToolExecution("working_repository", ctx);
     const setup = await requireSetupReady("docs-maintenance");
     const configuredRepository = setup.workingRepositoryInput.workingDocumentationRepository;
     const operationKey = workingRepositoryOperationKey(ctx.session.id, configuredRepository);
@@ -294,4 +298,5 @@ export default defineTool({
     );
   },
   toModelOutput: workingRepositoryModelOutput,
-});
+  });
+} } });

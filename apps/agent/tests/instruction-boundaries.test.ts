@@ -45,10 +45,11 @@ for (const dynamicInstruction of ["behavior.ts", "memory.ts", "setup.ts"]) {
 }
 
 const maintenance = await readFile(
-  join(skillsRoot, "docs-maintenance", "SKILL.md"),
+  join(skillsRoot, "docs-maintenance.ts"),
   "utf8",
 );
-assert.match(maintenance, /name: docs-maintenance/);
+assert.match(maintenance, /defineDynamic/);
+assert.match(maintenance, /"turn\.started"/);
 assert.match(maintenance, /`working_repository` list, search, and line-range read modes/);
 assert.match(maintenance, /`run_validators` is atomic read-only inspection/);
 assert.doesNotMatch(maintenance, /run_docs_maintenance_scenario/);
@@ -56,10 +57,11 @@ assert.match(maintenance, /clean diff/);
 assert.match(maintenance, /explicit approval/);
 
 const knowledge = await readFile(
-  join(skillsRoot, "workspace-knowledge", "SKILL.md"),
+  join(skillsRoot, "workspace-knowledge.ts"),
   "utf8",
 );
-assert.match(knowledge, /name: workspace-knowledge/);
+assert.match(knowledge, /defineDynamic/);
+assert.match(knowledge, /"turn\.started"/);
 assert.match(knowledge, /sourced answer, an\s+explicit abstention, or a natural-language recommendation/);
 assert.match(knowledge, /Do not cite a configured source that was not inspected/);
 assert.match(knowledge, /Provider conversation and workspace memory.*never independent proof/s);
@@ -69,19 +71,22 @@ assert.match(knowledge, /source ids, refs or resolved revisions, paths or URLs/)
 assert.doesNotMatch(knowledge, /run_workspace_knowledge|answer_workspace_question/);
 
 const intake = await readFile(
-  join(skillsRoot, "docs-signal-intake", "SKILL.md"),
+  join(skillsRoot, "docs-signal-intake.ts"),
   "utf8",
 );
-assert.match(intake, /name: docs-signal-intake/);
+assert.match(intake, /defineDynamic/);
+assert.match(intake, /"turn\.started"/);
 assert.match(intake, /provider-neutral signal/);
 assert.match(intake, /source evidence is missing/);
 assert.match(intake, /`docs_work_manage`/);
 assert.match(intake, /Do not patch during intake/);
 
 const watched = await readFile(
-  join(skillsRoot, "watched-repository-scan", "SKILL.md"),
+  join(skillsRoot, "watched-repository-scan.ts"),
   "utf8",
 );
+assert.match(watched, /defineDynamic/);
+assert.match(watched, /"turn\.started"/);
 assert.match(watched, /read-only source evidence/);
 assert.match(watched, /Do not write during the watched\s+repository scan/);
 

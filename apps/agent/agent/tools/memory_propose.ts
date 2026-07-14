@@ -1,17 +1,23 @@
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 
 import {
   proposeWorkspaceMemory,
   proposeWorkspaceMemoryInputSchema,
   proposeWorkspaceMemoryResultSchema,
 } from "../lib/workspace-memory";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("memory_propose")) return null;
+  return defineTool({
   description:
     "Propose a provenance-backed workspace memory for future docs routing or triage. This creates proposed memory only; promotion requires a separate explicit lifecycle step.",
   inputSchema: proposeWorkspaceMemoryInputSchema,
   outputSchema: proposeWorkspaceMemoryResultSchema,
-  execute: proposeWorkspaceMemory,
+  async execute(input, ctx) {
+    await requireCapabilityToolExecution("memory_propose", ctx);
+    return proposeWorkspaceMemory(input);
+  },
   toModelOutput(output) {
     return {
       type: "json",
@@ -38,4 +44,5 @@ export default defineTool({
       },
     };
   },
-});
+  });
+} } });

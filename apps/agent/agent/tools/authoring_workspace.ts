@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { defineTool } from "eve/tools";
+import { defineDynamic, defineTool } from "eve/tools";
 import { z } from "zod";
 
 import {
@@ -20,6 +20,7 @@ import {
   runWorkingRepositoryOperationSerially,
   workingRepositoryOperationKey,
 } from "../lib/working-repository-lifecycle";
+import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
 const inputSchema = z.discriminatedUnion("mode", [
   applyAuthoringDraftInputSchema.extend({ mode: z.literal("apply") }),
@@ -157,11 +158,14 @@ function truncate(value: string, limit: number) {
     : { value: `${value.slice(0, limit)}\n...[truncated]`, truncated: true };
 }
 
-export default defineTool({
+export default defineDynamic({ events: { "step.started": async (event, context) => {
+  if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("authoring_workspace")) return null;
+  return defineTool({
   description: "Create, revise, inspect, prepare, or abandon one requested draft in the working documentation repository. Use working_repository read results to obtain SHA-256 content hashes before editing. Every update, copy, move, or delete requires the current expectedContentHash; every new target requires createOnly. The complete ordered batch is preflighted before mutation and rolled back exactly on execution failure. Localized signal drafts may omit a content plan; multi-file, new-page, move, copy, delete, and large replacement work requires the matching ready plan. Prepare records checks, the exact diff, and linked signal lifecycle without publishing. Abandon requires the active draftId and is retry-safe. GitHub publication remains separately approval-gated.",
   inputSchema,
   outputSchema,
   async execute(input, ctx) {
+    await requireCapabilityToolExecution("authoring_workspace", ctx);
     const setup = await requireSetupReady("docs-maintenance");
     const configuredRepository = setup.workingRepositoryInput.workingDocumentationRepository;
     const operationKey = workingRepositoryOperationKey(ctx.session.id, configuredRepository);
@@ -176,4 +180,5 @@ export default defineTool({
     });
   },
   toModelOutput: authoringWorkspaceModelOutput,
-});
+  });
+} } });

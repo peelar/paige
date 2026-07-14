@@ -217,7 +217,12 @@ const publishToolSource = await readFile(
   new URL("../agent/tools/publish_working_repository_pr.ts", import.meta.url),
   "utf8",
 );
-assert.match(publishToolSource, /execute: publishWorkingRepositoryPr/);
+assert.match(publishToolSource, /async execute\(input, ctx\)/);
+assert.match(
+  publishToolSource,
+  /requireCapabilityToolExecution\("publish_working_repository_pr", ctx\)/,
+);
+assert.match(publishToolSource, /return publishWorkingRepositoryPr\(input, ctx\)/);
 const publishCoordinatorSource = await readFile(
   new URL("../agent/lib/github-writeback.ts", import.meta.url),
   "utf8",

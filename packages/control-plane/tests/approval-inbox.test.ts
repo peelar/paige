@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import { migrateDocsAgentDatabase } from "../src/db/client.ts";
 import { createDocsSignal } from "../src/docs-signals.ts";
-import { ApprovalInboxError, decideApproval, failApprovalsForRunReference, getApprovalDetail, listApprovals, markApprovalAnsweredByCall, recordApprovalBatch, type ApprovalRuntime } from "../src/approval-inbox.ts";
+import { ApprovalInboxError, decideApproval, failApprovalsForRunReference, getApprovalDetail, hasApprovedToolResume, listApprovals, markApprovalAnsweredByCall, recordApprovalBatch, type ApprovalRuntime } from "../src/approval-inbox.ts";
 import { test } from "vitest";
 
 test("approval inbox", async () => {
@@ -45,10 +45,25 @@ try {
   assert.doesNotMatch(JSON.stringify(detail), /private-resume-handle|browserToken|ghp_secret/);
 
   const resumed: unknown[] = [];
-  const runtime = runtimeFor(request, resumed);
+  let decidingResumeAuthorized = false;
+  const runtime: ApprovalRuntime = {
+    readEvents: async () => [inputEvent(request)],
+    resume: async (input) => {
+      resumed.push(input);
+      decidingResumeAuthorized = await hasApprovedToolResume({
+        sessionId: "session-approval",
+        runId: "turn_0",
+        callId: request.action.callId,
+        toolName: request.action.toolName,
+      });
+    },
+  };
   const approved = await decideApproval({ id: request.requestId, decision: "approve", reason: "The report, diff, and checks are ready.", idempotencyKey: "decision-approve-1", actor: { id: "docs-agent:github:1001", login: "operator" } }, runtime);
   assert.equal(approved.replayed, false);
   assert.equal(approved.approval.status, "approved");
+  assert.equal(decidingResumeAuthorized, true, "the deciding/submitting resume race is authorized");
+  assert.equal(await hasApprovedToolResume({ sessionId: "session-approval", runId: "turn_0", callId: request.action.callId, toolName: request.action.toolName }), true);
+  assert.equal(await hasApprovedToolResume({ sessionId: "session-approval", runId: "turn_0", callId: "wrong-call", toolName: request.action.toolName }), false);
   assert.deepEqual(resumed, [{ sessionId: "session-approval", continuationToken: "eve:private-resume-handle", requestId: request.requestId, decision: "approve" }]);
   const replay = await decideApproval({ id: request.requestId, decision: "approve", reason: "Ignored replay reason.", idempotencyKey: "decision-approve-1", actor: { id: "docs-agent:github:1001", login: "operator" } }, runtime);
   assert.equal(replay.replayed, true);
@@ -59,6 +74,11 @@ try {
   await recordApprovalBatch({ sessionId: "session-deny", runId: "turn_0", continuationToken: "eve:deny-handle", trigger: "slack", requester: "slack:user-202", requestedAt: "2026-07-11T11:00:00.000Z", requests: [deniedRequest] });
   const denied = await decideApproval({ id: deniedRequest.requestId, decision: "deny", reason: "The diff needs another review.", idempotencyKey: "decision-deny-1", actor: { id: "docs-agent:github:1001", login: "operator" } }, runtimeFor(deniedRequest, resumed));
   assert.equal(denied.approval.status, "denied");
+
+  const scheduleRequest = approvalRequest("request-schedule", signal.signal.id);
+  await recordApprovalBatch({ sessionId: "session-schedule", runId: "turn_0", continuationToken: "eve:schedule", trigger: "schedule", requester: "eve:app", requestedAt: "2026-07-11T11:15:00.000Z", requests: [scheduleRequest] });
+  await decideApproval({ id: scheduleRequest.requestId, decision: "approve", reason: "Exercise the negative schedule boundary.", idempotencyKey: "decision-schedule-1", actor: { id: "docs-agent:github:1001", login: "operator" } }, runtimeFor(scheduleRequest, resumed));
+  assert.equal(await hasApprovedToolResume({ sessionId: "session-schedule", runId: "turn_0", callId: scheduleRequest.action.callId, toolName: scheduleRequest.action.toolName }), false, "an approved schedule row cannot resume publication");
 
   const nativeRequest = approvalRequest("request-channel-native", signal.signal.id);
   await recordApprovalBatch({ sessionId: "session-native", runId: "turn_0", continuationToken: "eve:native", trigger: "slack", requester: "slack:user", requestedAt: "2026-07-11T11:30:00.000Z", requests: [nativeRequest] });
