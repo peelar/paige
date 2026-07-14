@@ -91,10 +91,13 @@ export const userTestScenarioSchema = z.object({
   repositoryInput: userTestRepositoryInputSchema,
   expected: z.object({
     outcome: userTestScenarioOutcomeSchema,
+    inspectedPaths: z.array(z.string().trim().min(1)).nonempty(),
+    replyMustInclude: z.array(z.string().trim().min(1)).nonempty(),
     impactReportMustInclude: z.array(z.string().trim().min(1)).nonempty(),
     expectedTouchedFiles: z.array(z.string().trim().min(1)),
     forbiddenTouchedFiles: z.array(z.string().trim().min(1)).default([]),
     expectedPatchHints: z.array(z.string().trim().min(1)).default([]),
+    requiredDiffText: z.array(z.string().trim().min(1)).default([]),
     mustNotDo: z.array(z.string().trim().min(1)).nonempty(),
     checks: z.array(userTestCheckSchema).default([]),
   }),

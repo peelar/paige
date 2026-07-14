@@ -81,6 +81,8 @@ export const saleorDocsUserTestScenarios = [
     },
     expected: {
       outcome: "docs-patch",
+      inspectedPaths: ["docs/api-usage/metadata.mdx"],
+      replyMustInclude: ["docs/api-usage/metadata.mdx", "private metadata", "patch"],
       impactReportMustInclude: [
         "The working repository was materialized or reused at /workspace/working-docs.",
         "The existing metadata guide was inspected before editing.",
@@ -94,6 +96,11 @@ export const saleorDocsUserTestScenarios = [
         "State that public metadata filtering remains available.",
         "State that private metadata filtering is limited to authenticated staff users or apps with permission to access private metadata.",
         "Do not claim anonymous or storefront callers can filter private metadata.",
+      ],
+      requiredDiffText: [
+        "docs/api-usage/metadata.mdx",
+        "private metadata",
+        "authenticated",
       ],
       mustNotDo: [
         "Do not create a new page.",
@@ -167,6 +174,8 @@ export const saleorDocsUserTestScenarios = [
     },
     expected: {
       outcome: "no-docs-change",
+      inspectedPaths: ["docs/api-usage/usage-limits.mdx"],
+      replyMustInclude: ["120", "180"],
       impactReportMustInclude: [
         "The working repository was materialized or reused at /workspace/working-docs.",
         "docs/api-usage/usage-limits.mdx was inspected.",
@@ -177,6 +186,7 @@ export const saleorDocsUserTestScenarios = [
       expectedTouchedFiles: [],
       forbiddenTouchedFiles: ["docs/api-usage/usage-limits.mdx", "docs/api-reference/**"],
       expectedPatchHints: [],
+      requiredDiffText: [],
       mustNotDo: [
         "Do not change the documented public limit to 180 requests/minute.",
         "Do not create a speculative changelog or note.",
@@ -188,6 +198,154 @@ export const saleorDocsUserTestScenarios = [
           command: "git diff --quiet",
           required: true,
           rationale: "Prove the false-alarm scenario left the working tree unchanged.",
+        },
+      ],
+    },
+  },
+  {
+    id: "saleor-docs-editorjs-table-support",
+    title: "Docs-needed: EditorJS table support",
+    intent:
+      "Validate that an unseen source-backed Slack report follows the same repository and authoring path as other focused documentation work.",
+    userPrompt:
+      "Could you check a possible docs gap? Saleor 3.23.9 added support for @editorjs/table, but the 3.22-to-3.23 upgrade guide may still list only the older supported EditorJS extensions.",
+    repositoryInput: {
+      workingDocumentationRepository: saleorDocsWorkingRepository,
+      watchedRepositories: [],
+      contextRepositories: [],
+      externalContext: [
+        {
+          kind: "communication-thread",
+          sourceId: "DOCS-UT-EDITORJS-SLACK",
+          title: "EditorJS table support docs gap",
+          participants: ["Marta, Product", "Nora, Docs"],
+          relatedReferences: [
+            "https://github.com/saleor/saleor/releases/tag/3.23.9",
+            "https://github.com/saleor/saleor/pull/19281",
+          ],
+          capturedAt: "2026-07-13T09:00:00Z",
+          messages: [
+            {
+              author: "Marta, Product",
+              timestamp: "2026-07-13T08:55:00Z",
+              body:
+                "Saleor 3.23.9 added @editorjs/table to the accepted EditorJSBlockModel union. The 3.23 backport is https://github.com/saleor/saleor/pull/19281.",
+            },
+            {
+              author: "Nora, Docs",
+              timestamp: "2026-07-13T08:58:00Z",
+              body:
+                "Please verify the 3.22-to-3.23 upgrade guide. If its exhaustive extension list is stale, prepare the smallest correction and keep it as a reversible draft.",
+            },
+          ],
+        },
+        {
+          kind: "release-note",
+          sourceId: "https://github.com/saleor/saleor/releases/tag/3.23.9",
+          title: "Saleor 3.23.9",
+          body:
+            "The patch release adds EditorJSTableBlockModel and support for @editorjs/table.",
+          releasedAt: "2025-08-07T00:00:00Z",
+          relevance:
+            "Official release evidence for a focused correction to the supported-extension list.",
+        },
+      ],
+    },
+    expected: {
+      outcome: "docs-patch",
+      inspectedPaths: ["docs/upgrade-guides/core/3-22-to-3-23.mdx"],
+      replyMustInclude: [
+        "docs/upgrade-guides/core/3-22-to-3-23.mdx",
+        "@editorjs/table",
+        "patch",
+      ],
+      impactReportMustInclude: [
+        "Saleor 3.23.9 and the backport are source evidence for EditorJS table support.",
+        "The current 3.22-to-3.23 guide was inspected before editing.",
+        "The exhaustive supported-extension list omits @editorjs/table.",
+        "The change is a focused correction rather than a new page.",
+      ],
+      expectedTouchedFiles: ["docs/upgrade-guides/core/3-22-to-3-23.mdx"],
+      forbiddenTouchedFiles: ["docs/api-reference/**", "sidebars.js"],
+      expectedPatchHints: [
+        "Add @editorjs/table to the supported extensions.",
+        "Link to https://www.npmjs.com/package/@editorjs/table.",
+        "Make clear that support begins with Saleor 3.23.9.",
+        "Preserve the warning that unlisted extensions can fail strict parsing.",
+      ],
+      requiredDiffText: [
+        "docs/upgrade-guides/core/3-22-to-3-23.mdx",
+        "@editorjs/table",
+        "https://www.npmjs.com/package/@editorjs/table",
+        "3.23.9",
+      ],
+      mustNotDo: [
+        "Do not create a new page.",
+        "Do not modify generated API reference files.",
+        "Do not claim arbitrary EditorJS plugins are supported.",
+        "Do not push or open a draft PR without explicit approval.",
+      ],
+      checks: [
+        {
+          command: "git diff --check",
+          required: true,
+          rationale: "Catch whitespace and patch formatting issues before exporting the diff.",
+        },
+      ],
+    },
+  },
+  {
+    id: "repository-generic-pagination-limit-no-change",
+    title: "No change: repository pagination limit is already accurate",
+    intent:
+      "Validate a repository-generic no-change decision whose language cannot match either historical Saleor fixture route.",
+    userPrompt:
+      "A team note says connection queries now allow 250 objects per page. Please verify whether the documentation needs an update.",
+    repositoryInput: {
+      workingDocumentationRepository: saleorDocsWorkingRepository,
+      watchedRepositories: [],
+      contextRepositories: [],
+      externalContext: [
+        {
+          kind: "issue-tracker-item",
+          sourceId: "DOCS-UT-GENERIC-001",
+          title: "Do not publish benchmark pagination size",
+          description:
+            "A benchmark harness exercised 250 objects per connection in a local experiment. The supported public API limit remains 100 objects per query, and no customer-facing behavior changed.",
+          status: "Closed - already documented",
+          author: "API Platform",
+          assignee: "Paige",
+          labels: ["no-docs-change", "pagination"],
+          relationships: [],
+          capturedAt: "2026-07-14T09:00:00Z",
+        },
+      ],
+    },
+    expected: {
+      outcome: "no-docs-change",
+      inspectedPaths: ["docs/api-usage/pagination.mdx"],
+      replyMustInclude: ["100", "250"],
+      impactReportMustInclude: [
+        "docs/api-usage/pagination.mdx was inspected.",
+        "The source context says 250 was only a benchmark value.",
+        "The current page already states the supported maximum is 100 objects.",
+        "No patch was produced.",
+      ],
+      expectedTouchedFiles: [],
+      forbiddenTouchedFiles: ["docs/api-usage/pagination.mdx", "docs/api-reference/**"],
+      expectedPatchHints: [],
+      requiredDiffText: [],
+      mustNotDo: [
+        "Do not change the supported maximum to 250.",
+        "Do not create a new page or changelog entry.",
+        "Do not export a non-empty diff.",
+        "Do not push or open a draft PR.",
+      ],
+      checks: [
+        {
+          command: "git diff --quiet",
+          required: true,
+          rationale: "Prove the already-covered scenario left the working tree unchanged.",
         },
       ],
     },

@@ -307,7 +307,6 @@ async function saveSignalWorkflowResult(input: {
 }): Promise<DocsMaintenanceWorkflowResult> {
   const workflowResult = docsMaintenanceWorkflowResultSchema.parse({
     ok: input.report.checks.every((check) => check.status === "passed"),
-    scenarioKind: "unknown",
     materialization: input.materialization,
     report: input.report,
     changedFiles: input.changedFiles,

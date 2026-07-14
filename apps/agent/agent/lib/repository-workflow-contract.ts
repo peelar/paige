@@ -46,11 +46,6 @@ export const documentationImpactReportSchema = z.object({
 
 export const docsMaintenanceWorkflowResultSchema = z.object({
   ok: z.boolean(),
-  scenarioKind: z.enum([
-    "private-metadata-filtering",
-    "sandbox-rate-limit-false-alarm",
-    "unknown",
-  ]),
   materialization: repositoryMaterializationSchema,
   report: documentationImpactReportSchema,
   changedFiles: z.array(z.string()),
@@ -157,24 +152,10 @@ export const editorialRecommendationSchema = z.object({
   updatedAt: z.string(),
 });
 
-export const runDocsMaintenanceScenarioInputSchema = z.object({
-  scenarioText: z
-    .string()
-    .trim()
-    .min(1)
-    .describe(
-      "The full user scenario and attached context. The working documentation repository must already be configured through configure_working_repository.",
-    ),
-});
-
 export type RepositoryCheckName = z.infer<typeof repositoryCheckNameSchema>;
 export type RepositoryCheckResult = z.infer<typeof repositoryCheckResultSchema>;
 export type DocumentationImpactReport = z.infer<typeof documentationImpactReportSchema>;
 export type DocsMaintenanceWorkflowResult = z.infer<typeof docsMaintenanceWorkflowResultSchema>;
-export type RunDocsMaintenanceScenarioInput = z.infer<
-  typeof runDocsMaintenanceScenarioInputSchema
->;
-export type ScenarioKind = DocsMaintenanceWorkflowResult["scenarioKind"];
 
 export interface WorkflowState {
   repositoryInput: ResolvedRepositoryInput;

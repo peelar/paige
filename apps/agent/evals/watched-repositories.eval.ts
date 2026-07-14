@@ -44,7 +44,6 @@ export default defineEval({
     t.notCalledTool("write_file");
     t.notCalledTool("glob");
     t.notCalledTool("grep");
-    t.notCalledTool("run_docs_maintenance_scenario");
     t.notCalledTool("repo_replace_text");
     t.notCalledTool("repo_run_checks");
     t.notCalledTool("repo_export_diff");

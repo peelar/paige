@@ -92,12 +92,8 @@ The current implementation already contains much of the right substrate:
   `docs_work.manage`, with bounded revisions, typed attachments, retention,
   provenance, idempotency, optimistic concurrency, and behavioral proof.
 
-The main architectural debt is in the model-facing surface:
+The remaining architectural debt is in the model-facing surface:
 
-- `run_docs_maintenance_scenario` presents itself as a complete workflow but
-  recognizes only two deterministic Saleor fixtures;
-- the primary Saleor eval requires that terminal fixture tool and forbids the
-  generic repository path;
 - repository work is split across preparation tools, five `repo_*` tools,
   `prepare_docs_signal_patch`, and `authoring_workspace`;
 - `prepare_docs_signal_patch` retains a one-file exact-replacement contract
@@ -124,8 +120,8 @@ direction. It deliberately uses the generic authoring path instead of adding a
 third hard-coded runtime fixture. Promote it into executable behavioral proof
 during this program.
 
-The refreshed validation baseline is 36 authored tools, 12 framework tools,
-and 34 discovered Eve eval cases. `pnpm capability:check` passes. The authored
+The refreshed validation baseline is 35 authored tools, 12 framework tools,
+and 36 discovered Eve eval cases. `pnpm capability:check` passes. The authored
 tool surface remains static: the landed watch capability registry constrains
 policy and dispatch readiness, but it does not yet resolve Eve tools by
 channel, principal, setup, or work state.
@@ -272,8 +268,8 @@ Tracked by #78. GitHub issues are the implementation source of truth.
 | Order | Slice | Outcome | Depends on | Status |
 | --- | --- | --- | --- | --- |
 | CR0 | Record the architecture contract and migration inventory | One accepted capability model and checked migration inventory | None | Complete in #63 |
-| CR1 / #79 | Remove fixture workflows from the production tool surface | Runtime behavior no longer depends on Saleor-specific scenario code | CR0 | Ready |
-| CR2 / #80 | Build the read-only working-repository capability kernel | One composable repository inspection surface | CR0, CR1 | Pending CR1 |
+| CR1 / #79 | Remove fixture workflows from the production tool surface | Runtime behavior no longer depends on Saleor-specific scenario code | CR0 | Complete in #79 |
+| CR2 / #80 | Build the read-only working-repository capability kernel | One composable repository inspection surface | CR0, CR1 | Ready |
 | CR3 / #81 | Converge all documentation mutation on `authoring_workspace` | One reversible, concurrency-safe draft path | CR2 | Pending CR2 |
 | CR4 / #82 | Add a workspace knowledge source registry and context repositories | General, provenance-bearing read access across configured sources | CR2 | Pending CR2 |
 | CR5 / #83 | Make knowledge answers a first-class agent behavior | Paige can answer, abstain, or continue into docs work | CR4 | Pending CR4 |

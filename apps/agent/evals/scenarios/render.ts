@@ -66,14 +66,29 @@ function formatExternalContext(context: ExternalContext): string {
 
 export function renderScenarioPrompt(scenario: UserTestScenario): string {
   const repository = scenario.repositoryInput.workingDocumentationRepository;
+  const outcomeGuidance = scenario.expected.outcome === "docs-patch"
+    ? [
+        "If the repository evidence confirms a gap, inspect repository conventions and use an available reversible repository-authoring capability for the smallest focused draft and checks.",
+        "Return the changed file and diff, but do not publish it.",
+      ]
+    : [
+        "If the repository evidence shows the docs are already accurate, run the named clean-diff check and inspect the exported diff.",
+        "Do not create a draft for an already-covered case.",
+      ];
 
   return [
     scenario.userPrompt,
     "Work only from the working documentation repository and attached context below.",
-    "First call configure_working_repository with prepareNow false and the working repository details below. Do not start docs maintenance until that setup step succeeds.",
-    "Then call run_docs_maintenance_scenario with the full scenario and attached context. Do not answer from attached context alone.",
-    "After run_docs_maintenance_scenario succeeds, answer from that workflow result. Do not call lower-level repo_* tools for additional verification in this user test.",
+    "Load the docs-maintenance skill before repository work.",
+    "First call configure_working_repository with prepareNow false, the working repository details below, and the attached context. Do not start docs maintenance until setup succeeds.",
+    "This is direct session-local documentation maintenance, not provider or signal intake. Do not create a docs signal or use signal-specific verification or patch tools.",
+    "Compose the available repository search, file-read, named-check, and reversible authoring capabilities around the evidence this case needs. Do not use raw shell or unrestricted filesystem tools.",
+    `Likely current-documentation paths: ${scenario.expected.inspectedPaths.join(", ")}. Verify them rather than assuming they are correct.`,
+    "Stay focused on those likely paths and their relevant sections unless repository evidence points elsewhere.",
+    "Inspect current documentation before deciding; attached context alone is not enough.",
+    ...outcomeGuidance,
     "Produce a documentation impact report first. Prepare a patch only if the evidence supports it.",
+    "Publishing is outside this request and still requires separate explicit approval.",
     "",
     "## Working Documentation Repository",
     `URL: ${repository.source.url}`,

@@ -119,7 +119,6 @@ assert.equal(
 const prBody = buildPullRequestBody({
   result: {
     ok: true,
-    scenarioKind: "unknown",
     materialization: {
       repositoryUrl: "https://github.com/acme/docs.git",
       requestedRef: "main",

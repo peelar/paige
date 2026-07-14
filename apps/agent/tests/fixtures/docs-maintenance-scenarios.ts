@@ -3,23 +3,25 @@ import type { ToolContext } from "eve/tools";
 import type {
   ExternalContext,
   ResolvedRepositoryInput,
-} from "./repository-contract";
-import type { RepositoryActionRecord } from "./repository-materialization";
+} from "../../agent/lib/repository-contract";
+import type { RepositoryActionRecord } from "../../agent/lib/repository-materialization";
 import {
   readRepositoryFile,
   replaceRepositoryText,
   runRepositoryCheck,
   searchRepository,
-} from "./repository-operations";
-import type {
-  DocumentationImpactReport,
-  ScenarioKind,
-} from "./repository-workflow-contract";
+} from "../../agent/lib/repository-operations";
+import type { DocumentationImpactReport } from "../../agent/lib/repository-workflow-contract";
 
-export function detectScenarioKind(
+export type FixtureScenarioKind =
+  | "private-metadata-filtering"
+  | "sandbox-rate-limit-false-alarm"
+  | "unknown";
+
+export function detectFixtureScenarioKind(
   scenarioText: string,
   externalContext: ExternalContext[],
-): ScenarioKind {
+): FixtureScenarioKind {
   const haystack = [scenarioText, ...externalContext.map((context) => JSON.stringify(context))]
     .join("\n")
     .toLowerCase();
@@ -41,7 +43,7 @@ export function detectScenarioKind(
 
 export async function runScenarioFixture(
   ctx: ToolContext,
-  scenarioKind: ScenarioKind,
+  scenarioKind: FixtureScenarioKind,
   repositoryInput: ResolvedRepositoryInput,
   actionProvenance: RepositoryActionRecord[],
 ): Promise<DocumentationImpactReport> {
@@ -58,9 +60,9 @@ export async function runScenarioFixture(
     decision: "ask-maintainer",
     affectedPages: [],
     proposedAction: "Ask a maintainer for a clearer docs-impact target before preparing a patch.",
-    evidence: ["The scenario did not match a supported user-test fixture."],
+    evidence: ["The scenario did not match a supported deterministic fixture."],
     consideredPages: [],
-    uncertainty: ["Only the two Saleor docs user-test scenarios are implemented in this slice."],
+    uncertainty: ["Only the two historical Saleor user-test fixtures are implemented here."],
     patchSummary: "No patch prepared.",
     checks,
   };

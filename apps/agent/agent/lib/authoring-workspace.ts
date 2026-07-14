@@ -127,7 +127,7 @@ export async function prepareAuthoringDraft(input: z.infer<typeof prepareAuthori
     preparedAt: new Date().toISOString(),
   };
   state.lastResult = {
-    ok, scenarioKind: "unknown", materialization: state.materialization,
+    ok, materialization: state.materialization,
     report: { decision: ok ? "docs-patch" : "ask-maintainer", affectedPages: changedFiles, proposedAction: ok ? "Review the complete authoring draft before approved writeback." : "Fix failed repository checks before publishing.", evidence: parsed.evidence, consideredPages: changedFiles, uncertainty: parsed.uncertainty, patchSummary: parsed.patchSummary, checks },
     changedFiles, diff, noDiff: false, actionProvenance: state.actionProvenance,
     rawSandboxToolsPolicy: "Use only the policy-aware authoring workspace for working-repository changes.",

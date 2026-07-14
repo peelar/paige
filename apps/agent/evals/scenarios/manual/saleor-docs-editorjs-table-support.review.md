@@ -1,9 +1,9 @@
 # Docs-needed: EditorJS table support
 
-This Slack scenario checks whether Paige can turn a real Saleor patch-release
-change into a focused correction of an existing guide. It exercises Slack
-signal intake, current-docs verification, thread continuation, and the general
-authoring path.
+This complementary Slack scenario checks whether Paige can turn a real Saleor
+patch-release change into a focused correction of an existing guide through
+provider intake and thread continuation. The same source provenance and patch
+contract are also covered by the executable Eve user-test scenario.
 
 Baseline checked on 2026-07-13: `peelar/saleor-docs` main at
 `ab5a9eb6872151145503f6ccb2b57d1cdef5c8fc`.
@@ -38,8 +38,6 @@ Expected outcome: `docs-patch`.
 - Record a `focused-patch` editorial recommendation.
 - Skip `content_plan` because this is a localized existing-page edit.
 - Apply and prepare the reversible draft, including a visible diff and checks.
-- Do not use `run_docs_maintenance_scenario`; this is not one of its supported
-  deterministic fixtures.
 
 ## Expected touched files
 

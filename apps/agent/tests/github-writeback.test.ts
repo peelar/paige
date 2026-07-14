@@ -458,7 +458,6 @@ function workflowStateFixture(): WorkflowState {
     actionProvenance: [],
     lastResult: {
       ok: true,
-      scenarioKind: "unknown",
       materialization,
       report: {
         decision: "docs-patch",

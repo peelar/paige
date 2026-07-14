@@ -35,17 +35,15 @@ for (const boundary of [
 for (const tool of [
   "create_docs_signal",
   "scan_watched_repositories",
-  "run_docs_maintenance_scenario",
+  "verify_docs_signal_current_docs",
   "authoring_workspace",
   "publish_working_repository_pr",
 ]) {
   assert.equal(workflows.includes(`\`${tool}\``), true);
 }
 
-assert.match(
-  workflows,
-  /run_docs_maintenance_scenario`: stays as the eval and scenario terminal\s+workflow for now/,
-);
+assert.equal(workflows.includes("run_docs_maintenance_scenario"), false);
+assert.match(workflows, /composable repository reads and named checks/);
 assert.match(workflows, /Draft PR publishing waits for explicit approval/);
 assert.match(workflows, /No sandbox verification runs yet/);
 assert.match(workflows, /Slack Mention With Source Evidence/);

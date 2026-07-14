@@ -52,9 +52,9 @@ Expected result:
 
 Saleor 3.23.9 shipped support for `@editorjs/table`, but the current
 3.22-to-3.23 upgrade guide still presents an exhaustive supported-extension
-list without it. This Slack scenario uses the real release and source PR as
-evidence and exercises signal intake, current-docs verification, thread
-continuation, and Paige's general authoring path.
+list without it. The executable scenario preserves the original Slack thread,
+release, and source PR as attached provenance while exercising Paige's general
+repository and authoring path.
 
 Expected result:
 
@@ -67,6 +67,20 @@ Expected result:
 - Leave generated API reference files untouched.
 - Run sandboxed git diff checks before exporting a diff.
 - Leave publication waiting for explicit approval.
+
+### Incorrect: Pagination Benchmark False Alarm
+
+The user prompt suggests that connection queries now allow 250 objects per
+page. The attached source context says 250 was only a local benchmark value,
+while the public API limit remains 100 and the current pagination guide already
+states that limit.
+
+Expected result:
+
+- Inspect `docs/api-usage/pagination.mdx`.
+- Report that the supported maximum remains 100 objects per query.
+- Produce no patch and export an empty diff.
+- Do not invoke authoring or writeback capabilities.
 
 ## Manual `/goal` Loop
 
@@ -107,8 +121,8 @@ can happen later when the docs workflow needs the checkout.
 
 ## Manual Slack Loop
 
-The real EditorJS gap is exercised as a two-message Slack thread rather than a
-`/goal` run. Copy the messages from
+The real EditorJS gap also remains available as a two-message Slack thread for
+provider-intake testing. Copy the messages from
 `apps/agent/evals/scenarios/manual/saleor-docs-editorjs-table-support.slack.md`.
 The first mention should capture and verify the signal without patching. After
 Paige reports the stale guide, the second message requests a reversible patch
@@ -120,11 +134,13 @@ Keep the human review contract out of Paige's context while testing:
 
 ## Eve Evals
 
-`apps/agent/evals/saleor-docs-user-tests.eval.ts` registers the two deterministic
-scenarios with hard assertions for the live agent behavior and repository
-workflow. The EditorJS scenario remains a manual Slack thread so it exercises
-provider intake and the generic authoring path instead of adding another
-hard-coded scenario implementation.
+`apps/agent/evals/saleor-docs-user-tests.eval.ts` registers four executable
+scenarios: the two historical cases, the source-backed EditorJS gap, and a
+repository-generic pagination no-change case whose language cannot match the
+historical fixture routes. Assertions cover semantic outcomes, evidence,
+changed-file authority, checks, empty or focused diffs, and publication
+boundaries without prescribing one exact tool sequence. The manual EditorJS
+Slack thread remains complementary provider-intake coverage.
 
 `apps/agent/evals/watched-repositories.eval.ts` registers the first watched-repository
 scan scenario. It configures `peelar/saleor-docs` as the working documentation
@@ -152,7 +168,7 @@ That command validates:
 
 - configure the working repository before running docs maintenance;
 - clone, refresh, or reuse the GitHub working repository;
-- the model chooses the authored repository workflow tool;
+- the model composes the reusable repository and authoring capabilities;
 - the model loads the watched-repository scan skill for watched source scans;
 - enforce repository allowed actions;
 - inspect and patch files inside the sandbox;

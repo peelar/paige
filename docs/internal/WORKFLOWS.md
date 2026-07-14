@@ -117,7 +117,7 @@ cookie or silently inherit web authentication.
 | Owned execution | Keep one substantial task on its originating signal and Eve session through reversible work, human pauses, corrections, approval, and outcome. | `owned_docs_work`, the one-to-one `docs_signal_owned_work` projection, existing signal events/artifacts, and Eve's durable session/turn runtime. | Create a second workflow engine, duplicate work on resume, narrate routine activity, or bypass approval. |
 | Scheduled follow-up | Revisit a bounded checklist of due signal work once per UTC daily occurrence. | `docs_follow_up`, `process_due_docs_followups`, `daily-docs-follow-ups`, and app-owned follow-up/run tables. | Scan broadly, process an occurrence twice, hide failures, or publish. |
 | Decision and triage | Classify docs impact, missing evidence, verification need, and next action. | `planDocsImpactDecision` and the shared decision schemas. | Treat Slack or Linear context alone as proof for public docs claims. |
-| Current-docs verification | Inspect the configured working documentation repository in the sandbox. | `verify_docs_signal_current_docs` for captured signals; existing scenario workflow in `run_docs_maintenance_scenario`. | Publish or write outside `/workspace/working-docs`. |
+| Current-docs verification | Inspect the configured working documentation repository in the sandbox. | `verify_docs_signal_current_docs` for captured signals; composable repository reads and named checks for direct investigations. | Publish or write outside `/workspace/working-docs`. |
 | Editorial recommendation | Choose the smallest intervention that solves the reader problem and explain evidence plus important alternatives. | `editorial_recommendation`, linked to current-docs evidence, docs profile, prior impact decision, and later draft. | Turn model judgment into a large rule engine, blindly follow a requested format, or debate routine style. |
 | Content planning | Define the reader outcome, placement, scope, evidence, outline, validation, and done state for substantial work. | `content_plan`, linked to the prior docs-impact decision and authoring draft. | Duplicate impact judgment, gate a ready plan on approval, or require a plan for a localized patch. |
 | Draft authoring | Create, revise, inspect, check, or abandon a complete working-repository draft. | `authoring_workspace`; `get_docs_profile` for conventions and nearby examples; `prepare_docs_signal_patch` for the existing signal-specific handoff. | Open a PR or write to watched/source repositories. |
@@ -166,8 +166,6 @@ cookie or silently inherit web authentication.
   events.
 - `update_docs_signal_lifecycle`: record status changes and workflow evidence.
 - `scan_watched_repositories`: periodic or on-demand read-only release scan.
-- `run_docs_maintenance_scenario`: stays as the eval and scenario terminal
-  workflow for now. It should not become the general channel tool name.
 - `publish_working_repository_pr`: approval-gated writeback only.
 
 ## Scenario Outline

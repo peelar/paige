@@ -4,11 +4,13 @@ import { satisfies } from "eve/evals/expect";
 import { saleorDocsUserTestScenarios } from "./scenarios/saleor-docs-user-test-scenarios";
 import { renderScenarioPrompt } from "./scenarios/render";
 
+type Scenario = (typeof saleorDocsUserTestScenarios)[number];
+
 export default [
   ...saleorDocsUserTestScenarios.map((scenario) =>
     defineEval({
       description: scenario.title,
-      tags: ["saleor-docs", "user-test", scenario.expected.outcome],
+      tags: ["saleor-docs", "user-test", "composable-capabilities", scenario.expected.outcome],
       timeoutMs: 900_000,
       metadata: {
         scenarioId: scenario.id,
@@ -21,12 +23,12 @@ export default [
 
         t.succeeded();
         t.noFailedActions();
-        t.toolOrder(["configure_working_repository", "run_docs_maintenance_scenario"]);
+        t.loadedSkill("docs-maintenance");
         t.check(
           t.reply,
           satisfies(
             (reply) => matchesScenarioReply(reply, scenario),
-            `${scenario.id} final reply summarizes the documentation impact decision`,
+            `${scenario.id} final reply summarizes the evidence-backed outcome`,
           ),
         );
         t.calledTool("configure_working_repository", {
@@ -34,24 +36,37 @@ export default [
           output: (output) => matchesConfiguredRepository(output, scenario),
           count: 1,
         });
-        t.calledTool("run_docs_maintenance_scenario", {
-          output: (output) => matchesScenarioOutput(output, scenario),
-          count: 1,
-        });
+        for (const path of scenario.expected.inspectedPaths) {
+          t.calledTool("repo_read_file", { input: { path } });
+        }
+        if (scenario.expected.outcome === "docs-patch") {
+          t.calledTool("get_docs_profile");
+          t.calledTool("repo_run_checks", {
+            output: hasSuccessfulRepositoryCheck,
+          });
+          t.calledTool("repo_export_diff", {
+            output: (output) => matchesPreparedDiff(output, scenario),
+          });
+        } else {
+          t.calledTool("repo_run_checks", {
+            output: hasSuccessfulRepositoryCheck,
+          });
+          t.calledTool("repo_export_diff", {
+            output: matchesEmptyDiff,
+          });
+          t.notCalledTool("authoring_workspace");
+          t.notCalledTool("repo_replace_text");
+        }
+
         t.notCalledTool("bash");
         t.notCalledTool("read_file");
         t.notCalledTool("write_file");
         t.notCalledTool("glob");
         t.notCalledTool("grep");
         t.notCalledTool("configure_github_writeback");
-        t.notCalledTool("get_setup_status");
-        t.notCalledTool("prepare_configured_working_repository");
-        t.notCalledTool("prepare_working_repository");
-        t.notCalledTool("repo_search");
-        t.notCalledTool("repo_read_file");
-        t.notCalledTool("repo_replace_text");
-        t.notCalledTool("repo_run_checks");
-        t.notCalledTool("repo_export_diff");
+        t.notCalledTool("create_docs_signal");
+        t.notCalledTool("prepare_docs_signal_patch");
+        t.notCalledTool("verify_docs_signal_current_docs");
         t.notCalledTool("publish_working_repository_pr");
       },
     }),
@@ -74,18 +89,12 @@ export default [
       t.noFailedActions();
       t.loadedSkill("docs-maintenance", { count: 1 });
       t.notCalledTool("configure_working_repository");
-      t.notCalledTool("run_docs_maintenance_scenario");
     },
   }),
 ];
 
-function matchesConfiguredRepository(
-  output: unknown,
-  scenario: (typeof saleorDocsUserTestScenarios)[number],
-): boolean {
+function matchesConfiguredRepository(output: unknown, scenario: Scenario): boolean {
   output = unwrapModelOutput(output);
-
-  const materialization = isRecord(output) ? output.materialization : null;
   const repository = scenario.repositoryInput.workingDocumentationRepository;
 
   return (
@@ -95,15 +104,11 @@ function matchesConfiguredRepository(
     output.ref === repository.ref &&
     (output.docsRoot === undefined || output.docsRoot === repository.docsRoot) &&
     output.sandboxPath === repository.sandboxPath &&
-    output.materialized === false &&
-    materialization === undefined
+    output.materialized === false
   );
 }
 
-function matchesConfigureInput(
-  input: unknown,
-  scenario: (typeof saleorDocsUserTestScenarios)[number],
-): boolean {
+function matchesConfigureInput(input: unknown, scenario: Scenario): boolean {
   const repository = scenario.repositoryInput.workingDocumentationRepository;
   if (!isRecord(input) || !isRecord(input.workingDocumentationRepository)) return false;
 
@@ -123,120 +128,78 @@ function matchesConfigureInput(
   );
 }
 
-function matchesScenarioOutput(
-  output: unknown,
-  scenario: (typeof saleorDocsUserTestScenarios)[number],
-): boolean {
+function matchesPreparedDiff(output: unknown, scenario: Scenario): boolean {
   output = unwrapModelOutput(output);
-
-  if (!isRecord(output)) return false;
-
-  if (scenario.id === "saleor-docs-private-metadata-filtering") {
-    return (
-      output.ok === true &&
-      output.scenarioKind === "private-metadata-filtering" &&
-      matchesMaterialization(output.materialization, scenario) &&
-      isRecord(output.report) &&
-      output.report.decision === "docs-patch" &&
-      includesAll(output.report.affectedPages, ["docs/api-usage/metadata.mdx"]) &&
-      includesAll(output.report.consideredPages, [
-        "docs/api-usage/metadata.mdx",
-        "docs/api-reference/**",
-      ]) &&
-      includesText(output.report.evidence, [
-        "DOCS-UT-001",
-        "DOCS-UT-001-discussion",
-        "DOCS-UT-001-release-note",
-      ]) &&
-      includesAll(output.changedFiles, ["docs/api-usage/metadata.mdx"]) &&
-      excludesPrefix(output.changedFiles, "docs/api-reference/") &&
-      typeof output.diff === "string" &&
-      output.diff.includes("diff --git a/docs/api-usage/metadata.mdx b/docs/api-usage/metadata.mdx") &&
-      output.diff.includes("Private metadata filtering is available only") &&
-      checksPassed(output.report.checks, ["diff-check"]) &&
-      hasAnyAction(output.actionProvenance, ["clone", "refresh", "reuse"]) &&
-      hasActions(output.actionProvenance, [
-        "search",
-        "read",
-        "patch",
-        "run-checks",
-        "export-diff",
-      ]) &&
-      lacksActions(output.actionProvenance, ["publish-pr"])
-    );
-  }
-
-  if (scenario.id === "saleor-docs-sandbox-rate-limit-false-alarm") {
-    return (
-      output.ok === true &&
-      output.scenarioKind === "sandbox-rate-limit-false-alarm" &&
-      matchesMaterialization(output.materialization, scenario) &&
-      isRecord(output.report) &&
-      output.report.decision === "no-docs-change" &&
-      Array.isArray(output.report.affectedPages) &&
-      output.report.affectedPages.length === 0 &&
-      includesAll(output.report.consideredPages, ["docs/api-usage/usage-limits.mdx"]) &&
-      includesText(output.report.evidence, [
-        "DOCS-UT-002",
-        "DOCS-UT-002-discussion",
-        "docs/api-usage/usage-limits.mdx",
-      ]) &&
-      Array.isArray(output.changedFiles) &&
-      output.changedFiles.length === 0 &&
-      output.noDiff === true &&
-      output.diff === "" &&
-      checksPassed(output.report.checks, ["diff-quiet"]) &&
-      hasAnyAction(output.actionProvenance, ["clone", "refresh", "reuse"]) &&
-      hasActions(output.actionProvenance, ["search", "read", "run-checks", "export-diff"]) &&
-      lacksActions(output.actionProvenance, ["patch", "publish-pr"])
-    );
-  }
-
-  return false;
-}
-
-function matchesMaterialization(
-  value: unknown,
-  scenario: (typeof saleorDocsUserTestScenarios)[number],
-): boolean {
-  const repository = scenario.repositoryInput.workingDocumentationRepository;
-
   return (
-    isRecord(value) &&
-    value.status === "materialized" &&
-    value.repositoryUrl === repository.source.url &&
-    value.requestedRef === repository.ref &&
-    value.docsRoot === repository.docsRoot &&
-    value.sandboxPath === repository.sandboxPath
+    isRecord(output) &&
+    changedOnlyExpectedFiles(output.changedFiles, scenario.expected.expectedTouchedFiles) &&
+    includesText(output.diff, scenario.expected.requiredDiffText) &&
+    output.noDiff === false
   );
 }
 
-function matchesScenarioReply(
-  reply: unknown,
-  scenario: (typeof saleorDocsUserTestScenarios)[number],
-): boolean {
+function matchesEmptyDiff(output: unknown): boolean {
+  output = unwrapModelOutput(output);
+  return (
+    isRecord(output) &&
+    Array.isArray(output.changedFiles) &&
+    output.changedFiles.length === 0 &&
+    output.diff === "" &&
+    output.noDiff === true
+  );
+}
+
+function matchesScenarioReply(reply: unknown, scenario: Scenario): boolean {
   const text = String(reply).toLowerCase();
+  const includesExpectedText = scenario.expected.replyMustInclude.every((token) =>
+    text.includes(token.toLowerCase())
+  );
 
-  if (scenario.id === "saleor-docs-private-metadata-filtering") {
-    return (
-      text.includes("docs/api-usage/metadata.mdx") &&
-      text.includes("private metadata") &&
-      (text.includes("docs patch") || text.includes("updated") || text.includes("patch")) &&
-      !text.includes("docs-patch")
-    );
+  if (!includesExpectedText) return false;
+  if (scenario.expected.outcome === "docs-patch") {
+    return text.includes("updated") || text.includes("prepared");
   }
 
-  if (scenario.id === "saleor-docs-sandbox-rate-limit-false-alarm") {
-    return (
-      (text.includes("no docs change") || text.includes("no documentation change")) &&
-      text.includes("120") &&
-      text.includes("180") &&
-      (text.includes("no patch") || text.includes("no diff") || text.includes("unchanged")) &&
-      !text.includes("no-docs-change")
-    );
-  }
+  return (
+    (text.includes("no change") ||
+      text.includes("no docs change") ||
+      text.includes("no documentation change") ||
+      text.includes("no update")) &&
+    (text.includes("no patch") || text.includes("no diff") || text.includes("unchanged"))
+  );
+}
 
-  return false;
+function hasSuccessfulRepositoryCheck(output: unknown): boolean {
+  output = unwrapModelOutput(output);
+  return (
+    isRecord(output) &&
+    Array.isArray(output.checks) &&
+    output.checks.some(
+      (entry) =>
+        isRecord(entry) && entry.status === "passed" && entry.exitCode === 0,
+    )
+  );
+}
+
+function changedOnlyExpectedFiles(value: unknown, expected: string[]): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length === expected.length &&
+    expected.every((path) => value.includes(path))
+  );
+}
+
+function includesText(value: unknown, expected: readonly string[]): boolean {
+  const haystack = Array.isArray(value)
+    ? value.map((item) => String(item)).join("\n")
+    : String(value);
+  const normalizedHaystack = haystack.toLowerCase();
+
+  return expected.every((item) => normalizedHaystack.includes(item.toLowerCase()));
+}
+
+function includesAll(value: unknown, expected: string[]): boolean {
+  return Array.isArray(value) && expected.every((item) => value.includes(item));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -244,71 +207,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function unwrapModelOutput(output: unknown): unknown {
-  if (
-    isRecord(output) &&
-    output.type === "json" &&
-    isRecord(output.value)
-  ) {
+  if (isRecord(output) && output.type === "json" && isRecord(output.value)) {
     return output.value;
   }
 
   return output;
-}
-
-function includesAll(value: unknown, expected: string[]): boolean {
-  return Array.isArray(value) && expected.every((item) => value.includes(item));
-}
-
-function includesText(value: unknown, expected: string[]): boolean {
-  if (!Array.isArray(value)) return false;
-
-  const haystack = value
-    .map((item) => (typeof item === "string" ? item : ""))
-    .join("\n");
-
-  return expected.every((item) => haystack.includes(item));
-}
-
-function excludesPrefix(value: unknown, prefix: string): boolean {
-  return Array.isArray(value) && value.every((item) => typeof item !== "string" || !item.startsWith(prefix));
-}
-
-function checksPassed(value: unknown, expectedNames: string[]): boolean {
-  if (!Array.isArray(value)) return false;
-
-  return expectedNames.every((name) =>
-    value.some(
-      (entry) =>
-        isRecord(entry) &&
-        entry.name === name &&
-        entry.status === "passed" &&
-        entry.exitCode === 0,
-    ),
-  );
-}
-
-function hasActions(value: unknown, expectedActions: string[]): boolean {
-  if (!Array.isArray(value)) return false;
-
-  return expectedActions.every((action) =>
-    value.some((entry) => isRecord(entry) && entry.action === action && entry.status === "success"),
-  );
-}
-
-function hasAnyAction(value: unknown, expectedActions: string[]): boolean {
-  return (
-    Array.isArray(value) &&
-    expectedActions.some((action) =>
-      value.some((entry) => isRecord(entry) && entry.action === action && entry.status === "success"),
-    )
-  );
-}
-
-function lacksActions(value: unknown, deniedActions: string[]): boolean {
-  return (
-    Array.isArray(value) &&
-    deniedActions.every((action) =>
-      value.every((entry) => !isRecord(entry) || entry.action !== action),
-    )
-  );
 }

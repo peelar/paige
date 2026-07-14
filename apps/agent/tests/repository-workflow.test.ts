@@ -4,7 +4,10 @@ import { readFile } from "node:fs/promises";
 import type { SandboxCommandResult } from "eve/sandbox";
 import type { ToolContext } from "eve/tools";
 
-import { runScenarioFixture } from "../agent/lib/docs-maintenance-scenarios";
+import {
+  detectFixtureScenarioKind,
+  runScenarioFixture,
+} from "./fixtures/docs-maintenance-scenarios";
 import * as operations from "../agent/lib/repository-operations";
 import { repositoryInputSchema } from "../agent/lib/repository-contract";
 import * as facade from "../agent/lib/repository-workflow";
@@ -50,7 +53,6 @@ assert.equal(facade.docsMaintenanceWorkflowResultSchema, contract.docsMaintenanc
 assert.equal(facade.repositoryCheckNameSchema, contract.repositoryCheckNameSchema);
 assert.equal(facade.repositoryCheckResultSchema, contract.repositoryCheckResultSchema);
 assert.equal(facade.repositoryMaterializationSchema, contract.repositoryMaterializationSchema);
-assert.equal(facade.runDocsMaintenanceScenarioInputSchema, contract.runDocsMaintenanceScenarioInputSchema);
 assert.equal(facade.loadRepositoryWorkflowState, state.loadRepositoryWorkflowState);
 assert.equal(facade.saveConfiguredRepositoryInput, state.saveConfiguredRepositoryInput);
 assert.equal(facade.saveRepositoryWorkflowState, state.saveRepositoryWorkflowState);
@@ -79,11 +81,23 @@ assert.match(stateSource, /"docs-agent\.repository-workflow-state"/);
 assert.match(stateSource, /"docs-agent\.configured-repository-input"/);
 
 const scenarioSource = await readFile(
-  new URL("../agent/lib/docs-maintenance-scenarios.ts", import.meta.url),
+  new URL("./fixtures/docs-maintenance-scenarios.ts", import.meta.url),
   "utf8",
 );
-assert.match(scenarioSource, /from "\.\/repository-operations"/);
+assert.match(scenarioSource, /from "\.\.\/\.\.\/agent\/lib\/repository-operations"/);
 assert.equal(scenarioSource.includes("ctx.getSandbox()"), false);
+
+await assert.rejects(
+  readFile(new URL("../agent/lib/docs-maintenance-scenarios.ts", import.meta.url), "utf8"),
+);
+
+assert.equal(
+  detectFixtureScenarioKind(
+    "A prototype used 250 objects per connection, but the public limit remains 100.",
+    [],
+  ),
+  "unknown",
+);
 
 const lifecycleSource = await readFile(
   new URL("../agent/lib/working-repository-lifecycle.ts", import.meta.url),

@@ -65,16 +65,21 @@ checker fails when a tool is added or removed without a complete row.
 | `prepare_working_repository` | `repository.read` | Merge into resource capability | Materialize one explicitly supplied working repository under repository policy. | Manual scenarios and setup-time preparation. | Sandbox checkout and resolved repository metadata. | Repository-materialization and policy tests. | Remove after setup persists configuration and the working-repository capability owns materialization. |
 | `process_due_docs_followups` | `follow_up.schedule` | Keep as authority boundary | Claim one bounded UTC occurrence idempotently and never publish. | Daily schedule principal. | Follow-up claim and product-run records. | Follow-up, schedule, and run-index tests. | Replace only with the canonical schedule-processing surface preserving occurrence idempotency and limits. |
 | `publish_working_repository_pr` | `publication.publish` | Keep as authority boundary | Publish only a checked prepared diff to the configured working docs repository after approval. | Human-approved interactive resume. | Prepared workflow result, approval event, GitHub PR metadata, audit event, and signal lifecycle. | Approval integration, writeback tests, owned-work approval eval, and browser approval tests. | Replace only through a superseding architecture decision preserving explicit per-call approval and repository scope. |
-| `repo_export_diff` | `draft.edit` | Merge into resource capability | Inspect the current reversible draft diff without external write. | Authoring and legacy scenario workflows. | Sandbox working tree and prepared diff metadata. | Repository-runner and authoring tests. | Remove after `authoring_workspace` owns all diff inspection and export consumers. |
-| `repo_read_file` | `repository.read` | Merge into resource capability | Read a bounded file from the configured working documentation repository. | Legacy scenario and verification workflows. | Sandbox checkout only. | Repository-runner and policy tests. | Remove after the working-repository capability exposes bounded reads. |
-| `repo_replace_text` | `draft.edit` | Merge into resource capability | Apply an exact reversible replacement in the working-docs sandbox. | Legacy scenario and patch workflows. | Sandbox working tree. | Repository-runner and authoring tests. | Remove after all consumers use `authoring_workspace` batched mutations. |
-| `repo_run_checks` | `repository.read` | Merge into resource capability | Run allowlisted named checks without granting arbitrary shell access. | Verification, authoring, and legacy scenario workflows. | Check results linked to the sandbox revision. | Repository-runner, policy, and authoring tests. | Remove after the working-repository capability owns named checks. |
-| `repo_search` | `repository.read` | Merge into resource capability | Search bounded paths in a configured repository. | Verification and legacy scenario workflows. | Sandbox checkout only. | Repository-runner and policy tests. | Remove after the working-repository capability exposes bounded search. |
+| `repo_export_diff` | `draft.edit` | Merge into resource capability | Inspect the current reversible draft diff without external write. | Direct and signal-backed documentation work. | Sandbox working tree and prepared diff metadata. | Repository-runner, authoring tests, and composable user-test evals. | Remove after `authoring_workspace` owns all diff inspection and export consumers. |
+| `repo_read_file` | `repository.read` | Merge into resource capability | Read a bounded file from the configured working documentation repository. | Direct documentation work and current-docs verification. | Sandbox checkout only. | Repository-runner, policy tests, and composable user-test evals. | Remove after the working-repository capability exposes bounded reads. |
+| `repo_replace_text` | `draft.edit` | Merge into resource capability | Apply an exact reversible replacement in the working-docs sandbox. | Focused direct and signal-backed patches. | Sandbox working tree. | Repository-runner, authoring tests, and composable user-test evals. | Remove after all consumers use `authoring_workspace` batched mutations. |
+| `repo_run_checks` | `repository.read` | Merge into resource capability | Run allowlisted named checks without granting arbitrary shell access. | Verification and authoring workflows. | Check results linked to the sandbox revision. | Repository-runner, policy tests, authoring tests, and composable user-test evals. | Remove after the working-repository capability owns named checks. |
+| `repo_search` | `repository.read` | Merge into resource capability | Search bounded paths in a configured repository. | Direct documentation work and current-docs verification. | Sandbox checkout only. | Repository-runner, policy tests, and composable user-test evals. | Remove after the working-repository capability exposes bounded search. |
 | `retrieve_slack_context` | Non-delegable provider context read | Keep as authority boundary | Search once with the current Slack user's request-scoped token and retain only derived context. | Active user-triggered Slack turns. | No raw durable result; only derived response and permalinks in the turn. | Slack retrieval tests and privacy assertions. | Replace only with a provider-specific surface preserving current-user authorization and ephemeral reduction. |
-| `run_docs_maintenance_scenario` | Eval-only workflow support | Move to eval-only support | Execute a fixture-oriented end-to-end scenario without becoming a production capability. | User-test and manual scenario harness. | Scenario workflow result and sandbox artifacts. | Saleor docs user-test evals and scenario tests. | Remove from the production tool surface in CR1 after evals call the same primitives through fixture support. |
 | `scan_watched_repositories` | `knowledge.read` and `repository.read` | Merge into resource capability | Read configured watched repositories and compare them with working docs without source mutation. | Release scanning and future watch goals. | Release cursor, provenance-bearing findings, and docs signals when escalated. | Watched-repository tests and read-only eval. | Remove after source registry reads plus a scan skill reproduce the behavior without a workflow-shaped tool. |
 | `update_docs_signal_lifecycle` | `docs_work.manage` | Merge into resource capability | Apply only non-privileged triage transitions owned by this surface. | Interactive triage and provider intake. | Docs-signal lifecycle event. | Signal lifecycle tests and docs-signal evals. | Remove after the durable docs-work capability enforces equivalent transition ownership. |
 | `verify_docs_signal_current_docs` | `repository.read` and `docs_work.manage` | Merge into resource capability | Inspect working docs for one signal and record verification without drafting or publishing. | Signal investigation. | Sandbox evidence, verification artifact, and signal lifecycle. | Verification tests, docs-signal evals, and user-test evals. | Remove after a skill composes working-repository reads with durable docs-work verification state. |
+
+## Removed Authored Tool Surfaces
+
+| Surface | Removed in | Replacement | Proof |
+| --- | --- | --- | --- |
+| `run_docs_maintenance_scenario` | #79 | Eval scenarios compose the existing repository, recommendation, and authoring capabilities; historical keyword fixtures live only under deterministic test support. | Compiled-manifest inventory check, repository search, deterministic fixture tests, and docs-needed/no-change live evals. |
 
 ## Framework Tool Inventory
 
@@ -109,14 +114,18 @@ conditional is resolved by Eve per session and is not an authority grant.
 
 ## Behavioral Proof Boundary
 
-`pnpm --filter docs-agent eval --list` currently discovers 34 cases across the
+`pnpm --filter docs-agent eval --list` currently discovers 36 cases across the
 conversation, documentation, provider, watched-repository, memory, authoring,
-and approval surfaces. #63 changes only architecture, inventory checking, and
-validation wiring.
+and approval surfaces.
 
 <!-- CAPABILITY_BASELINE_START -->
-The maintainer explicitly waived a full live-eval run for #63. No assertions
-were weakened, and #32 and #37 retain their separate live and external proof
+#79 ran the four composable working-repository cases live under Node 24.18.0:
+the historical docs-needed case passed 19/19 gates, the historical no-change
+case passed 20/20, the source-backed EditorJS case passed 19/19, and the
+repository-generic pagination no-change case passed 20/20. The evals assert
+semantic outcomes, repository and changed-file authority, checks, empty or
+focused diffs, and the no-publication boundary without prescribing one exact
+tool sequence. #32 and #37 retain their separate live and external proof
 requirements.
 <!-- CAPABILITY_BASELINE_END -->
 
