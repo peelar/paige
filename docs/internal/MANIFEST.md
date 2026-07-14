@@ -110,6 +110,14 @@ list them and perform bounded search or reads through the same provenance-bearin
 workspace-knowledge capability as current docs and watched repositories. They
 cannot enter authoring or writeback paths.
 
+**Workspace knowledge answers** are first-class outcomes, not implicit docs
+work. A workspace-grounded question may finish as a sourced answer, an explicit
+abstention, or a recommendation. Paige cites only inspected sources, keeps
+current docs, source, releases, accepted decisions, provider conversation, web
+results, and workspace memory in their proper trust classes, and reports
+conflicts or freshness limits. A direct answer does not create a docs signal,
+plan, draft, or memory by default.
+
 The first user-test fixtures target `https://github.com/peelar/saleor-docs.git`
 and live in `apps/agent/evals/scenarios/saleor-docs-user-test-scenarios.ts`. They cover one
 evidence-backed docs patch and one false alarm where the correct outcome is no
@@ -211,6 +219,24 @@ meaningful milestones and inspectable artifacts, parks for real human boundaries
 and resumes the same work after answers or corrections. This ownership record is
 a domain projection over Eve execution, not a separate workflow engine.
 
+## Workspace Knowledge Answer Workflow
+
+A user may ask what the configured workspace currently documents, implements,
+or has released without asking Paige to manufacture documentation work. Paige
+loads the workspace-knowledge procedure on demand, inspects only the sources
+needed for the question, and returns their stable source identities, evidence
+classes, refs or resolved revisions, paths or URLs, freshness, conflicts, and
+remaining uncertainty. Provider conversation and workspace memory may route
+the investigation but cannot independently prove a public product claim.
+
+Missing setup does not block greetings, planning, ordinary explanations, or a
+proportional general answer. Paige must say what current workspace evidence was
+not verified and must not imply repository or provider access succeeded. A
+later explicit request may capture a docs signal or start repository-backed
+authoring while carrying the inspected provenance forward in the existing
+evidence, link, and task-reference fields. Publication remains separately
+approval gated.
+
 ## Success Signals
 
 - The agent correctly says "no docs change required" for changes that do not
@@ -237,6 +263,9 @@ a domain projection over Eve execution, not a separate workflow engine.
 - Configured workspace sources can answer bounded questions with source
   identity, evidence class, paths, and resolved revisions without creating
   durable docs work or granting read-only repositories mutation authority.
+- Workspace-grounded questions can end in a sourced answer, explicit abstention,
+  or recommendation; conflicts and unverified sources stay visible, and a
+  discovered gap does not silently become durable work.
 - Slack threads and Linear issues can become structured docs signals with stable
   provenance and workflow status.
 - Substantive Slack or Linear docs signals trigger current-docs verification

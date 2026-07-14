@@ -67,7 +67,7 @@ checker fails when a tool is added or removed without a complete row.
 | `update_docs_signal_lifecycle` | `docs_work.manage` | Merge into resource capability | Apply only non-privileged triage transitions owned by this surface. | Interactive triage and provider intake. | Docs-signal lifecycle event. | Signal lifecycle tests and docs-signal evals. | Remove after the durable docs-work capability enforces equivalent transition ownership. |
 | `verify_docs_signal_current_docs` | `repository.read` and `docs_work.manage` | Merge into resource capability | Inspect working docs for one signal and record verification without drafting or publishing. | Signal investigation. | Sandbox evidence, verification artifact, and signal lifecycle. | Verification tests, docs-signal evals, and user-test evals. | Remove after a skill composes working-repository reads with durable docs-work verification state. |
 | `working_repository` | `repository.read` | Keep as canonical resource capability | Implicitly materialize and inspect only the configured working documentation repository through bounded list, search, text or binary-metadata hash-bearing read, status, diff, validator discovery, and named validation modes. | Direct, signal-backed, and future watch repository investigation. | Sandbox checkout, resolved repository identity, action provenance, shared repository-workflow FIFO, and the last disclosed typed validator profile. | Path, pattern, symlink, action, output-bound, full-file text/binary hash, validator, FIFO, compiled-manifest, and live discovery proof. | Replace only with an equivalent surface preserving repository identity, policy, provenance, validator ownership, source binding, and bounded outputs. |
-| `workspace_knowledge` | `knowledge.read` and `repository.read` | Keep as canonical source capability | List configured workspace sources, search one or more configured repositories, and read bounded source files while preserving source identity, revision, path, evidence class, redaction, and untrusted-data handling. Watched and context repositories expose no mutation actions. | Direct workspace-grounded questions and later source-composing skills or watch turns. | Workspace-scoped setup registry, sandbox checkouts, resolved revisions, and bounded Eve turn evidence only; source contents are not copied into product persistence. | Source-kind/access policy, context setup, cross-source conflict, prompt-injection, redaction, unavailable-source, materialization, manifest, and answer-only eval proof. | Replace only with an equivalent source registry preserving stable identity, evidence classes, provider/auth readiness, read-only enforcement, freshness, retention, and output bounds. |
+| `workspace_knowledge` | `knowledge.read` and `repository.read` | Keep as canonical source capability | List configured workspace sources, search one or more configured repositories, and read bounded source files while preserving source identity, revision, path, evidence class, redaction, and untrusted-data handling. Watched and context repositories expose no mutation actions. | Load-on-demand workspace-grounded answers and later source-composing skills or watch turns. | Workspace-scoped setup registry, sandbox checkouts, resolved revisions, and bounded Eve turn evidence only; source contents are not copied into product persistence. | Source-kind/access policy, context setup, cross-source conflict, prompt-injection, redaction, unavailable-source, materialization, manifest, current-docs, answer-only, no-mutation, and explicit-continuation eval proof. | Replace only with an equivalent source registry preserving stable identity, evidence classes, provider/auth readiness, read-only enforcement, freshness, retention, and output bounds. |
 
 ## Removed Authored Tool Surfaces
 
@@ -116,7 +116,7 @@ conditional is resolved by Eve per session and is not an authority grant.
 
 ## Behavioral Proof Boundary
 
-`pnpm --filter docs-agent eval --list` currently discovers 36 cases across the
+`pnpm --filter docs-agent eval --list` currently discovers 48 cases across the
 conversation, documentation, provider, watched-repository, memory, authoring,
 and approval surfaces.
 
@@ -130,6 +130,16 @@ focused diffs, and the no-publication boundary without prescribing one exact
 tool sequence. #32 and #37 retain their separate live and external proof
 requirements.
 <!-- CAPABILITY_BASELINE_END -->
+
+The `workspace-knowledge-sources` cross-source case plus the six
+`workspace-knowledge-answers` cases cover current-docs answers, cross-source
+answers, contradictory provider and memory context, missing setup, tool-free
+ordinary conversation, gap recommendation without mutation, and an explicit
+multi-turn continuation into one provenance-bearing docs signal. They assert
+semantic outcomes, inspected sources, freshness, uncertainty, and absence of
+durable side effects rather than one exact read order. The definitions are
+committed but remain unexecuted while the inherited Eve microsandbox
+session-start blocker from #81 and #82 is unchanged.
 
 The deterministic and local live suites do not replace external proof:
 

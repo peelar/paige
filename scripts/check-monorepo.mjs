@@ -191,6 +191,12 @@ for (const evalId of [
   "identity",
   "saleor-docs-user-tests",
   "watched-repositories",
+  "workspace-knowledge-answers/0000",
+  "workspace-knowledge-answers/0001",
+  "workspace-knowledge-answers/0002",
+  "workspace-knowledge-answers/0003",
+  "workspace-knowledge-answers/0004",
+  "workspace-knowledge-answers/0005",
   "workspace-knowledge-sources",
   "workspace-memory",
 ]) {

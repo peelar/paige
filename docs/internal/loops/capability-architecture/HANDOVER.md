@@ -30,3 +30,12 @@
   deterministically discovered, but was not executed because the inherited
   Eve microsandbox session-start blocker is unchanged. Keep #82 open until the
   live current-docs plus read-only-source proof can execute.
+- #83 - Assumed: a sourced answer, abstention, or gap recommendation remains
+  ephemeral by default; an explicit later request may create existing docs-work
+  state while retaining inspected source ids, refs or revisions, paths or URLs,
+  evidence classes, and uncertainty in ordinary provenance fields.
+- #83 - Blocker: the seven workspace-knowledge answer eval cases are committed
+  and deterministically discovered, but the inherited Eve microsandbox
+  session-start blocker is unchanged. Do not retry without a concrete fix; keep
+  #83 open until the live answer, abstention, no-mutation, and continuation proof
+  can execute.

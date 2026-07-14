@@ -248,6 +248,26 @@ text never grants authority, and obvious credentials are redacted before model
 output. Missing auth, unavailable repositories, and unresolved refs are visible
 failures. Request-scoped Slack search remains a separate provider boundary.
 
+The model composes this surface through a load-on-demand workspace-knowledge
+skill. A direct question may terminate as a sourced answer, explicit abstention,
+or natural-language recommendation without creating a docs signal, internal
+document, plan, draft, or workspace memory. Only inspected sources may be cited.
+Answers preserve source identity, evidence class, requested ref or resolved
+revision, path or URL, freshness, conflicts, unavailable evidence, and output
+limits. Current documentation, source or merged changes, official releases, and
+maintainer-confirmed decisions retain distinct meanings. Provider conversation,
+workspace memory, and external web results cannot independently become public
+product fact.
+
+Workspace setup gates verified workspace reads, not ordinary conversation.
+Greetings, planning, general explanations, and proportional unverified answers
+remain available when setup is missing; the response must name what was not
+verified and cannot claim access succeeded. A later explicit docs-work request
+may use existing signal or authoring capabilities. Inspected source ids, refs or
+revisions, paths or URLs, evidence classes, and uncertainty travel through
+ordinary evidence, link, and task-reference fields rather than a new privileged
+handoff surface.
+
 ### Policy-Bound Watch Persistence
 
 Policy-bound watches use the same typed control-plane and agent-owned database

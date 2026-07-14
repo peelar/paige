@@ -55,6 +55,19 @@ assert.doesNotMatch(maintenance, /run_docs_maintenance_scenario/);
 assert.match(maintenance, /clean diff/);
 assert.match(maintenance, /explicit approval/);
 
+const knowledge = await readFile(
+  join(skillsRoot, "workspace-knowledge", "SKILL.md"),
+  "utf8",
+);
+assert.match(knowledge, /name: workspace-knowledge/);
+assert.match(knowledge, /sourced answer, an\s+explicit abstention, or a natural-language recommendation/);
+assert.match(knowledge, /Do not cite a configured source that was not inspected/);
+assert.match(knowledge, /Provider conversation and workspace memory.*never independent proof/s);
+assert.match(knowledge, /does not by itself justify\s+`create_docs_signal`/);
+assert.match(knowledge, /proportional general\s+answer/);
+assert.match(knowledge, /source ids, refs or resolved revisions, paths or URLs/);
+assert.doesNotMatch(knowledge, /run_workspace_knowledge|answer_workspace_question/);
+
 const intake = await readFile(
   join(skillsRoot, "docs-signal-intake", "SKILL.md"),
   "utf8",

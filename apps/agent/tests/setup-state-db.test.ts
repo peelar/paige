@@ -51,6 +51,7 @@ await writeFile(
 );
 
 const {
+  buildSetupInstructions,
   getSetupStatus,
   readSetupState,
   saveGitHubWritebackSetup,
@@ -85,6 +86,14 @@ const firstRunStatus = await getSetupStatus();
 assert.equal(firstRunStatus.docsMaintenanceReady, false);
 assert.equal(firstRunStatus.setupMode, true);
 assert.equal(firstRunStatus.issues.some((issue) => issue.code === "setup-state-missing"), true);
+const incompleteInstructions = buildSetupInstructions(firstRunStatus);
+assert.match(incompleteInstructions, /Greetings, planning, general explanations/);
+assert.match(incompleteInstructions, /unverified general answers do not require workspace setup/);
+assert.match(incompleteInstructions, /say which configured sources were not verified/);
+assert.match(incompleteInstructions, /do not imply that setup or evidence access succeeded/);
+assert.match(incompleteInstructions, /verified workspace research or a repository-backed docs task/);
+assert.match(incompleteInstructions, /Once verified workspace research or a repository-backed docs task is clear, ask one question/);
+assert.doesNotMatch(incompleteInstructions, /^Ask for the working documentation repository/m);
 
 await saveWorkingRepositorySetup(repositoryInput);
 await saveGitHubWritebackSetup({ connector: "github/docs-agent" });

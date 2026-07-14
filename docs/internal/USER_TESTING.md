@@ -214,6 +214,42 @@ List the scenarios with:
 pnpm eval --list
 ```
 
+## Workspace Knowledge Answers
+
+`apps/agent/evals/workspace-knowledge-sources.eval.ts` retains the #82 source
+registry, cross-source search, and read proof. The six cases in
+`apps/agent/evals/workspace-knowledge-answers.eval.ts` add the #83 answer
+contract. Together they cover:
+
+- a current-docs answer with source identity, evidence class, revision, and
+  path;
+- a current-docs plus read-only-source answer without durable work;
+- contradictory provider conversation and workspace-memory context that does
+  not become public product fact;
+- missing setup with a proportional general answer and explicit unverified
+  workspace evidence;
+- a greeting and ordinary technical explanation with no tools or setup
+  choreography;
+- an inspected source/current-docs gap that ends as a recommendation, states
+  that main-source presence is not release proof, and creates no signal or
+  draft; and
+- an explicit second turn that creates one docs signal while retaining the
+  inspected source ids, refs, revisions, repository URLs, paths, and evidence
+  classes in ordinary provenance fields.
+
+The answer-only turns assert the absence of signal, memory, internal-document,
+planning, authoring, verification, and publication side effects. Evidence gates
+focus on what Paige inspected and reported, not one exact list/search/read
+ordering. Run the definitions only through the supervised repository command:
+
+```sh
+pnpm eval:safe -- workspace-knowledge-answers workspace-knowledge-sources --skip-report --verbose
+```
+
+The definitions are committed for later live proof. Do not retry them while the
+unchanged Eve microsandbox session-start blocker recorded for #81 and #82
+remains unresolved.
+
 ## Chat SDK State
 
 The repository gate includes deterministic local conformance and concurrency
@@ -904,10 +940,14 @@ and abandons back to a clean checkout. It runs through `pnpm check`.
 
 Issue #32 moved universal rules into `instructions/principles.md` and
 situational repository and provider-intake procedures into load-on-demand
-skills. `identity.md`, dynamic setup, and dynamic workspace-memory instructions
-remain unchanged. `apps/agent/tests/instruction-boundaries.test.ts` keeps the monolith absent,
-the identity byte-for-byte stable, the standing context below 220 words, and
-the three workflow skills present through `pnpm check`.
+skills. Issue #83 adds the workspace-knowledge answer procedure without changing
+`identity.md`; dynamic setup now explicitly leaves greetings, planning, general
+explanations, and proportional unverified answers available. Dynamic
+workspace-memory instructions remain unchanged.
+`apps/agent/tests/instruction-boundaries.test.ts` keeps the monolith absent, the
+identity byte-for-byte stable, the standing context below 220 words, and the
+four workflow skills present. `apps/agent/tests/setup-state-db.test.ts` proves
+the missing-setup answer boundary through `pnpm check`.
 
 The required live baseline was run before the refactor. `docs-signal-workflows`
 completed its Slack path and missed only the existing Linear final-reply gate.
