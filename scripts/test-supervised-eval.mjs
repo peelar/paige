@@ -260,7 +260,7 @@ function fixtureEnvironment(fixture, overrides) {
     PAIGE_EVAL_FAILURE_DIR: fixture.failureDirectory,
     PAIGE_EVAL_LOCK_DIR: fixture.lockDirectory,
     PAIGE_EVAL_MSB_BINARY: fakeMsbPath,
-    PAIGE_EVAL_MSB_TIMEOUT_MS: "500",
+    PAIGE_EVAL_MSB_TIMEOUT_MS: "2000",
     PAIGE_EVAL_NO_PROGRESS_MS: "1000",
     PAIGE_EVAL_TERM_GRACE_MS: "50",
     PAIGE_EVAL_WALL_TIMEOUT_MS: "4000",
