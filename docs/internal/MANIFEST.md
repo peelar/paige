@@ -35,11 +35,11 @@ when the right answer is no change, changelog only, or ask a maintainer.
 
 The current foundation proves the sandboxed GitHub repository work loop. Given a
 configured GitHub working documentation repository, PR-like change context,
-structured issue or product context, and optional read-only watched repositories,
-the agent clones or materializes repositories into the Eve sandbox, emits a
-documentation impact report, prepares a minimal Markdown or MDX patch when
-warranted, runs checks, exports a diff, and can push an approved branch or draft
-PR back to the same working repository.
+structured issue or product context, and optional read-only watched or context
+repositories, the agent clones or materializes repositories into the Eve
+sandbox, emits a documentation impact report, prepares a minimal Markdown or
+MDX patch when warranted, runs checks, exports a diff, and can push an approved
+branch or draft PR back to the same working repository.
 
 The current product also captures explicit Slack threads and Linear Agent
 Sessions as durable docs signals. The next product slice adds explicitly
@@ -104,9 +104,11 @@ discovery, verifies candidate terms in a sandboxed read-only checkout, compares
 them against the working documentation repository, and reports a docs-impact
 judgment without writing.
 
-**Context repositories** as a broader abstraction remain a later expansion.
-Watched repositories are the narrow source-evidence path for the current
-backlog.
+**Context repositories** are optional, explicitly configured read-only GitHub
+repositories for workspace knowledge that is not a proactive watch. Paige can
+list them and perform bounded search or reads through the same provenance-bearing
+workspace-knowledge capability as current docs and watched repositories. They
+cannot enter authoring or writeback paths.
 
 The first user-test fixtures target `https://github.com/peelar/saleor-docs.git`
 and live in `apps/agent/evals/scenarios/saleor-docs-user-test-scenarios.ts`. They cover one
@@ -121,8 +123,8 @@ docs change.
 - Continuous monitoring of arbitrary repositories, releases, support channels,
   or community discussions outside policy-bound watches and configured
   read-only repository scans.
-- Broad source or context repository integration beyond configured read-only
-  watched repository release scans.
+- Ambient or unbounded source integration beyond explicitly configured
+  read-only repositories and bounded provider-native retrieval.
 - Broad docs platform support beyond Docusaurus-style Markdown and MDX.
 - Large rewrites, new documentation sections, or autonomous publishing.
 - `llms.txt`, structured documentation bundles, MCP docs endpoints, or other
@@ -232,6 +234,9 @@ a domain projection over Eve execution, not a separate workflow engine.
 - Configured watched repositories can be scanned for release signals, verified
   in read-only sandbox checkouts, and compared with the working docs repository
   without granting them patch or writeback authority.
+- Configured workspace sources can answer bounded questions with source
+  identity, evidence class, paths, and resolved revisions without creating
+  durable docs work or granting read-only repositories mutation authority.
 - Slack threads and Linear issues can become structured docs signals with stable
   provenance and workflow status.
 - Substantive Slack or Linear docs signals trigger current-docs verification
