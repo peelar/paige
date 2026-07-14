@@ -32,6 +32,7 @@ try {
   await testCleanupFailureFailsClosed();
   await testBaselineFailurePreservesExistingResources();
   await testLiveLockFailsClosed();
+  await testPnpmProcessGroupInterruptCleansUp();
 
   console.log("Supervised eval runner checks passed.");
 } finally {
@@ -151,6 +152,44 @@ async function testLiveLockFailsClosed() {
   assert.deepEqual(await readRemovalLog(fixture), []);
 }
 
+async function testPnpmProcessGroupInterruptCleansUp() {
+  const fixture = await createFixture("pnpm-interrupt");
+  const environment = fixtureEnvironment(fixture, {
+    FAKE_EVAL_SCENARIO: "heartbeat",
+    FAKE_EVAL_SANDBOX_NAME: "eve-sbx-ses-owned-interrupt",
+  });
+  const pnpmEntry = process.env.npm_execpath;
+  const command = pnpmEntry
+    ? spawn(process.execPath, [pnpmEntry, "eval:safe"], {
+        cwd: repositoryRoot,
+        detached: true,
+        env: environment,
+        stdio: ["ignore", "pipe", "pipe"],
+      })
+    : spawn("pnpm", ["eval:safe"], {
+        cwd: repositoryRoot,
+        detached: true,
+        env: environment,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+  let stderr = "";
+  command.stderr.setEncoding("utf8");
+  command.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+  command.stdout.resume();
+
+  await waitForFile(fixture.pidFile);
+  process.kill(-command.pid, "SIGINT");
+  await waitForClose(command, 5_000);
+
+  await assertProcessTreeStopped(fixture.pidFile);
+  await assertCleanup(fixture, ["preexisting-sandbox"]);
+  assert.deepEqual(await readRemovalLog(fixture), ["eve-sbx-ses-owned-interrupt"]);
+  assert.match(await readOnlyFailureLog(fixture), /received SIGINT|received SIGHUP/u);
+  assert.doesNotMatch(stderr, /cleanup failed/u);
+}
+
 async function createFixture(name) {
   const root = join(testRoot, name);
   const failureDirectory = join(root, "failures");
@@ -179,23 +218,7 @@ async function createFixture(name) {
 }
 
 async function runFixture(fixture, overrides) {
-  const environment = {
-    ...process.env,
-    FAKE_EVAL_PID_FILE: fixture.pidFile,
-    FAKE_MSB_LOG: fixture.msbLog,
-    FAKE_MSB_STATE: fixture.msbState,
-    PAIGE_EVAL_CHILD_ARGS_JSON: "[]",
-    PAIGE_EVAL_CHILD_COMMAND: fakeChildPath,
-    PAIGE_EVAL_FAILURE_DIR: fixture.failureDirectory,
-    PAIGE_EVAL_LOCK_DIR: fixture.lockDirectory,
-    PAIGE_EVAL_MSB_BINARY: fakeMsbPath,
-    PAIGE_EVAL_MSB_TIMEOUT_MS: "500",
-    PAIGE_EVAL_NO_PROGRESS_MS: "1000",
-    PAIGE_EVAL_TERM_GRACE_MS: "50",
-    PAIGE_EVAL_WALL_TIMEOUT_MS: "4000",
-    PAIGE_EVAL_WORKFLOW_PARENT: fixture.workflowParent,
-    ...overrides,
-  };
+  const environment = fixtureEnvironment(fixture, overrides);
 
   return new Promise((resolvePromise, rejectPromise) => {
     const command = spawn(process.execPath, [runnerPath], {
@@ -224,6 +247,54 @@ async function runFixture(fixture, overrides) {
       resolvePromise({ code, signal, stderr, stdout });
     });
   });
+}
+
+function fixtureEnvironment(fixture, overrides) {
+  return {
+    ...process.env,
+    FAKE_EVAL_PID_FILE: fixture.pidFile,
+    FAKE_MSB_LOG: fixture.msbLog,
+    FAKE_MSB_STATE: fixture.msbState,
+    PAIGE_EVAL_CHILD_ARGS_JSON: "[]",
+    PAIGE_EVAL_CHILD_COMMAND: fakeChildPath,
+    PAIGE_EVAL_FAILURE_DIR: fixture.failureDirectory,
+    PAIGE_EVAL_LOCK_DIR: fixture.lockDirectory,
+    PAIGE_EVAL_MSB_BINARY: fakeMsbPath,
+    PAIGE_EVAL_MSB_TIMEOUT_MS: "500",
+    PAIGE_EVAL_NO_PROGRESS_MS: "1000",
+    PAIGE_EVAL_TERM_GRACE_MS: "50",
+    PAIGE_EVAL_WALL_TIMEOUT_MS: "4000",
+    PAIGE_EVAL_WORKFLOW_PARENT: fixture.workflowParent,
+    ...overrides,
+  };
+}
+
+function waitForClose(command, timeoutMs) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const timeout = setTimeout(() => {
+      command.kill("SIGKILL");
+      rejectPromise(new Error(`process ${command.pid} exceeded ${timeoutMs}ms`));
+    }, timeoutMs);
+    command.once("error", rejectPromise);
+    command.once("close", () => {
+      clearTimeout(timeout);
+      resolvePromise();
+    });
+  });
+}
+
+async function waitForFile(path) {
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline) {
+    try {
+      await readFile(path);
+      return;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    await delay(20);
+  }
+  throw new Error(`timed out waiting for ${path}`);
 }
 
 async function assertCleanup(fixture, expectedSandboxNames) {

@@ -52,6 +52,7 @@ let cleanupPromise;
 let executionWallTimer;
 
 const signalHandlers = new Map([
+  ["SIGHUP", () => requestStop("received SIGHUP", "SIGHUP")],
   ["SIGINT", () => requestStop("received SIGINT", "SIGINT")],
   ["SIGTERM", () => requestStop("received SIGTERM", "SIGTERM")],
 ]);
@@ -105,9 +106,11 @@ try {
 }
 
 process.exitCode = requestedSignal
-  ? requestedSignal === "SIGINT"
-    ? 130
-    : 143
+  ? requestedSignal === "SIGHUP"
+    ? 129
+    : requestedSignal === "SIGINT"
+      ? 130
+      : 143
   : exitCode;
 
 function readConfig() {
