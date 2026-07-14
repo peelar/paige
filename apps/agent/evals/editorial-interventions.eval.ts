@@ -57,19 +57,30 @@ export default cases.map((scenario) => defineEval({
     await t.send(`${repositorySetup}\n\n${scenario.prompt}`);
     t.succeeded();
     t.noFailedActions();
-    t.calledTool("editorial_recommendation", {
+    t.calledTool("docs_work_manage", {
       input: (input) => isRecord(input) &&
-        input.mode === "create" &&
-        input.chosenIntervention === scenario.intervention &&
-        Array.isArray(input.repositoryEvidence) && input.repositoryEvidence.length > 0 &&
-        Array.isArray(input.alternatives) && input.alternatives.length <= 3 &&
+        input.operation === "decide" &&
+        isRecord(input.decision) &&
+        input.decision.mode === "create" &&
+        input.decision.chosenIntervention === scenario.intervention &&
+        Array.isArray(input.decision.repositoryEvidence) && input.decision.repositoryEvidence.length > 0 &&
+        Array.isArray(input.decision.alternatives) && input.decision.alternatives.length <= 3 &&
         ("reaffirmed" in scenario
-          ? isRecord(input.maintainerDirection) && input.maintainerDirection.reaffirmed === true
+          ? isRecord(input.decision.maintainerDirection) && input.decision.maintainerDirection.reaffirmed === true
           : true),
       count: 1,
     });
-    if (scenario.requiresPlan) t.calledTool("content_plan", { count: 1 });
-    else t.notCalledTool("content_plan");
+    if (scenario.requiresPlan) {
+      t.calledTool("docs_work_manage", {
+        input: (input) => isRecord(input) && input.operation === "plan",
+        count: 1,
+      });
+    } else {
+      t.calledTool("docs_work_manage", {
+        input: (input) => isRecord(input) && input.operation === "plan",
+        count: 0,
+      });
+    }
     if (scenario.intervention === "wait-for-evidence") {
       t.notCalledTool("authoring_workspace");
     }

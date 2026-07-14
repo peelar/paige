@@ -33,9 +33,8 @@ description: Always load before answering a question grounded in configured work
 ## Stop without manufacturing work
 
 - A direct answer or discovered gap does not by itself justify
-  `create_docs_signal`, provider capture, workspace-memory mutation,
-  `editorial_recommendation`, `content_plan`, `internal_document`,
-  `owned_docs_work`, or `authoring_workspace`.
+  `docs_work_manage`, provider capture, workspace-memory mutation,
+  `internal_document`, or `authoring_workspace`.
 - Report a likely gap as a recommendation with its evidence and uncertainty.
   Do not silently turn it into a signal, plan, draft, or memory.
 - Greetings, planning conversation, and general technical explanations do not

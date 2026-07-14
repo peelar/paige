@@ -66,9 +66,8 @@ export default [
         t.notCalledTool("glob");
         t.notCalledTool("grep");
         t.notCalledTool("configure_github_writeback");
-        t.notCalledTool("create_docs_signal");
+        t.notCalledTool("docs_work_manage");
         t.notCalledTool("prepare_docs_signal_patch");
-        t.notCalledTool("verify_docs_signal_current_docs");
         t.notCalledTool("publish_working_repository_pr");
       },
     }),

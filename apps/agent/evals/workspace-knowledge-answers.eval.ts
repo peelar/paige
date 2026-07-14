@@ -286,8 +286,10 @@ export default [
 
       second.succeeded();
       second.noFailedActions();
-      second.calledTool("create_docs_signal", {
+      second.calledTool("docs_work_manage", {
         input: (input) =>
+          isRecord(input) &&
+          input.operation === "create" &&
           matchesContinuationSignal(input, [docsEvidence, sourceEvidence]),
         output: (output) => {
           const normalized = unwrapModelOutput(output);
@@ -297,6 +299,10 @@ export default [
             normalized.signal.sourceKind === "external-context";
         },
         count: 1,
+      });
+      second.calledTool("docs_work_manage", {
+        input: (input) => !isRecord(input) || input.operation !== "create",
+        count: 0,
       });
       t.check(
         second.message,
@@ -363,20 +369,16 @@ function assertNoDurableWork(scope: {
     "capture_slack_docs_signal",
     "configure_github_writeback",
     "configure_working_repository",
-    "content_plan",
-    "create_docs_signal",
+    "docs_work_manage",
+    "docs_work_read",
     "docs_follow_up",
-    "editorial_recommendation",
     "internal_document",
     "memory_mark_stale",
     "memory_promote",
     "memory_propose",
     "memory_retire",
-    "owned_docs_work",
     "publish_working_repository_pr",
     "scan_watched_repositories",
-    "update_docs_signal_lifecycle",
-    "verify_docs_signal_current_docs",
   ]) {
     scope.notCalledTool(name);
   }
@@ -391,18 +393,14 @@ function assertNoMutationBeyondSignal(scope: {
     "capture_slack_docs_signal",
     "configure_github_writeback",
     "configure_working_repository",
-    "content_plan",
+    "docs_work_read",
     "docs_follow_up",
-    "editorial_recommendation",
     "internal_document",
     "memory_mark_stale",
     "memory_promote",
     "memory_propose",
     "memory_retire",
-    "owned_docs_work",
     "publish_working_repository_pr",
-    "update_docs_signal_lifecycle",
-    "verify_docs_signal_current_docs",
   ]) {
     scope.notCalledTool(name);
   }

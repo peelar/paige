@@ -268,6 +268,38 @@ revisions, paths or URLs, evidence classes, and uncertainty travel through
 ordinary evidence, link, and task-reference fields rather than a new privileged
 handoff surface.
 
+### Documentation Work Resources
+
+`docs_work_read` is the bounded model-facing read surface for finding
+documentation work, inspecting one aggregate, and inspecting the current Eve
+session's typed editorial decision and content plan. Its model projection omits
+raw source text, workspace and database scope, internal operation keys, and
+credential-shaped metadata. `docs_work_manage` is the single model-facing
+mutation surface for explicit manual work, bounded triage, runtime-corroborated
+current-docs verification, typed editorial decisions and plans, idempotent
+evidence links, and substantial-work lifecycle updates.
+
+The generic mutation boundary accepts no actor, lifecycle status, transition
+authority, workspace, database, agent, or provider-admission identity. Server
+code maps typed operations to the existing transition authorities and actors.
+Evidence linking preserves lifecycle and uses the aggregate's `updatedAt` as an
+optimistic token plus an operation key for replay. Substantial owned work,
+editorial decisions, and content plans retain their stable ids, revisions,
+session binding, and operation-key semantics. Corrections, parks, manual
+pauses, resumes, milestones, and completed, blocked, abandoned, or failed
+terminal outcomes update the original owned work rather than creating another
+workflow.
+
+Provider-specific capture remains before this boundary. `docs_follow_up` and
+due processing remain `follow_up.schedule`; `internal_document` remains the
+general Paige-owned document primitive; workspace memory remains governed
+routing context; `authoring_workspace` remains the only reversible repository
+mutation boundary; publication remains separately approval gated. A quick
+question or localized edit does not require substantial owned work. The
+historical signal, lifecycle, recommendation, plan, verification, and owned-
+work wrappers are absent from the compiled model manifest after their
+consumers migrate to these two surfaces.
+
 ### Policy-Bound Watch Persistence
 
 Policy-bound watches use the same typed control-plane and agent-owned database

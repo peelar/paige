@@ -78,6 +78,12 @@ assert.ok(
   authoredNames.includes("working_repository"),
   "The canonical working_repository capability must be present in the compiled manifest.",
 );
+for (const docsWorkTool of ["docs_work_read", "docs_work_manage"]) {
+  assert.ok(
+    authoredNames.includes(docsWorkTool),
+    `The canonical ${docsWorkTool} capability must be present in the compiled manifest.`,
+  );
+}
 for (const removedRepositoryTool of [
   "prepare_configured_working_repository",
   "prepare_working_repository",
@@ -95,6 +101,14 @@ for (const removedRepositoryTool of [
 for (const removedMutationTool of [
   "prepare_docs_signal_patch",
   "repo_replace_text",
+  "content_plan",
+  "create_docs_signal",
+  "editorial_recommendation",
+  "get_docs_signal",
+  "list_docs_signals",
+  "owned_docs_work",
+  "update_docs_signal_lifecycle",
+  "verify_docs_signal_current_docs",
 ]) {
   assert.equal(
     authoredNames.includes(removedMutationTool),

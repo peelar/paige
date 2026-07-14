@@ -250,6 +250,43 @@ The definitions are committed for later live proof. Do not retry them while the
 unchanged Eve microsandbox session-start blocker recorded for #81 and #82
 remains unresolved.
 
+## Documentation Work Capabilities
+
+`docs_work_read` is the bounded read surface for finding work, inspecting one
+aggregate, and inspecting the current Eve session's editorial decision or
+content plan. Its model projection omits raw source text, internal operation
+keys, workspace scope, and credential-shaped metadata. `docs_work_manage` is
+the single model-facing mutation surface for explicit manual work, bounded
+triage, runtime-corroborated current-docs verification, typed editorial
+decisions and plans, evidence links, substantial ownership, milestones,
+corrections, parks or manual pauses, resumes, and completed, blocked,
+abandoned, or failed terminal outcomes. It accepts no caller-
+selected actor, lifecycle status, workspace, database, or transition authority.
+
+The migrated `owned-docs-work` eval array plus `internal-working-documents`
+covers the seven #84 behavior requirements: quick inline work, substantial
+work, correction, park/resume, the separate `docs_follow_up` scheduling
+surface, the separate general `internal_document` primitive, and an explicit
+terminal no-change outcome. Existing authoring and provider evals retain the
+draft, publication, provider-admission, and verification boundaries. Discover
+the definitions with:
+
+```sh
+pnpm eval --list
+```
+
+When the inherited Eve microsandbox session-start blocker is fixed, run the
+behavior proof only through the repository supervisor:
+
+```sh
+pnpm eval:safe -- owned-docs-work internal-working-documents --skip-report --verbose
+```
+
+Until then, do not rerun the live suite unchanged. Deterministic capability
+tests prove create replay, source-text-safe projections, fixed actors,
+idempotent evidence linking, optimistic concurrency, cross-resource rejection,
+and the absence of caller-selected privileged status.
+
 ## Chat SDK State
 
 The repository gate includes deterministic local conformance and concurrency
@@ -526,7 +563,7 @@ docs-signal check covers explicit Slack thread capture as
 separate from model summaries, setup-gated required verification, completed
 current-docs verification state, skipped verification with an explicit reason,
 and the no patch/writeback boundary. Typecheck and Eve build cover the
-`verify_docs_signal_current_docs` tool surface; live verification behavior should
+the `docs_work_manage` `verify_current_docs` operation; live verification behavior should
 show materialization of the configured working documentation repository, reads
 or searches against likely docs targets, a `docs-verified` lifecycle event, and
 no patch or draft PR. The Linear docs-signal check covers Agent Session issue
@@ -802,7 +839,7 @@ explicit UTC, and durable failure information through `pnpm check`.
 ## Substantial Owned Work
 
 Start with a captured docs signal and ask Paige to “take care of” a substantial
-documentation outcome. Confirm `owned_docs_work` records one work id plus the
+documentation outcome. Confirm `docs_work_manage` records one work id plus the
 originating signal, conversation, Eve session, starting/latest run, intended
 outcome, and revision. The acceptance update should be concise; Paige should
 then continue through reversible verification, editorial recommendation,
@@ -821,8 +858,9 @@ Exercise a missing-evidence or consequential-decision park, then answer in the
 same Eve session and resume the same work id. A stale revision, duplicate start,
 replayed operation, or different-session takeover must not create duplicate work
 or artifacts. Apply a correction and confirm Paige revises the current
-recommendation, plan, and draft references. Also exercise pause/resume and
-abandon; abandonment should reset any reversible draft separately.
+recommendation, plan, and draft references. Also exercise pause/resume,
+abandon, and unrecoverable failure; abandonment should reset any reversible
+draft separately.
 
 At draft readiness, Paige should record an approval-request milestone but must
 not call `publish_working_repository_pr` until approval is explicit. The
@@ -864,7 +902,7 @@ handoff contract.
 ## Editorial Intervention Choice
 
 After current-docs verification and `get_docs_profile`, ask Paige to choose an
-intervention with `editorial_recommendation`. Confirm the concise result names
+intervention with the `docs_work_manage` `decide` operation. Confirm the concise result names
 the reader problem, repository evidence, chosen intervention, important rejected
 alternatives, and remaining uncertainty without becoming a second content plan.
 
@@ -875,7 +913,7 @@ obsolete pages should be consolidated; a distinct administrator task should
 produce a new document; an explicitly reaffirmed new-document choice should be
 followed after the tradeoff is understood; and missing public-behavior evidence
 should choose `wait-for-evidence` and produce no draft. Substantial choices must
-call `content_plan`; focused patches must not.
+use the `docs_work_manage` `plan` operation; focused patches must not.
 
 The Vitest case `apps/agent/tests/editorial-recommendation.test.ts` keeps the typed handoff and
 safety behavior in `pnpm check`. It covers every supported intervention,
@@ -886,16 +924,16 @@ documentation quality as a scoring engine.
 
 ## Substantial-work Content Planning
 
-After `editorial_recommendation` chooses a new page, coordinated page set,
-restructure, migration guide, or broad replacement, call `content_plan` before
-authoring. Confirm the complete artifact identifies the reader and outcome,
+After the `docs_work_manage` `decide` operation chooses a new page, coordinated
+page set, restructure, migration guide, or broad replacement, use its typed
+`plan` operation before authoring. Confirm the complete artifact identifies the reader and outcome,
 content type and placement, affected surfaces, outline, evidence, examples,
 assets, unresolved decisions, validation, and definition of done. The returned
 progress update should be concise and `continuesToDraft` should be true without
 an approval prompt when the plan is ready.
 
 Call `authoring_workspace` with the same task or docs-signal reference. Confirm
-the draft records the plan id and revision, and that a later `content_plan`
+the draft records the plan id and revision, and that a later `docs_work_manage` plan
 revision remains attached across turns. A single localized change to an
 existing page should work without creating or displaying a plan.
 

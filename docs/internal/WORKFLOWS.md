@@ -113,13 +113,12 @@ cookie or silently inherit web authentication.
 | Watch dispatch readiness | Revalidate and reserve a bounded handoff before the later watch-turn executor. | Current verified provider workspace, canonical setup, active exact effective revision, source/event/retention/claim validation, available approved capabilities, and an idempotent fixed-UTC-hour processing-budget reservation. | Inherit a replacement revision; expose provider payload fields or extra capability; dispatch after pause/deletion/expiry/authorization loss/budget exhaustion; start Eve or create signals, memories, replies, digests, or follow-ups. |
 | Slack thread presence | Admit only invited thread replies and preserve conversational continuity. | Separate `slack_thread_presence` state plus Chat SDK subscriptions, one-second burst debounce, silent observer turns, dismissal, signal-resolution cleanup, and seven-day inactivity expiry. | Persist or model-process unenrolled channel traffic, create signals from ordinary chatter, or widen participation beyond the invited thread. |
 | Slack context retrieval | Fill one concrete context gap during the current Slack user's interaction. | Request-scoped `action_token`, one `assistant.search.context` call, up to five results, ephemeral summarization, and permalink-only citations through `retrieve_slack_context`. | Search ambiently, page automatically, expose tokens or raw hits to Eve state, retain results, or treat Slack discussion as verified public evidence. |
-| Signal intake | Convert provider context into a docs signal with provenance. | `capture_slack_docs_signal`, `capture_linear_docs_signal`; `create_docs_signal`, `list_docs_signals`, `get_docs_signal`, `update_docs_signal_lifecycle`; watched scans also create source evidence. | Inspect or patch docs directly. |
-| Owned execution | Keep one substantial task on its originating signal and Eve session through reversible work, human pauses, corrections, approval, and outcome. | `owned_docs_work`, the one-to-one `docs_signal_owned_work` projection, existing signal events/artifacts, and Eve's durable session/turn runtime. | Create a second workflow engine, duplicate work on resume, narrate routine activity, or bypass approval. |
+| Documentation work | Find, inspect, create, decide, link evidence, and update the original bounded documentation work resource. | `docs_work_read`, `docs_work_manage`, provider capture adapters, one `docs_signal_owned_work` projection for substantial work, and server-owned events/artifacts. | Accept caller-selected actors or lifecycle statuses, duplicate work on correction/resume, expose raw source text, or absorb provider admission, follow-ups, documents, drafting, memory, or publication. |
 | Scheduled follow-up | Revisit a bounded checklist of due signal work once per UTC daily occurrence. | `docs_follow_up`, `process_due_docs_followups`, `daily-docs-follow-ups`, and app-owned follow-up/run tables. | Scan broadly, process an occurrence twice, hide failures, or publish. |
 | Decision and triage | Classify docs impact, missing evidence, verification need, and next action. | `planDocsImpactDecision` and the shared decision schemas. | Treat Slack or Linear context alone as proof for public docs claims. |
-| Current-docs verification | Inspect the configured working documentation repository in the sandbox. | `verify_docs_signal_current_docs` for captured signals; bounded `working_repository` list, search, line-range read, status, diff, validator discovery, and named validation modes for direct investigations. | Supply a command, follow a symlink, escape the configured checkout, publish, or write outside `/workspace/working-docs`. |
-| Editorial recommendation | Choose the smallest intervention that solves the reader problem and explain evidence plus important alternatives. | `editorial_recommendation`, linked to current-docs evidence, docs profile, prior impact decision, and later draft. | Turn model judgment into a large rule engine, blindly follow a requested format, or debate routine style. |
-| Content planning | Define the reader outcome, placement, scope, evidence, outline, validation, and done state for substantial work. | `content_plan`, linked to the prior docs-impact decision and authoring draft. | Duplicate impact judgment, gate a ready plan on approval, or require a plan for a localized patch. |
+| Current-docs verification | Inspect the configured working documentation repository in the sandbox. | `docs_work_manage` `verify_current_docs` keeps the internal verification service behind runtime repository reads; bounded `working_repository` modes serve direct investigations. | Accept model-supplied evidence as verification, supply a command, follow a symlink, escape the configured checkout, publish, or write outside `/workspace/working-docs`. |
+| Editorial recommendation | Choose the smallest intervention that solves the reader problem and explain evidence plus important alternatives. | The typed `docs_work_manage` `decide` operation, linked to current-docs evidence, docs profile, prior impact decision, and later draft. | Turn model judgment into a large rule engine, blindly follow a requested format, or debate routine style. |
+| Content planning | Define the reader outcome, placement, scope, evidence, outline, validation, and done state for substantial work. | The typed `docs_work_manage` `plan` operation, linked to the prior docs-impact decision and authoring draft. | Duplicate impact judgment, gate a ready plan on approval, or require a plan for a localized patch. |
 | Draft authoring | Create, revise, inspect, check, prepare, or abandon the one working-repository draft through content-bound atomic operations. | `authoring_workspace`; `working_repository` full-file hashes; `get_docs_profile` for conventions; optional signal, owned-work, recommendation, and ready-plan links. | Open a PR, clobber stale content, leave a partial batch, or write to watched/source repositories. |
 | Writeback | Publish an approved prepared draft PR to the working docs repository. | `publish_working_repository_pr` consumes the stable prepared draft identity, exact base/check/diff snapshot, and its derived signal relation. | Run without explicit approval, attach a different signal, publish an editing or failed-check draft, or target another repository. |
 
@@ -137,33 +136,22 @@ cookie or silently inherit web authentication.
   Session issue into `issue-tracker-item` external context, create or dedupe a
   Linear docs signal, run shared decision/triage, and return Agent Activity
   reply guidance.
-- `owned_docs_work`: accept or resume substantial work on one docs signal,
-  retain Eve session/run and conversation references, serialize corrections,
-  record inspectable milestones and artifacts, park for human input, and finish
-  with an explicit outcome. Quick inline work skips this tool.
+- `docs_work_read`: find bounded work, inspect one aggregate, or inspect the
+  current session decision and plan without returning raw source text or
+  internal operation keys.
+- `docs_work_manage`: create or dedupe explicit manual work, apply bounded
+  triage, run repository-corroborated verification, record typed editorial
+  decisions and plans, link evidence idempotently, and start or update the
+  original substantial work through milestones, corrections, parks, resumes,
+  and terminal outcomes. Quick inline work skips durable mutation.
 - `docs_follow_up`: create, list, cancel, or inspect schedule status for the
   small signal-linked follow-up checklist.
 - `process_due_docs_followups`: idempotently claim at most 20 due items for the
   current UTC daily occurrence and return them for normal investigation.
-- `verify_docs_signal_current_docs`: materialize the configured working
-  documentation repository for one signal, read likely docs pages, search likely
-  docs terms, record a `docs-verified` lifecycle event, and return evidence
-  without patching or publishing.
 - `authoring_workspace`: link an existing `docs-verified` signal when it
   originates a draft, apply hash-bound or create-only operations after an
   ordered virtual-tree preflight, prepare checks and the exact diff, and derive
   `patch-prepared` or `patch-failed` signal artifacts from that draft.
-- `content_plan`: create, revise, or inspect the living plan for substantial
-  work, return a concise maintainer progress update, continue ready plans into
-  sandbox authoring, and pause blocked plans before mutation.
-- `editorial_recommendation`: create, revise, or inspect the concise
-  reader-oriented intervention choice after current-docs verification; route
-  substantial choices to `content_plan` and blockers to a visible pause.
-- `create_docs_signal`: create or dedupe the durable work item.
-- `list_docs_signals`: find active work by status and source kind.
-- `get_docs_signal`: read source provenance, links, artifacts, and lifecycle
-  events.
-- `update_docs_signal_lifecycle`: record status changes and workflow evidence.
 - `scan_watched_repositories`: periodic or on-demand read-only release scan.
 - `publish_working_repository_pr`: approval-gated writeback only.
 
@@ -177,7 +165,7 @@ cookie or silently inherit web authentication.
    `communication-thread` external context and creates or dedupes the signal.
 4. Decision/triage sees a customer-facing API claim and linked release evidence.
 5. The shared decision is `needs-docs-verification`.
-6. If workspace setup is ready, `verify_docs_signal_current_docs` materializes
+6. If workspace setup is ready, `docs_work_manage` `verify_current_docs` materializes
    `/workspace/working-docs`, reads likely docs pages, and searches likely docs
    terms. If setup is missing or stale, the Slack reply says verification is
    blocked by setup instead of guessing repository details.

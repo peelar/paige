@@ -256,15 +256,21 @@ function matchesLinearCaptureOutput(output: unknown): boolean {
 
 function assertNoRepositoryOrWriteTools(t: {
   notCalledTool: (toolName: string) => unknown;
+  calledTool: (
+    toolName: string,
+    options: { input: (input: unknown) => boolean; count: number },
+  ) => unknown;
 }): void {
   t.notCalledTool("configure_working_repository");
-  t.notCalledTool("verify_docs_signal_current_docs");
+  t.calledTool("docs_work_manage", {
+    input: (input) => isRecord(input) && input.operation === "verify_current_docs",
+    count: 0,
+  });
   t.notCalledTool("prepare_docs_signal_patch");
   t.notCalledTool("repo_replace_text");
   t.notCalledTool("repo_run_checks");
   t.notCalledTool("repo_export_diff");
   t.notCalledTool("publish_working_repository_pr");
-  t.notCalledTool("update_docs_signal_lifecycle");
   t.notCalledTool("bash");
   t.notCalledTool("write_file");
 }

@@ -23,7 +23,7 @@ for (const heading of [
 }
 
 for (const boundary of [
-  "Signal intake",
+  "Documentation work",
   "Decision and triage",
   "Current-docs verification",
   "Draft authoring",
@@ -33,17 +33,29 @@ for (const boundary of [
 }
 
 for (const tool of [
-  "create_docs_signal",
+  "docs_work_manage",
+  "docs_work_read",
   "scan_watched_repositories",
-  "verify_docs_signal_current_docs",
   "authoring_workspace",
   "publish_working_repository_pr",
 ]) {
   assert.equal(workflows.includes(`\`${tool}\``), true);
 }
+for (const removed of [
+  "create_docs_signal",
+  "get_docs_signal",
+  "list_docs_signals",
+  "update_docs_signal_lifecycle",
+  "owned_docs_work",
+  "editorial_recommendation",
+  "content_plan",
+  "verify_docs_signal_current_docs",
+]) {
+  assert.equal(workflows.includes(`\`${removed}\``), false);
+}
 
 assert.equal(workflows.includes("run_docs_maintenance_scenario"), false);
-assert.match(workflows, /bounded `working_repository` list.*named validation modes/);
+assert.match(workflows, /repository reads; bounded `working_repository` modes serve direct investigations/);
 assert.match(workflows, /Draft PR publishing waits for explicit approval/);
 assert.match(workflows, /No sandbox verification runs yet/);
 assert.match(workflows, /Slack Mention With Source Evidence/);

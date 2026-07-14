@@ -104,11 +104,9 @@ function assertNoOtherDurableMutationTools(t: {
   notCalledTool(name: string): void;
 }): void {
   for (const name of [
-    "create_docs_signal",
+    "docs_work_manage",
+    "docs_work_read",
     "memory_propose",
-    "owned_docs_work",
-    "content_plan",
-    "editorial_recommendation",
     "authoring_workspace",
     "publish_working_repository_pr",
   ]) {

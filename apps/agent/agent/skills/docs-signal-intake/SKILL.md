@@ -14,8 +14,9 @@ description: Always load before capturing a Slack or Linear docs signal. Use whe
    pull request was published.
 4. When the decision requires current-docs verification:
    - if setup is blocked, report the setup boundary and stop;
-   - if setup is ready, call `verify_docs_signal_current_docs` and answer from
-     the recorded evidence.
+   - if setup is ready, call `docs_work_manage` with
+     `operation: verify_current_docs` and answer from the repository-corroborated
+     recorded evidence.
 5. Do not patch during intake. After verification, a separate request may use
    `authoring_workspace` with the verified `signalId`, current content hash,
    ordinary authoring operations, and the shared preparation mode. A localized

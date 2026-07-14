@@ -39,3 +39,13 @@
   session-start blocker is unchanged. Do not retry without a concrete fix; keep
   #83 open until the live answer, abstention, no-mutation, and continuation proof
   can execute.
+- #84 - Assumed: explicit manual docs work may use a server-labelled
+  `external-context` or `manual-scenario` source with an operation key, while
+  Slack and Linear identities remain exclusive to their provider-admission
+  adapters; evidence linking preserves lifecycle and uses `updatedAt` as its
+  optimistic revision token.
+- #84 - Blocker: the migrated quick, substantial, correction, park/resume,
+  follow-up, internal-document, and terminal-outcome eval definitions are not
+  executed while the inherited Eve microsandbox session-start blocker remains
+  unchanged. Keep #84 open until that live proof can run through the supervised
+  evaluator.

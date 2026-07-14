@@ -40,6 +40,15 @@ export async function loadRepositoryWorkflowState(): Promise<WorkflowState> {
     throw new Error("Working repository has not been materialized in this session.");
   }
 
+  return parseRepositoryWorkflowState(state);
+}
+
+export function inspectRepositoryWorkflowState(): WorkflowState | null {
+  const state = repositoryWorkflowState.get();
+  return state === null ? null : parseRepositoryWorkflowState(state);
+}
+
+function parseRepositoryWorkflowState(state: WorkflowState): WorkflowState {
   const repositoryInput = parseResolvedRepositoryInput(state.repositoryInput);
 
   return {

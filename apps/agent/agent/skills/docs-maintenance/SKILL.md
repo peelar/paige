@@ -29,10 +29,11 @@ description: Always load before a documentation-impact or working-repository wor
   but the target page covers a broader release line, make the version boundary
   explicit instead of implying the behavior existed in every earlier patch.
 - Use `get_docs_profile` before writing.
-- Record the smallest reader-solving choice with `editorial_recommendation`.
+- Record the smallest reader-solving choice with `docs_work_manage` using the
+  typed `decide` operation.
 - Keep localized changes inline. For substantial work, keep the originating
-  signal and Eve session, use `owned_docs_work`, and create a `content_plan`
-  before drafting.
+  signal and Eve session, use `docs_work_manage` to start and update the
+  original work, and record a typed `plan` before drafting.
 - Use `authoring_workspace` for every localized, signal-backed, or multi-file
   draft. Take each update hash from the full-file `contentHash` returned by
   `working_repository` read; use `createOnly` only for a new target. Link a

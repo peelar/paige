@@ -168,6 +168,16 @@ export const getDocsSignalInputSchema = z.object({
   id: z.string().trim().min(1),
 });
 
+export const recordDocsSignalEvidenceInputSchema = z.object({
+  id: z.string().trim().min(1),
+  expectedUpdatedAt: z.string().trim().min(1),
+  operationKey: z.string().trim().min(1).max(500),
+  reason: z.string().trim().min(1).max(2_000),
+  links: z.array(docsSignalLinkInputSchema).max(50).default([]),
+  artifacts: z.array(docsSignalArtifactInputSchema).max(20).default([]),
+  metadata: z.record(z.string(), z.unknown()).default({}),
+}).strict();
+
 const docsSignalRecordSchema = z.object({
   id: z.string(),
   workspaceId: z.string(),
@@ -253,6 +263,11 @@ export const docsSignalDetailSchema = docsSignalRecordSchema.extend({
 
 export const createDocsSignalResultSchema = z.object({
   created: z.boolean(),
+  signal: docsSignalDetailSchema,
+});
+
+export const recordDocsSignalEvidenceResultSchema = z.object({
+  replayed: z.boolean(),
   signal: docsSignalDetailSchema,
 });
 
@@ -474,6 +489,84 @@ export async function updateDocsSignalLifecycle(
     },
     "triage",
   );
+}
+
+export async function recordDocsSignalEvidence(
+  input: z.infer<typeof recordDocsSignalEvidenceInputSchema>,
+): Promise<z.infer<typeof recordDocsSignalEvidenceResultSchema>> {
+  const parsed = recordDocsSignalEvidenceInputSchema.parse(input);
+
+  return withDocsAgentDatabase(async (db) => {
+    const replayed = await db.transaction(async (tx) => {
+      const current = await readDocsSignalRecord(tx, parsed.id);
+      const priorEvents = await tx
+        .select({ metadata: docsSignalEvents.metadata })
+        .from(docsSignalEvents)
+        .where(
+          and(
+            eq(docsSignalEvents.workspaceId, DEFAULT_WORKSPACE_ID),
+            eq(docsSignalEvents.signalId, parsed.id),
+            eq(docsSignalEvents.eventType, "evidence-linked"),
+          ),
+        );
+      if (
+        priorEvents.some(
+          ({ metadata }) =>
+            typeof metadata === "object" &&
+            metadata !== null &&
+            "operationKey" in metadata &&
+            metadata.operationKey === parsed.operationKey,
+        )
+      ) {
+        return true;
+      }
+      if (current.updatedAt !== parsed.expectedUpdatedAt) {
+        throw new DocsSignalTransitionError(
+          `Docs signal ${parsed.id} changed concurrently. Expected revision ${parsed.expectedUpdatedAt}, found ${current.updatedAt}. Inspect and retry the same work item.`,
+        );
+      }
+
+      const updatedRows = await tx
+        .update(docsSignals)
+        .set({ updatedAt: nextIsoTimestamp(current.updatedAt) })
+        .where(
+          and(
+            eq(docsSignals.workspaceId, DEFAULT_WORKSPACE_ID),
+            eq(docsSignals.id, parsed.id),
+            eq(docsSignals.status, current.status),
+            eq(docsSignals.updatedAt, parsed.expectedUpdatedAt),
+          ),
+        )
+        .returning({ id: docsSignals.id });
+      if (updatedRows.length !== 1) {
+        throw new DocsSignalTransitionError(
+          `Docs signal ${parsed.id} changed while evidence was linked. Inspect and retry.`,
+        );
+      }
+
+      await insertLinks(tx, parsed.id, parsed.links);
+      await insertArtifacts(tx, parsed.id, parsed.artifacts);
+      await insertEvent(tx, {
+        signalId: parsed.id,
+        eventType: "evidence-linked",
+        fromStatus: current.status,
+        toStatus: current.status,
+        reason: parsed.reason,
+        actor: "docs-agent:docs-work",
+        metadata: { ...parsed.metadata, operationKey: parsed.operationKey },
+      });
+      return false;
+    });
+
+    return recordDocsSignalEvidenceResultSchema.parse({
+      replayed,
+      signal: await readDocsSignalDetail(db, parsed.id),
+    });
+  });
+}
+
+function nextIsoTimestamp(previous: string): string {
+  return new Date(Math.max(Date.now(), Date.parse(previous) + 1)).toISOString();
 }
 
 export async function transitionDocsSignalLifecycle(

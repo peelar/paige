@@ -61,7 +61,10 @@ export default [
         input: (input) => isRecord(input) && input.mode === "prepare",
         output: preparedDraft,
       });
-      t.notCalledTool("content_plan");
+      t.calledTool("docs_work_manage", {
+        input: (input) => isRecord(input) && input.operation === "plan",
+        count: 0,
+      });
       assertNoLegacyOrPublication(t);
     },
   }),
@@ -77,8 +80,8 @@ export default [
       ].join("\n"));
 
       t.succeeded();
-      t.calledTool("editorial_recommendation");
-      t.calledTool("content_plan", { input: (input) => isRecord(input) && input.mode === "create" });
+      t.calledTool("docs_work_manage", { input: (input) => isRecord(input) && input.operation === "decide" });
+      t.calledTool("docs_work_manage", { input: (input) => isRecord(input) && input.operation === "plan" && isRecord(input.plan) && input.plan.mode === "create" });
       t.calledTool("authoring_workspace", {
         input: (input) => authoringApplyHasSafeOperations(input, 2),
         output: (output) => isRecord(output) && output.mode === "apply" && output.ok === true,
@@ -109,8 +112,8 @@ export default [
       t.calledTool("authoring_workspace", {
         input: (input) => isRecord(input) && input.mode === "abandon" && typeof input.draftId === "string",
       });
-      t.calledTool("editorial_recommendation", { input: (input) => isRecord(input) && input.mode === "revise" });
-      t.calledTool("content_plan", { input: (input) => isRecord(input) && input.mode === "revise" });
+      t.calledTool("docs_work_manage", { input: (input) => isRecord(input) && input.operation === "decide" && isRecord(input.decision) && input.decision.mode === "revise" });
+      t.calledTool("docs_work_manage", { input: (input) => isRecord(input) && input.operation === "plan" && isRecord(input.plan) && input.plan.mode === "revise" });
       t.calledTool("authoring_workspace", {
         input: (input) => authoringApplyHasSafeOperations(input, 1),
         output: (output) => isRecord(output) && output.mode === "apply" && output.ok === true,
@@ -148,7 +151,10 @@ export default [
           isRecord(output.draft) &&
           output.draft.status === "checks-failed",
       });
-      t.notCalledTool("content_plan");
+      t.calledTool("docs_work_manage", {
+        input: (input) => isRecord(input) && input.operation === "plan",
+        count: 0,
+      });
       assertNoLegacyOrPublication(t);
     },
   }),

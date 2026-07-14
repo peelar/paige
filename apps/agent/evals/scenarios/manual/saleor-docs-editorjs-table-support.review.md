@@ -36,7 +36,8 @@ Expected outcome: `docs-patch`.
   signal.
 - Load the docs-maintenance skill and docs profile before writing.
 - Record a `focused-patch` editorial recommendation.
-- Skip `content_plan` because this is a localized existing-page edit.
+- Skip the `docs_work_manage` plan operation because this is a localized
+  existing-page edit.
 - Apply and prepare the reversible draft, including a visible diff and checks.
 
 ## Expected touched files

@@ -424,25 +424,24 @@ The model-facing queue tools are deliberately small:
   `issue-tracker-item` external context, capture or dedupe the signal, run
   shared decision/triage, and return Linear Agent Activity reply guidance
   without exposing raw source text in model output.
-- `verify_docs_signal_current_docs`: inspect the configured working
-  documentation repository for one signal, record verification evidence, and
-  leave patch/writeback to later approved handoff.
+- `docs_work_read`: find bounded work or inspect one aggregate and its
+  provenance, lifecycle, artifacts, ownership, or current session decisions
+  through a source-text-free redacted model projection.
+- `docs_work_manage`: create or dedupe explicit manual work, apply bounded
+  triage, keep runtime repository inspection behind `verify_current_docs`,
+  record typed editorial decisions and plans, link evidence idempotently, and
+  update substantial work through optimistic revisions and operation keys.
 - `authoring_workspace`: create, revise, inspect, prepare, or abandon the one
   sandbox-local draft. A verified `signalId` may back the same draft used for
   ordinary focused or substantial work; preparation records its exact checked
   diff and updates the signal lifecycle while preserving source provenance.
-- `create_docs_signal`: capture or dedupe a structured signal.
-- `list_docs_signals`: list open or filtered signals by status/source kind.
-- `get_docs_signal`: read one signal with provenance, links, artifacts, and
-  lifecycle events.
-- `update_docs_signal_lifecycle`: update status with a reason and optional
-  workflow links or artifacts.
 
-The generic queue tools do not add Slack, Linear, scheduled scan, patch, or
-writeback behavior by themselves. Slack intake now calls the queue through
+The generic documentation-work tools do not add Slack, Linear, scheduled scan,
+follow-up, internal-document, patch, memory, or writeback authority by
+themselves. Slack intake calls the queue through
 `capture_slack_docs_signal`, Linear intake calls the queue through
-`capture_linear_docs_signal`, and signal verification uses
-`verify_docs_signal_current_docs`. Patch handoff uses `authoring_workspace`
+`capture_linear_docs_signal`, and signal verification uses the runtime-backed
+`docs_work_manage` operation. Patch handoff uses `authoring_workspace`
 with the verified signal relation, and approved draft PR publishing consumes
 that exact prepared draft through `publish_working_repository_pr`.
 
@@ -463,8 +462,8 @@ revisions and operation keys; completed Eve steps are replay-safe, corrections
 serialize against the current revision, and a different session cannot silently
 take over sandbox state.
 
-`owned_docs_work` starts, inspects, records, parks, resumes, corrects, pauses,
-abandons, or completes that work. Missing evidence and consequential decisions
+`docs_work_manage` starts, records, parks, resumes, corrects, or completes that
+work, while `docs_work_read` inspects the aggregate. Missing evidence and consequential decisions
 park durably; a later answer resumes the same id and session. Unrecoverable
 failure, explicit abandonment, completed draft, justified no-change, and blocked
 outcomes are terminal and explicit. Publication remains a separate
@@ -520,7 +519,7 @@ the profile builder nor retrieval tool silently activates memory.
 
 ## Editorial Recommendation
 
-After current-docs verification, `editorial_recommendation` records Paige's
+After current-docs verification, the `docs_work_manage` `decide` operation records Paige's
 concise choice of no change, focused patch, new document, rewrite, restructure,
 consolidation, removal, changelog-only, waiting for evidence, or asking a
 maintainer. It names the reader problem, repository and docs-profile evidence,
@@ -546,7 +545,7 @@ before mutation. Associated drafts record the recommendation id and revision.
 
 The docs-impact decision establishes whether documentation work is warranted,
 and the editorial recommendation chooses the intervention. For substantial
-work, `content_plan` then records what Paige intends to write:
+work, the `docs_work_manage` `plan` operation then records what Paige intends to write:
 the reader and desired outcome, content type and placement, affected surfaces,
 outline, evidence, examples, assets, unresolved decisions, validation, and
 definition of done. The plan points back to the prior impact decision instead

@@ -219,6 +219,16 @@ meaningful milestones and inspectable artifacts, parks for real human boundaries
 and resumes the same work after answers or corrections. This ownership record is
 a domain projection over Eve execution, not a separate workflow engine.
 
+The model finds and inspects this state through `docs_work_read` and mutates it
+through the typed `docs_work_manage` resource surface. Manual creation,
+triage, repository-corroborated verification, editorial decisions, content
+plans, evidence, milestones, corrections, parks, resumes, and terminal outcomes
+share that bounded mutation entry point. Provider capture, follow-up scheduling,
+internal documents, workspace memory, reversible authoring, and publication
+remain separate authority boundaries. Actors, lifecycle statuses, transition
+authority, workspace scope, and runtime provenance never come from model input.
+Quick questions and localized edits are not forced into substantial ownership.
+
 ## Workspace Knowledge Answer Workflow
 
 A user may ask what the configured workspace currently documents, implements,
