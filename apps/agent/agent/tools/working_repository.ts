@@ -25,79 +25,88 @@ const workingRepositoryValidatorIdListSchema = z
   .array(workingRepositoryValidatorIdSchema)
   .min(1)
   .max(5);
-const workingRepositoryValidatorIdsRawInputSchema = z.union([
-  workingRepositoryValidatorIdListSchema,
-  workingRepositoryValidatorIdSchema,
-  z.string().trim().min(2).max(5_000).regex(/^\[/, {
-    message: "A JSON-encoded validator list must begin with '['.",
-  }),
-]);
-
 export const workingRepositoryValidatorIdsInputSchema =
-  workingRepositoryValidatorIdsRawInputSchema
-    .transform((value, ctx) => {
-      if (Array.isArray(value)) {
-        return value;
-      }
-      if (!value.startsWith("[")) {
-        return [value];
-      }
-      try {
-        const parsed: unknown = JSON.parse(value);
-        if (!Array.isArray(parsed)) {
-          ctx.addIssue({
-            code: "custom",
-            message: "validatorIds JSON must encode an array.",
-          });
-          return z.NEVER;
-        }
-        return parsed;
-      } catch {
-        ctx.addIssue({
-          code: "custom",
-          message: "validatorIds must be a valid JSON array.",
-        });
-        return z.NEVER;
-      }
-    })
-    .pipe(workingRepositoryValidatorIdListSchema);
+  workingRepositoryValidatorIdListSchema;
 
-const inputSchema = z.discriminatedUnion("mode", [
-  z.object({ mode: z.literal("ensure") }),
-  z.object({
-    mode: z.literal("list"),
-    pathPrefix: z.string().default("."),
-    pattern: z.string().default("**/*"),
-    limit: z.number().int().min(1).max(200).default(100),
-    maxDepth: z.number().int().min(0).max(8).default(4),
-  }),
-  z.object({
-    mode: z.literal("search"),
-    query: z.string().min(1).max(500),
-    kind: z.enum(["literal", "regex"]).default("literal"),
-    caseSensitive: z.boolean().default(false),
-    pathPrefix: z.string().default("."),
-    pattern: z.string().default("**/*"),
-    limit: z.number().int().min(1).max(100).default(50),
-  }),
-  z.object({
-    mode: z.literal("read"),
-    path: z.string().min(1),
-    startLine: z.number().int().positive().default(1),
-    endLine: z.number().int().positive().optional(),
-    maxCharacters: z.number().int().min(1).max(24_000).default(24_000),
-  }),
-  z.object({ mode: z.literal("status") }),
-  z.object({
-    mode: z.literal("diff"),
-    maxCharacters: z.number().int().min(1).max(50_000).default(50_000),
-  }),
-  z.object({ mode: z.literal("validators") }),
-  z.object({
-    mode: z.literal("run_validators"),
-    validatorIds: workingRepositoryValidatorIdsInputSchema,
-  }),
+const ensureInputSchema = z.object({ mode: z.literal("ensure") });
+const listInputSchema = z.object({
+  mode: z.literal("list"),
+  pathPrefix: z.string().default("."),
+  pattern: z.string().default("**/*"),
+  limit: z.number().int().min(1).max(200).default(100),
+  maxDepth: z.number().int().min(0).max(8).default(4),
+});
+const searchInputSchema = z.object({
+  mode: z.literal("search"),
+  query: z.string().min(1).max(500),
+  kind: z.enum(["literal", "regex"]).default("literal"),
+  caseSensitive: z.boolean().default(false),
+  pathPrefix: z.string().default("."),
+  pattern: z.string().default("**/*"),
+  limit: z.number().int().min(1).max(100).default(50),
+});
+const readInputSchema = z.object({
+  mode: z.literal("read"),
+  path: z.string().min(1),
+  startLine: z.number().int().positive().default(1),
+  endLine: z.number().int().positive().optional(),
+  maxCharacters: z.number().int().min(1).max(24_000).default(24_000),
+});
+const statusInputSchema = z.object({ mode: z.literal("status") });
+const diffInputSchema = z.object({
+  mode: z.literal("diff"),
+  maxCharacters: z.number().int().min(1).max(50_000).default(50_000),
+});
+const validatorsInputSchema = z.object({ mode: z.literal("validators") });
+const runValidatorsInputSchema = z.object({
+  mode: z.literal("run_validators"),
+  validatorIds: workingRepositoryValidatorIdsInputSchema,
+});
+
+const workingRepositoryModeInputSchema = z.discriminatedUnion("mode", [
+  ensureInputSchema,
+  listInputSchema,
+  searchInputSchema,
+  readInputSchema,
+  statusInputSchema,
+  diffInputSchema,
+  validatorsInputSchema,
+  runValidatorsInputSchema,
 ]);
+
+/**
+ * Keep argument types visible in top-level JSON Schema `properties` for model
+ * providers while preserving the existing mode-specific contract via `pipe`.
+ */
+export const workingRepositoryInputSchema = z.object({
+  mode: z.enum([
+    "ensure",
+    "list",
+    "search",
+    "read",
+    "status",
+    "diff",
+    "validators",
+    "run_validators",
+  ]),
+  pathPrefix: listInputSchema.shape.pathPrefix.removeDefault().optional(),
+  pattern: listInputSchema.shape.pattern.removeDefault().optional(),
+  // `limit` has different ceilings for list (200) and search (100). Keep the
+  // provider-facing property typed without advertising one mode's ceiling as
+  // universal; the piped mode schema remains the fail-closed authority.
+  limit: z.number().int().min(1).optional(),
+  maxDepth: listInputSchema.shape.maxDepth.removeDefault().optional(),
+  query: searchInputSchema.shape.query.optional(),
+  kind: searchInputSchema.shape.kind.removeDefault().optional(),
+  caseSensitive: searchInputSchema.shape.caseSensitive.removeDefault().optional(),
+  path: readInputSchema.shape.path.optional(),
+  startLine: readInputSchema.shape.startLine.removeDefault().optional(),
+  endLine: readInputSchema.shape.endLine.optional(),
+  // `maxCharacters` is likewise mode-specific: read allows 24,000 while diff
+  // allows 50,000. The mode schema below enforces the applicable ceiling.
+  maxCharacters: z.number().int().min(1).optional(),
+  validatorIds: workingRepositoryValidatorIdsInputSchema.optional(),
+}).strict().pipe(workingRepositoryModeInputSchema);
 
 const commonOutput = {
   repository: workingRepositoryReferenceSchema,
@@ -235,7 +244,7 @@ export default defineDynamic({ events: { "step.started": async (event, context) 
   return defineTool({
   description:
     "Inspect the configured working documentation repository through one policy-aware read capability. It materializes setup implicitly, lists safe paths, searches bounded text, reads line ranges, and returns bounded binary metadata with a full-file SHA-256 hash and null content. Use that hash as the authoring precondition for existing text or binary files. Validators mode optionally lists ids and does not run checks. run_validators is atomic read-only inspection: it discovers and persists the current source-bound trusted profile, executes only requested ids from that profile, accepts no command, and does not mutate the repository.",
-  inputSchema,
+  inputSchema: workingRepositoryInputSchema,
   outputSchema,
   async execute(input, ctx) {
     await requireCapabilityToolExecution("working_repository", ctx);

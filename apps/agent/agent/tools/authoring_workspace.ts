@@ -22,12 +22,38 @@ import {
 } from "../lib/working-repository-lifecycle";
 import { requireCapabilityToolExecution, resolveDynamicCapabilities } from "../lib/capability-resolution";
 
-const inputSchema = z.discriminatedUnion("mode", [
+const authoringWorkspaceModeInputSchema = z.discriminatedUnion("mode", [
   applyAuthoringDraftInputSchema.extend({ mode: z.literal("apply") }),
   z.object({ mode: z.literal("inspect"), paths: z.array(z.string().trim().min(1).max(500)).max(10).default([]) }),
   prepareAuthoringDraftInputSchema.extend({ mode: z.literal("prepare") }),
   abandonAuthoringDraftInputSchema.extend({ mode: z.literal("abandon") }),
 ]);
+
+/**
+ * Keep the provider-facing schema as one top-level object. Some model-provider
+ * tool parsers infer argument types only from top-level `properties` and lose
+ * array types hidden below a discriminated union's `oneOf` branches. The pipe
+ * retains the existing mode-specific validation and defaults after the flat
+ * object has rejected malformed provider input.
+ */
+export const authoringWorkspaceInputSchema = z.object({
+  mode: z.enum(["apply", "inspect", "prepare", "abandon"]),
+  operations: applyAuthoringDraftInputSchema.shape.operations.optional(),
+  taskReferences:
+    applyAuthoringDraftInputSchema.shape.taskReferences.removeDefault().optional(),
+  signalId: applyAuthoringDraftInputSchema.shape.signalId.optional(),
+  ownedWorkId: applyAuthoringDraftInputSchema.shape.ownedWorkId.optional(),
+  editorialRecommendationId:
+    applyAuthoringDraftInputSchema.shape.editorialRecommendationId.optional(),
+  contentPlanId: applyAuthoringDraftInputSchema.shape.contentPlanId.optional(),
+  paths: z.array(z.string().trim().min(1).max(500)).max(10).optional(),
+  patchSummary: prepareAuthoringDraftInputSchema.shape.patchSummary.optional(),
+  evidence: prepareAuthoringDraftInputSchema.shape.evidence.removeDefault().optional(),
+  uncertainty:
+    prepareAuthoringDraftInputSchema.shape.uncertainty.removeDefault().optional(),
+  checks: prepareAuthoringDraftInputSchema.shape.checks.removeDefault().optional(),
+  draftId: abandonAuthoringDraftInputSchema.shape.draftId.optional(),
+}).strict().pipe(authoringWorkspaceModeInputSchema);
 
 const outputSchema = z.union([
   z.object({
@@ -162,7 +188,7 @@ export default defineDynamic({ events: { "step.started": async (event, context) 
   if (!(await resolveDynamicCapabilities(event, context)).toolNames.includes("authoring_workspace")) return null;
   return defineTool({
   description: "Create, revise, inspect, prepare, or abandon one requested draft in the working documentation repository. Use working_repository read results to obtain SHA-256 content hashes before editing. Every update, copy, move, or delete requires the current expectedContentHash; every new target requires createOnly. The complete ordered batch is preflighted before mutation and rolled back exactly on execution failure. Localized signal drafts may omit a content plan; multi-file, new-page, move, copy, delete, and large replacement work requires the matching ready plan. Prepare records checks, the exact diff, and linked signal lifecycle without publishing. Abandon requires the active draftId and is retry-safe. GitHub publication remains separately approval-gated.",
-  inputSchema,
+  inputSchema: authoringWorkspaceInputSchema,
   outputSchema,
   async execute(input, ctx) {
     await requireCapabilityToolExecution("authoring_workspace", ctx);

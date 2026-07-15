@@ -28,14 +28,37 @@ import {
 } from "../lib/capability-resolution";
 import { PAIGE_WATCH_CAPABILITY_REGISTRY } from "../lib/slack-watch-admission";
 
-const inputSchema = z.discriminatedUnion("mode", [
-  createInternalDocumentInputSchema.extend({ mode: z.literal("create") }),
-  readInternalDocumentInputSchema.extend({ mode: z.literal("read") }),
-  updateInternalDocumentInputSchema.extend({ mode: z.literal("update") }),
-  findInternalDocumentByAttachmentInputSchema.extend({ mode: z.literal("find") }),
-  attachInternalDocumentInputSchema.extend({ mode: z.literal("attach") }),
-  archiveInternalDocumentInputSchema.extend({ mode: z.literal("archive") }),
+const createInputSchema = createInternalDocumentInputSchema.extend({ mode: z.literal("create") });
+const readInputSchema = readInternalDocumentInputSchema.extend({ mode: z.literal("read") });
+const updateInputSchema = updateInternalDocumentInputSchema.extend({ mode: z.literal("update") });
+const findInputSchema = findInternalDocumentByAttachmentInputSchema.extend({ mode: z.literal("find") });
+const attachInputSchema = attachInternalDocumentInputSchema.extend({ mode: z.literal("attach") });
+const archiveInputSchema = archiveInternalDocumentInputSchema.extend({ mode: z.literal("archive") });
+
+const internalDocumentModeInputSchema = z.discriminatedUnion("mode", [
+  createInputSchema,
+  readInputSchema,
+  updateInputSchema,
+  findInputSchema,
+  attachInputSchema,
+  archiveInputSchema,
 ]);
+
+export const internalDocumentInputSchema = z.object({
+  mode: z.enum(["create", "read", "update", "find", "attach", "archive"]),
+  title: createInternalDocumentInputSchema.shape.title.optional(),
+  kind: createInternalDocumentInputSchema.shape.kind.removeDefault().optional(),
+  editingProfile: createInternalDocumentInputSchema.shape.editingProfile.removeDefault().optional(),
+  content: createInternalDocumentInputSchema.shape.content.optional(),
+  retentionDays: createInternalDocumentInputSchema.shape.retentionDays.removeDefault().optional(),
+  attachment: createInternalDocumentInputSchema.shape.attachment.optional(),
+  sourceReferences: createInternalDocumentInputSchema.shape.sourceReferences.removeDefault().optional(),
+  documentId: readInternalDocumentInputSchema.shape.documentId.optional(),
+  revision: readInternalDocumentInputSchema.shape.revision.optional(),
+  expectedRevision: updateInternalDocumentInputSchema.shape.expectedRevision.optional(),
+  changeSummary: updateInternalDocumentInputSchema.shape.changeSummary.optional(),
+  reason: archiveInternalDocumentInputSchema.shape.reason.optional(),
+}).strict().pipe(internalDocumentModeInputSchema);
 
 const outputSchema = z.union([
   internalDocumentMutationResultSchema.extend({
@@ -48,7 +71,7 @@ const outputSchema = z.union([
   }).strict(),
 ]);
 
-type InternalDocumentToolInput = z.infer<typeof inputSchema>;
+type InternalDocumentToolInput = z.infer<typeof internalDocumentInputSchema>;
 type InternalDocumentSourceReferences = z.infer<
   typeof internalDocumentSourceReferencesSchema
 >;
@@ -61,7 +84,7 @@ export default defineDynamic({ events: { "step.started": async (event, context) 
   return defineTool({
   description:
     "Create, read, update, find, attach, or archive a bounded internal Paige working document. Use this for explicit, inspectable documentation-work state that must survive Eve sessions; it is not workspace memory, hidden reasoning, or a public documentation draft. To revise an existing document, read it and then update that same documentId with its currentRevision; never create a second document for the same working purpose. Document kind and editing profile guide the applicable skill but do not add authority.",
-  inputSchema,
+  inputSchema: internalDocumentInputSchema,
   outputSchema,
   async execute(input, ctx) {
     await requireCapabilityToolExecution("internal_document", ctx);

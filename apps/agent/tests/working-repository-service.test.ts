@@ -32,19 +32,13 @@ test("working repository service", async () => {
     workingRepositoryValidatorIdsInputSchema.parse([" internal.diff-quiet "]),
     ["internal.diff-quiet"],
   );
-  assert.deepEqual(
-    workingRepositoryValidatorIdsInputSchema.parse(" internal.diff-quiet "),
-    ["internal.diff-quiet"],
-  );
-  assert.deepEqual(
-    workingRepositoryValidatorIdsInputSchema.parse(
-      '[" internal.diff-quiet ","package:root:build"]',
-    ),
-    ["internal.diff-quiet", "package:root:build"],
+  assert.throws(
+    () => workingRepositoryValidatorIdsInputSchema.parse("internal.diff-quiet"),
+    /expected array/i,
   );
   assert.throws(
-    () => workingRepositoryValidatorIdsInputSchema.parse('["internal.diff-quiet"'),
-    /valid JSON array/,
+    () => workingRepositoryValidatorIdsInputSchema.parse('["internal.diff-quiet"]'),
+    /expected array/i,
   );
   assert.throws(
     () =>
@@ -61,22 +55,13 @@ test("working repository service", async () => {
   const validatorIdsJsonSchema = z.toJSONSchema(
     workingRepositoryValidatorIdsInputSchema,
     { io: "input" },
-  ) as { anyOf?: Array<Record<string, unknown>> };
-  const validatorIdsVariants = validatorIdsJsonSchema.anyOf ?? [];
-  const listVariant = validatorIdsVariants.find(({ type }) => type === "array");
-  assert.equal(listVariant?.minItems, 1);
-  assert.equal(listVariant?.maxItems, 5);
+  ) as Record<string, unknown>;
+  assert.equal(validatorIdsJsonSchema.type, "array");
+  assert.equal(validatorIdsJsonSchema.minItems, 1);
+  assert.equal(validatorIdsJsonSchema.maxItems, 5);
   assert.equal(
-    (listVariant?.items as Record<string, unknown> | undefined)?.maxLength,
+    (validatorIdsJsonSchema.items as Record<string, unknown> | undefined)?.maxLength,
     160,
-  );
-  const stringVariants = validatorIdsVariants.filter(({ type }) => type === "string");
-  assert.equal(stringVariants.length, 2);
-  assert.equal(
-    stringVariants.every(
-      ({ maxLength }) => typeof maxLength === "number" && maxLength <= 5_000,
-    ),
-    true,
   );
 
   const root = await mkdtemp(join(tmpdir(), "paige-working-repository-"));

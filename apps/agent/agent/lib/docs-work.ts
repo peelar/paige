@@ -93,6 +93,34 @@ const planDecisionSchema = z.discriminatedUnion("mode", [
   }),
 ]);
 
+const editorialDecisionProviderInputSchema = z.object({
+  ...editorialRecommendationDetailsSchema.shape,
+  mode: z.enum(["create", "revise"]),
+  recommendationId: z.string().trim().min(1).optional(),
+  expectedRevision: z.number().int().positive().optional(),
+}).strict().transform((input, ctx) => {
+  const result = editorialDecisionSchema.safeParse(input);
+  if (result.success) return result.data;
+  for (const issue of result.error.issues) {
+    ctx.addIssue({ code: "custom", path: [...issue.path], message: issue.message });
+  }
+  return z.NEVER;
+});
+
+const planDecisionProviderInputSchema = z.object({
+  ...contentPlanDetailsSchema.shape,
+  mode: z.enum(["create", "revise"]),
+  planId: z.string().trim().min(1).optional(),
+  expectedRevision: z.number().int().positive().optional(),
+}).strict().transform((input, ctx) => {
+  const result = planDecisionSchema.safeParse(input);
+  if (result.success) return result.data;
+  for (const issue of result.error.issues) {
+    ctx.addIssue({ code: "custom", path: [...issue.path], message: issue.message });
+  }
+  return z.NEVER;
+});
+
 const ownedBase = {
   workId: workIdSchema,
   expectedRevision: z.number().int().positive(),
@@ -167,6 +195,118 @@ export const docsWorkReadInputSchema = z.discriminatedUnion("operation", [
   z.object({ operation: z.literal("inspect"), workId: workIdSchema }).strict(),
   z.object({ operation: z.literal("inspect_session_decisions") }).strict(),
 ]);
+
+/**
+ * Provider-facing schemas keep argument types in top-level JSON Schema
+ * `properties`. The strict adapter preserves the existing operation-specific
+ * unions, refinements, and defaults after malformed provider input is rejected.
+ */
+export const docsWorkManageProviderInputSchema = z.object({
+  operation: z.enum([
+    "create",
+    "triage",
+    "verify_current_docs",
+    "decide",
+    "plan",
+    "link_evidence",
+    "start",
+    "milestone",
+    "correct",
+    "park",
+    "resume",
+    "finish",
+  ]),
+  source: createWorkSchema.shape.source.optional(),
+  sourceSummary: createWorkSchema.shape.sourceSummary.optional(),
+  extractedClaims: createWorkSchema.shape.extractedClaims.removeDefault().optional(),
+  likelyDocsConcepts:
+    createWorkSchema.shape.likelyDocsConcepts.removeDefault().optional(),
+  likelyDocsPages: createWorkSchema.shape.likelyDocsPages.removeDefault().optional(),
+  productSurfaces: createWorkSchema.shape.productSurfaces.removeDefault().optional(),
+  missingEvidence: triageSchema.shape.missingEvidence.optional(),
+  uncertainty: createWorkSchema.shape.uncertainty.optional(),
+  priority: createWorkSchema.shape.priority.removeDefault().optional(),
+  nextActionAt: createWorkSchema.shape.nextActionAt
+    .describe("Set a non-null next-action time for create or triage.")
+    .optional(),
+  clearNextActionAt: z.literal(true)
+    .describe("For triage only, clear the current next-action time.")
+    .optional(),
+  links: triageSchema.shape.links.removeDefault().optional(),
+  artifacts: triageSchema.shape.artifacts.removeDefault().optional(),
+  ownership: createWorkSchema.shape.ownership.optional(),
+  workId: workIdSchema.optional(),
+  outcome: z.enum([
+    "continue",
+    "needs-maintainer-answer",
+    "needs-source-evidence",
+    "completed-draft",
+    "no-change",
+    "blocked",
+    "abandoned",
+    "failed",
+  ]).describe("Triage uses continue or needs-*; finish uses a terminal work outcome.").optional(),
+  reason: summarySchema.optional(),
+  metadata: triageSchema.shape.metadata.removeDefault().optional(),
+  docsPages:
+    verifyDocsSignalCurrentDocsInputSchema.shape.docsPages.removeDefault().optional(),
+  searchQueries:
+    verifyDocsSignalCurrentDocsInputSchema.shape.searchQueries.removeDefault().optional(),
+  maxSearchQueries:
+    verifyDocsSignalCurrentDocsInputSchema.shape.maxSearchQueries.removeDefault().optional(),
+  decision: editorialDecisionProviderInputSchema.optional(),
+  plan: planDecisionProviderInputSchema.optional(),
+  expectedUpdatedAt: z.string().trim().min(1).optional(),
+  operationKey: operationKeySchema.optional(),
+  intendedOutcome: summarySchema.optional(),
+  conversation: ownedDocsWorkConversationSchema.optional(),
+  expectedRevision: ownedBase.expectedRevision.optional(),
+  summary: summarySchema.optional(),
+  activityKind: z.enum(["routine", "milestone"]).optional(),
+  milestone: ownedDocsWorkMilestoneSchema.optional(),
+  references: ownedDocsWorkReferencesSchema.partial().optional(),
+  reasonKind: z.enum([
+    "missing-evidence",
+    "product-decision",
+    "manual-pause",
+    "unrecoverable-failure",
+  ]).optional(),
+}).strict().transform((input, ctx) => {
+  const { clearNextActionAt, ...providerInput } = input;
+  if (clearNextActionAt === true && input.operation !== "triage") {
+    ctx.addIssue({
+      code: "custom",
+      path: ["clearNextActionAt"],
+      message: "Only triage may clear the next-action time.",
+    });
+    return z.NEVER;
+  }
+  if (clearNextActionAt === true && input.nextActionAt !== undefined) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["clearNextActionAt"],
+      message: "Choose either nextActionAt or clearNextActionAt, not both.",
+    });
+    return z.NEVER;
+  }
+  const normalizedInput: Record<string, unknown> = { ...providerInput };
+  if (clearNextActionAt === true) normalizedInput.nextActionAt = null;
+  const result = docsWorkManageInputSchema.safeParse(normalizedInput);
+  if (result.success) return result.data;
+  for (const issue of result.error.issues) {
+    ctx.addIssue({ code: "custom", path: [...issue.path], message: issue.message });
+  }
+  return z.NEVER;
+});
+
+export const docsWorkReadProviderInputSchema = z.object({
+  operation: z.enum(["find", "inspect", "inspect_session_decisions"]),
+  statuses: listDocsSignalsInputSchema.shape.statuses.removeDefault().optional(),
+  sourceKinds: listDocsSignalsInputSchema.shape.sourceKinds.removeDefault().optional(),
+  openOnly: listDocsSignalsInputSchema.shape.openOnly.removeDefault().optional(),
+  limit: listDocsSignalsInputSchema.shape.limit.removeDefault().optional(),
+  workId: workIdSchema.optional(),
+}).strict().pipe(docsWorkReadInputSchema);
 
 export async function readDocsWork(input: z.infer<typeof docsWorkReadInputSchema>) {
   const parsed = docsWorkReadInputSchema.parse(input);
