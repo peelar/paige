@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  microsandbox: 0.5.7
+
 packageExtensionsChecksum: sha256-BFhBLA/f31bB0k2tXO+iMR5SW/1jSh3kajFaFo0OpeI=
 
 importers:
@@ -36,7 +39,7 @@ importers:
         version: link:../../packages/control-plane
       '@vercel/connect':
         specifier: 0.3.2
-        version: 0.3.2(@chat-adapter/slack@4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3))(ai@7.0.23(zod@4.4.3))(better-auth@1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@types/node@24.13.2)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))))(eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))
+        version: 0.3.2(@chat-adapter/slack@4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3))(ai@7.0.23(zod@4.4.3))(better-auth@1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@types/node@24.13.2)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))))(eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.7)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))
       ai:
         specifier: ^7.0.23
         version: 7.0.23(zod@4.4.3)
@@ -45,7 +48,7 @@ importers:
         version: 4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3)
       eve:
         specifier: ^0.23.0
-        version: 0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))
+        version: 0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.7)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -57,8 +60,8 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(@libsql/client@0.17.4)(kysely@0.29.3)
       microsandbox:
-        specifier: ^0.5.10
-        version: 0.5.10
+        specifier: 0.5.7
+        version: 0.5.7
       tsx:
         specifier: ^4.23.1
         version: 4.23.1
@@ -140,7 +143,7 @@ importers:
         version: 0.17.4
       '@vercel/connect':
         specifier: 0.3.2
-        version: 0.3.2(@chat-adapter/slack@4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3))(ai@7.0.23(zod@4.4.3))(better-auth@1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@types/node@24.13.2)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))))(eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))
+        version: 0.3.2(@chat-adapter/slack@4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3))(ai@7.0.23(zod@4.4.3))(better-auth@1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@types/node@24.13.2)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))))(eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.7)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))
       '@vercel/oidc':
         specifier: 3.8.0
         version: 3.8.0
@@ -2171,21 +2174,21 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@superradcompany/microsandbox-darwin-arm64@0.5.10':
-    resolution: {integrity: sha512-MGEV2SuLzSg3SiQJy2TXRE9SoWnmIUEhCAQno5y0hJ6dsMe7FbaRDFZtHpKiK4XExAstL5WhT1XF+JJWTEfSqg==}
+  '@superradcompany/microsandbox-darwin-arm64@0.5.7':
+    resolution: {integrity: sha512-/ZnoBI0l9mYvPrwS8xPQ5L+c5B6U+aescZsiGXbjIvW9m/2rvMvi+tvl/Rj/pISHME8r2/2AQTqiFk4wvVxbcQ==}
     engines: {node: '>= 22'}
     cpu: [arm64]
     os: [darwin]
 
-  '@superradcompany/microsandbox-linux-arm64-gnu@0.5.10':
-    resolution: {integrity: sha512-4FYoAURc1qbNxIbBFK9shMQ9MxklgPRGEsY7tQog8beqvc3U91W34aZyOu90OTRJm0TNsdoLIg3lxKP4LKIJYQ==}
+  '@superradcompany/microsandbox-linux-arm64-gnu@0.5.7':
+    resolution: {integrity: sha512-OHn6eZ1eTdZxmz3cfgpQFo3wpGq1WkbyqnB5P+VQYRknl+HyBJTsGb22ayqiSpIrN07QGOGoHcOA2+43etk5fw==}
     engines: {node: '>= 22'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@superradcompany/microsandbox-linux-x64-gnu@0.5.10':
-    resolution: {integrity: sha512-M9FjBAQ36dxhfs5S62uVxCTNAZzxjUgprNh41dIG6H6eF+tAEHYMY1lUEf/w1rkQw8SUsVRrtS+wfVyIM4z9fA==}
+  '@superradcompany/microsandbox-linux-x64-gnu@0.5.7':
+    resolution: {integrity: sha512-YBh0uaVG62aUHOSeKptpEQO+R2l/OZcWzE8DoCqMvyXQ9thKva9DUxP7QD439zHlteReh2Suku6DW9SRBeyqhw==}
     engines: {node: '>= 22'}
     cpu: [x64]
     os: [linux]
@@ -3202,7 +3205,7 @@ packages:
       ai: ^7.0.0
       braintrust: ^3.0.0
       just-bash: ^3.0.0
-      microsandbox: ^0.5.0
+      microsandbox: 0.5.7
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
@@ -3853,8 +3856,8 @@ packages:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
 
-  microsandbox@0.5.10:
-    resolution: {integrity: sha512-0NVFu8DohPq/hrG76CJ5x2x8wckNQq8KSN/VXxyVLns8WfDyBzfSSYXHUSV2evjdRB3dkA9FUJjnGujb2XRD1Q==}
+  microsandbox@0.5.7:
+    resolution: {integrity: sha512-6M/J2HsBtQeKQN2zyglwozC/nFD5bQPsF9fuk5dJvBqE6z5oxmqR5TOWoLVq2d3f2iS88TioxwDH7+Sa/MVTCQ==}
     engines: {node: '>= 22'}
     hasBin: true
 
@@ -6696,13 +6699,13 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@superradcompany/microsandbox-darwin-arm64@0.5.10':
+  '@superradcompany/microsandbox-darwin-arm64@0.5.7':
     optional: true
 
-  '@superradcompany/microsandbox-linux-arm64-gnu@0.5.10':
+  '@superradcompany/microsandbox-linux-arm64-gnu@0.5.7':
     optional: true
 
-  '@superradcompany/microsandbox-linux-x64-gnu@0.5.10':
+  '@superradcompany/microsandbox-linux-x64-gnu@0.5.7':
     optional: true
 
   '@swc/helpers@0.5.15':
@@ -6921,14 +6924,14 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/connect@0.3.2(@chat-adapter/slack@4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3))(ai@7.0.23(zod@4.4.3))(better-auth@1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@types/node@24.13.2)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))))(eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))':
+  '@vercel/connect@0.3.2(@chat-adapter/slack@4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3))(ai@7.0.23(zod@4.4.3))(better-auth@1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@types/node@24.13.2)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))))(eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.7)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))':
     dependencies:
       '@vercel/oidc': 3.8.0
     optionalDependencies:
       '@chat-adapter/slack': 4.34.0(ai@7.0.23(zod@4.4.3))(zod@4.4.3)
       ai: 7.0.23(zod@4.4.3)
       better-auth: 1.6.23(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(next@16.2.10(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@types/node@24.13.2)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))
-      eve: 0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))
+      eve: 0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.7)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))
 
   '@vercel/oidc@3.2.0': {}
 
@@ -7472,12 +7475,12 @@ snapshots:
 
   etag@1.8.1: {}
 
-  eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.10)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)):
+  eve@0.23.0(@libsql/client@0.17.4)(ai@7.0.23(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(microsandbox@0.5.7)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)):
     dependencies:
       ai: 7.0.23(zod@4.4.3)
       nitro: 3.0.260610-beta(@libsql/client@0.17.4)(dotenv@17.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))(jiti@2.7.0)(vite@8.1.4(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))
     optionalDependencies:
-      microsandbox: 0.5.10
+      microsandbox: 0.5.7
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -8272,11 +8275,11 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.2
 
-  microsandbox@0.5.10:
+  microsandbox@0.5.7:
     optionalDependencies:
-      '@superradcompany/microsandbox-darwin-arm64': 0.5.10
-      '@superradcompany/microsandbox-linux-arm64-gnu': 0.5.10
-      '@superradcompany/microsandbox-linux-x64-gnu': 0.5.10
+      '@superradcompany/microsandbox-darwin-arm64': 0.5.7
+      '@superradcompany/microsandbox-linux-arm64-gnu': 0.5.7
+      '@superradcompany/microsandbox-linux-x64-gnu': 0.5.7
 
   mime-db@1.52.0: {}
 

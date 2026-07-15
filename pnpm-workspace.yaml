@@ -24,6 +24,11 @@ minimumReleaseAgeExclude:
 allowBuilds:
   esbuild: false
   sharp: false
+# Keep every Eve peer on the one locally verified Microsandbox build. Version
+# 0.5.10 wedges Eve's streamed authoring workload on macOS; 0.5.7 completes it.
+# Do not widen this until that regression is fixed in Eve's supported range.
+overrides:
+  microsandbox: 0.5.7
 # Compatibility for eve releases with an incomplete runtime manifest.
 packageExtensions:
   "eve@>=0.6.0-beta.13 <=0.7.0":

@@ -34,7 +34,7 @@
   "devDependencies": {
     "@types/node": "24.x",
     "drizzle-orm": "^0.45.2",
-    "microsandbox": "^0.5.10",
+    "microsandbox": "0.5.7",
     "tsx": "^4.23.1",
     "typescript": "7.0.2"
   },
