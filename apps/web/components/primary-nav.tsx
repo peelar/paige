@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Brain, ChartNoAxesCombined, CircleGauge, Inbox, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Activity, Brain, ChartNoAxesCombined, CircleGauge, DatabaseZap, Inbox, KeyRound, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { href: "/status", label: "Status", icon: CircleGauge },
+  { href: "/sources", label: "Sources", icon: DatabaseZap },
+  { href: "/capabilities", label: "Capabilities", icon: KeyRound },
   { href: "/signals", label: "Signals", icon: Inbox },
   { href: "/memories", label: "Memories", icon: Brain },
   { href: "/runs", label: "Runs", icon: Activity },

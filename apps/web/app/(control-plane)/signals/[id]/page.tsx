@@ -14,5 +14,5 @@ export default async function SignalDetailPage({ params, searchParams }: {
   const [{ id }, { scenario }] = await Promise.all([params, searchParams]);
   const result = await resolveSignalDetail(id, scenario);
 
-  return <div className="grid gap-[clamp(2rem,6vw,5rem)]"><PageHeading index="02 / detail" title="Signal record" summary="The evidence, decisions, workflow history, and artifacts behind one durable docs signal." /><SignalDetail result={result} /></div>;
+  return <div className="grid gap-[clamp(2rem,6vw,5rem)]"><PageHeading index="04 / detail" title="Signal record" summary="The evidence, decisions, workflow history, and artifacts behind one durable docs signal." /><SignalDetail result={result} /></div>;
 }

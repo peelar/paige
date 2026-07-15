@@ -31,7 +31,7 @@ export default async function AssurancePage({
   const result = await resolveAssuranceList(filters, single(params.scenario));
   return (
     <div className="grid gap-[clamp(2rem,6vw,5rem)]">
-      <PageHeading index="05" title="Assurance" summary="Read the recorded behavioral and deterministic proof behind a change, then compare it with an earlier compatible baseline." />
+      <PageHeading index="07" title="Assurance" summary="Read the recorded behavioral and deterministic proof behind a change, then compare it with an earlier compatible baseline." />
       <AssuranceList filters={filters} result={result} />
     </div>
   );

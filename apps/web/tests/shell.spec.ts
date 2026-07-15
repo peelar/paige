@@ -18,6 +18,14 @@ test("the shell navigates and adapts to the viewport", async ({ page }, testInfo
   );
   await expect(page.getByRole("heading", { name: "Status", exact: true })).toBeVisible();
 
+  await page.getByRole("link", { name: "Sources", exact: true }).click();
+  await expect(page).toHaveURL(/\/sources$/);
+  await expect(page.getByRole("heading", { name: "Knowledge sources", exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "Capabilities", exact: true }).click();
+  await expect(page).toHaveURL(/\/capabilities$/);
+  await expect(page.getByRole("heading", { name: "Capabilities", exact: true })).toBeVisible();
+
   await page.getByRole("link", { name: "Signals", exact: true }).click();
   await expect(page).toHaveURL(/\/signals$/);
   await expect(page.getByRole("link", { name: "Signals" })).toHaveAttribute(

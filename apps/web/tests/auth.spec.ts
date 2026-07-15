@@ -41,6 +41,12 @@ test("unauthenticated pages redirect to sign in and protected operations reject"
   await page.goto("/runs");
   await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fruns$/);
 
+  await page.goto("/sources");
+  await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fsources$/);
+
+  await page.goto("/capabilities");
+  await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fcapabilities$/);
+
   await page.goto("/settings");
   await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fsettings$/);
 

@@ -18,7 +18,7 @@ export default async function SettingsPage({
   return (
     <div className="grid gap-[clamp(2rem,6vw,5rem)]">
       <PageHeading
-        index="07"
+        index="09"
         title="Behavior settings"
         summary="Tune how Paige sounds and where she participates without editing prompts, widening repository access, or weakening approval rules."
       />

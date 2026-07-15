@@ -33,7 +33,7 @@ export default async function SignalsPage({
   return (
     <div className="grid gap-[clamp(2rem,6vw,5rem)]">
       <PageHeading
-        index="02"
+        index="04"
         title="Signals"
         summary="The durable work queue for evidence, documentation impact, and the next careful action."
       />

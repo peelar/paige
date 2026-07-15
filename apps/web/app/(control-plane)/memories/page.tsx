@@ -32,7 +32,7 @@ export default async function MemoriesPage({
   return (
     <div className="grid gap-[clamp(2rem,6vw,5rem)]">
       <PageHeading
-        index="03"
+        index="05"
         title="Workspace memories"
         summary="Review the routing context Paige carries forward, where it came from, and whether it is still fit to use."
       />

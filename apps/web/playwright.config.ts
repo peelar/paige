@@ -30,6 +30,8 @@ export default defineConfig({
       DOCS_AGENT_ASSURANCE_TEST_SCENARIOS: "1",
       DOCS_AGENT_BEHAVIOR_TEST_SCENARIOS: "1",
       DOCS_AGENT_SIGNAL_TEST_SCENARIOS: "1",
+      DOCS_AGENT_SOURCE_TEST_SCENARIOS: "1",
+      DOCS_AGENT_CAPABILITY_TEST_SCENARIOS: "1",
     },
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,

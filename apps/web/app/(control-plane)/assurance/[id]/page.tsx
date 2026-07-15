@@ -18,7 +18,7 @@ export default async function AssuranceDetailPage({
   const result = await resolveAssuranceDetail(decodeRouteId(id), baseline, scenario);
   return (
     <div className="grid gap-[clamp(2rem,6vw,5rem)]">
-      <PageHeading index="05 / detail" title="Assurance run" summary="Inspect safe case evidence and compare it with an earlier run without changing the suite, assertions, or runtime." />
+      <PageHeading index="07 / detail" title="Assurance run" summary="Inspect safe case evidence and compare it with an earlier run without changing the suite, assertions, or runtime." />
       <AssuranceDetail baselineId={baseline} result={result} scenario={scenario} />
     </div>
   );
