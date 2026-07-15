@@ -1,4 +1,0 @@
-interface:
-  display_name: "Setup Paige"
-  short_description: "Set up Paige with guided workspace Q&A"
-  default_prompt: "Use $setup to set up Paige with the fewest necessary questions."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Loop"
-  short_description: "Define and run autonomous coding loops."
-  default_prompt: "Use $loop to define a self-verifying coding loop for this epic."

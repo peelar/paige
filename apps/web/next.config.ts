@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+export default {
   reactStrictMode: true,
-};
-
-export default nextConfig;
+} satisfies NextConfig;

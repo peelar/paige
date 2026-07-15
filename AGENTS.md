@@ -1,39 +1,19 @@
 # Paige
 
-This project uses the eve framework. Before writing code, read the relevant guide
-from the installed eve package docs. In most installs, those docs are at
-`node_modules/eve/docs/`. In workspaces or local package installs, resolve the
-installed `eve` package location first and read its `docs/` directory. If
-package docs are unavailable, use <https://eve.dev/docs> as a fallback.
+This project uses Eve. Before writing runtime code, read the relevant guide from
+the installed `eve` package under `node_modules/eve/docs/`.
 
 ## Rules
 
-- Do not add fail-open stubs or silent fallbacks that make broken required
-  integrations look successful.
-- Use `pnpm check` for the fast affected-package feedback loop. Before handing
-  work over, run the complete repo validation command (`pnpm check:full`). Keep
-  all required handoff validators wired into that command instead of relying on
-  separate remembered steps.
-- Treat live Eve evals as targeted behavioral proof, not as an inner-loop
-  linter. Once model-visible behavior is coherent, run the affected eval IDs or
-  tags with `pnpm eval:feature -- <id-or-tag>`. Reserve `pnpm eval:full` for
-  scheduled or release-level assurance.
-- Before changing persistence, deployment, authentication, connectors, or
-  workspace scoping, read and preserve the accepted contract in
-  `docs/ARCHITECTURE.md` and its linked ADRs.
-- Prefer generic, composable tools and generalizable agent behavior over
-  scenario-specific workflows. See: ADR 0006.
-- Once a scope of work is complete, propose a commit message following conventional commit message conventions. End with "Commit? [Y/n]".
-- Exception: an explicitly authorized named loop follows the scope and approval
-  contract in `.codex/skills/loop/SKILL.md` instead of pausing for per-issue
-  approval.
-- We'll be often using peelar/saleor-docs as the working documentation repository. It is our dogfooding project. Avoid overfitting to this repository. It's only an example we need to generalize from.
-
-## Identity Instructions
-
-- Keep `apps/agent/agent/instructions/identity.md` deliberately small.
-- Use short, plain sentences for permanent identity, tone, and cross-channel behavior only.
-- Before changing it, search the other model-visible instructions, skills, tool descriptions, and channel context. Do not duplicate guidance from those surfaces.
-- Do not put workflows, tool routing, examples, temporary requirements, or provider-specific behavior in `identity.md`.
-- Prefer replacing or deleting an existing sentence over appending another one.
-- Cover every behavior change in `identity.md` with an eval, or show that an existing eval already proves it.
+- Paige currently answers Slack direct messages and does nothing else.
+- Do not add a tool, skill, hook, schedule, durable product table, or new channel
+  behavior without an explicit product need and a focused behavioral proof.
+- Do not add fail-open stubs or silent fallbacks for required integrations.
+- Keep `apps/agent/agent/instructions.md` small and limited to permanent identity
+  and standing behavior.
+- Use `pnpm check` while working and `pnpm check:full` before handoff.
+- Use targeted Eve evals only after model-visible behavior changes.
+- Before changing product scope, persistence, connectors, or runtime boundaries,
+  read `MANIFEST.md`.
+- Once a scope is complete, propose a conventional commit message and end with
+  `Commit? [Y/n]`.

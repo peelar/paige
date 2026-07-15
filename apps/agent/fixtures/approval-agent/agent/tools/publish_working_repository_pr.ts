@@ -1,2 +1,0 @@
-import { defineTool } from "eve/tools"; import { always } from "eve/tools/approval"; import { z } from "zod";
-export default defineTool({ description: "Publish a deterministic fixture draft pull request.", inputSchema: z.object({ baseBranch: z.string(), title: z.string() }), outputSchema: z.object({ published: z.literal(true), repository: z.string() }), approval: always(), execute: async () => ({ published: true as const, repository: "example/docs" }) });

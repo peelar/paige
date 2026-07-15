@@ -3,31 +3,11 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [
-        ".eve/**",
-        ".next/**",
-        "!.next/cache/**",
-        ".output/**"
-      ]
+      "outputs": [".eve/**", ".next/**", "!.next/cache/**", ".output/**"]
     },
-    "docs-agent#build": {
-      "dependsOn": ["^build"],
-      "env": [
-        "DOCS_AGENT_DATABASE_AUTH_TOKEN",
-        "DOCS_AGENT_DATABASE_URL",
-        "DOCS_AGENT_LINEAR_CONNECTOR",
-        "DOCS_AGENT_SLACK_CONNECTOR",
-        "EVE_GATEWAY_MODEL"
-      ],
-      "outputs": [
-        ".eve/**",
-        ".vercel/output/**",
-        ".output/**"
-      ]
-    },
-    "@docs-agent/control-plane#build": {
-      "dependsOn": ["^build"],
-      "outputs": []
+    "paige#build": {
+      "env": ["PAIGE_SLACK_CONNECTOR", "EVE_GATEWAY_MODEL"],
+      "outputs": [".eve/**", ".vercel/output/**", ".output/**"]
     },
     "check": {
       "outputs": []
@@ -42,10 +22,6 @@
     },
     "test": {
       "outputs": []
-    },
-    "test:e2e": {
-      "dependsOn": ["build"],
-      "cache": false
     },
     "typecheck": {
       "outputs": []

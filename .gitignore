@@ -3,7 +3,7 @@ node_modules
 .eve
 .vercel
 .workflow-data
-.docs-agent
+.paige
 .next
 apps/web/next-env.d.ts
 .output

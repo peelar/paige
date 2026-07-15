@@ -1,4 +1,0 @@
-interface:
-  display_name: "Next"
-  short_description: "Pick and ship the next Paige issue directly on main."
-  default_prompt: "$next"

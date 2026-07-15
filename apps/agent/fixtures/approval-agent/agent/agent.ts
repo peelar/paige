@@ -1,2 +1,0 @@
-import { defineAgent } from "eve"; import { mockModel } from "eve/evals";
-export default defineAgent({ modelContextWindowTokens: 32_000, compaction: { modelContextWindowTokens: 32_000 }, model: mockModel({ modelId: "approval-fixture", provider: "docs-agent-fixtures", respond: ({ toolResults }) => toolResults.length === 0 ? { toolCalls: [{ name: "publish_working_repository_pr", input: { baseBranch: "main", title: "Fixture draft PR" } }] } : `Finished: ${JSON.stringify(toolResults[0]?.output)}` }) });
