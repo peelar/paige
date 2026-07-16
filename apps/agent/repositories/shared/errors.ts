@@ -2,6 +2,7 @@ import type { Result, ResultAsync } from "neverthrow";
 
 export type RepositoryErrorCode =
   | "REPOSITORY_APPROVAL_MISMATCH"
+  | "REPOSITORY_CONFIGURATION_FAILED"
   | "REPOSITORY_CONFLICT"
   | "REPOSITORY_DIFF_REJECTED"
   | "REPOSITORY_DIRTY_WORKSPACE"
