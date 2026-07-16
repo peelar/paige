@@ -6,26 +6,26 @@ export default defineEval({
   timeoutMs: 240_000,
   async test(t) {
     await t.send(
-      "Use documentation_draft to prepare the documentation repository, write paige-eval-local.md with exactly 'Local eval only.\\n', and inspect the diff. Report the changed path and digest. Do not call documentation_publish.",
+      "Use documentation_workspace to prepare the documentation repository, write paige-eval-local.md with exactly 'Local eval only.\\n', and inspect the diff. Report the changed path and digest. Do not call documentation_publish.",
     );
     t.succeeded();
     t.noFailedActions();
     t.toolOrder([
-      "documentation_draft",
-      "documentation_draft",
-      "documentation_draft",
+      "documentation_workspace",
+      "documentation_workspace",
+      "documentation_workspace",
     ]);
-    t.calledTool("documentation_draft", {
+    t.calledTool("documentation_workspace", {
       input: { action: "prepare" },
     });
-    t.calledTool("documentation_draft", {
+    t.calledTool("documentation_workspace", {
       input: {
         action: "write",
         path: "paige-eval-local.md",
         content: "Local eval only.\n",
       },
     });
-    t.calledTool("documentation_draft", {
+    t.calledTool("documentation_workspace", {
       input: { action: "inspect_diff" },
       output: (output) =>
         JSON.stringify(output).includes("paige-eval-local.md") &&

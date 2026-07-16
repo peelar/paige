@@ -6,10 +6,10 @@ export default defineEval({
   timeoutMs: 300_000,
   async test(t) {
     const reviewed = await t.send(
-      "Use documentation_draft to prepare the documentation repository, write paige-eval-drift.md with exactly 'Reviewed bytes.\\n', inspect_diff, report the digest, and stop without publishing.",
+      "Use documentation_workspace to prepare the documentation repository, write paige-eval-drift.md with exactly 'Reviewed bytes.\\n', inspect_diff, report the digest, and stop without publishing.",
     );
     reviewed.succeeded();
-    reviewed.calledTool("documentation_draft", {
+    reviewed.calledTool("documentation_workspace", {
       input: { action: "inspect_diff" },
     });
 

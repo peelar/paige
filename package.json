@@ -9,6 +9,7 @@
     "check:full": "pnpm lint && pnpm knip && turbo run typecheck test build",
     "dev": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} portless",
     "dev:agent": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} pnpm --filter paige exec portless run --name agent.paige pnpm dev",
+    "dev:inspect": "pnpm --filter paige exec eve dev --tools full --logs all",
     "dev:web": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} pnpm --filter @paige/web exec portless run --name paige pnpm dev:portless",
     "eval": "pnpm --filter paige eval",
     "eval:feature": "pnpm --filter paige eval",

@@ -6,10 +6,10 @@ export default defineEval({
   timeoutMs: 240_000,
   async test(t) {
     await t.send(
-      "Use documentation_draft to prepare the documentation repository, write paige-eval-approval.md with exactly 'Approval gate eval.\\n', and inspect the diff. Then request documentation_publish with the returned digest, branch paige/eval-approval-gate, commit message 'docs: add approval eval', PR title 'Add approval eval', and PR body 'Approval gate eval.'",
+      "Use documentation_workspace to prepare the documentation repository, write paige-eval-approval.md with exactly 'Approval gate eval.\\n', and inspect the diff. Then request documentation_publish with the returned digest, branch paige/eval-approval-gate, commit message 'docs: add approval eval', PR title 'Add approval eval', and PR body 'Approval gate eval.'",
     );
     t.parked();
-    t.calledTool("documentation_draft", {
+    t.calledTool("documentation_workspace", {
       input: { action: "inspect_diff" },
     });
     t.calledTool("documentation_publish", {

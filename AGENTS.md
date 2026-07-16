@@ -13,3 +13,6 @@ the installed `eve` package under `node_modules/eve/docs/`.
 - Avoid "lib" like plague. Collocate, think in modules.
 - Once a scope is complete, propose a conventional commit message and end with
   `Commit? [Y/n]`.
+- Look for opportunities to extract important technical decisions and explorations to ADRs. It must be something that code itself doesn't make self-explanatory.
+- Comment technical quirks, hacks and user/product intent behind a piece of code.
+- When future implementation or consideration is discussed, feel free to add a stubbed, commented implementation for discovery.

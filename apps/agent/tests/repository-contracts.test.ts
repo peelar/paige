@@ -6,8 +6,8 @@ import documentationPublishTool, {
   documentationPublishToolInputSchema,
 } from "../agent/tools/documentation_publish";
 import {
-  documentationDraftToolInputSchema,
-} from "../agent/tools/documentation_draft";
+  documentationWorkspaceToolInputSchema,
+} from "../agent/tools/documentation_workspace";
 import {
   repositoryReadToolInputSchema,
 } from "../agent/tools/repository_read";
@@ -216,11 +216,11 @@ describe("repository tool contract", () => {
 describe("documentation tool contract", () => {
   test("separates local authoring from approval-gated publication", async () => {
     assert.deepEqual(
-      documentationDraftToolInputSchema.parse({ action: "prepare" }),
+      documentationWorkspaceToolInputSchema.parse({ action: "prepare" }),
       { action: "prepare" },
     );
     assert.deepEqual(
-      documentationDraftToolInputSchema.parse({
+      documentationWorkspaceToolInputSchema.parse({
         action: "write",
         path: "docs/example.md",
         content: "Example\n",
@@ -232,7 +232,7 @@ describe("documentation tool contract", () => {
       },
     );
     assert.deepEqual(
-      documentationDraftToolInputSchema.parse({
+      documentationWorkspaceToolInputSchema.parse({
         action: "inspect_diff",
       }),
       { action: "inspect_diff" },

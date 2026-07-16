@@ -35,7 +35,7 @@ const actionInputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("inspect_diff") }),
 ]);
 
-export const documentationDraftToolInputSchema = z.object({
+export const documentationWorkspaceToolInputSchema = z.object({
   action: z.enum([
     "prepare",
     "list_files",
@@ -58,7 +58,7 @@ export const documentationDraftToolInputSchema = z.object({
 export default defineTool({
   description:
     "Draft changes in Paige's configured documentation repository without publishing. Use prepare first, then bounded list/search/read/write/remove actions, and inspect_diff to present the complete reviewable patch and approval digest. For read-only documentation work, repository_read is also available.",
-  inputSchema: documentationDraftToolInputSchema,
+  inputSchema: documentationWorkspaceToolInputSchema,
   async execute(input, ctx) {
     const service = new DocumentationRepositoryService(ctx);
 
