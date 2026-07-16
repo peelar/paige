@@ -1,4 +1,3 @@
-import type { ToolContext } from "eve/tools";
 import { err, Result, ResultAsync } from "neverthrow";
 
 import { RepositoryError } from "../shared/errors";
@@ -23,18 +22,18 @@ interface RepositoryConfigurationServiceOptions {
 }
 
 export class RepositoryConfigurationService {
-  readonly #ctx: ToolContext;
+  readonly #abortSignal: AbortSignal;
   readonly #store: RepositoryConfigurationStore;
   readonly #validateRepository: (
     repository: RepositoryConfig,
   ) => RepositoryResultAsync<void>;
 
   constructor(
-    ctx: ToolContext,
+    request: { abortSignal: AbortSignal },
     store: RepositoryConfigurationStore,
     options: RepositoryConfigurationServiceOptions = {},
   ) {
-    this.#ctx = ctx;
+    this.#abortSignal = request.abortSignal;
     this.#store = store;
     this.#validateRepository = options.validateRepository ??
       ((repository) => this.#validateGitHubRepository(repository));
@@ -88,7 +87,7 @@ export class RepositoryConfigurationService {
           repository,
           createGitHubRequest({
             token,
-            abortSignal: this.#ctx.abortSignal,
+            abortSignal: this.#abortSignal,
           }),
         ).resolveCommit()
       )

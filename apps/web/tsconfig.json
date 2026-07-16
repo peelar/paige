@@ -10,6 +10,9 @@
     "noEmit": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./*"]
+    },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
