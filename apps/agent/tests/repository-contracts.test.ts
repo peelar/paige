@@ -12,6 +12,9 @@ import {
   repositoryReadToolInputSchema,
 } from "../agent/tools/repository_read";
 import {
+  repositoryMetadataToolInputSchema,
+} from "../agent/tools/repository_metadata";
+import {
   assertDocumentationRepository,
   catalogRepositories,
   documentationRepository,
@@ -23,7 +26,6 @@ import {
   assertSearchQuery,
   selectFileLines,
 } from "../repositories/files";
-import { repositoryMetadataTodos } from "../repositories/metadata/service";
 import type { RepositoryMetadataService } from "../repositories/metadata/service";
 import { RepositoryError } from "../repositories/shared/errors";
 
@@ -213,6 +215,88 @@ describe("repository tool contract", () => {
   });
 });
 
+describe("repository metadata tool contract", () => {
+  test("accepts the five bounded read-only actions", () => {
+    assert.deepEqual(
+      repositoryMetadataToolInputSchema.parse({
+        action: "list_releases",
+        repositoryId: "saleor-core",
+      }),
+      {
+        action: "list_releases",
+        repositoryId: "saleor-core",
+        limit: 20,
+      },
+    );
+    assert.deepEqual(
+      repositoryMetadataToolInputSchema.parse({
+        action: "list_open_issues",
+        repositoryId: "saleor-core",
+        limit: 5,
+      }),
+      {
+        action: "list_open_issues",
+        repositoryId: "saleor-core",
+        limit: 5,
+      },
+    );
+    assert.deepEqual(
+      repositoryMetadataToolInputSchema.parse({
+        action: "list_open_pull_requests",
+        repositoryId: "saleor-core",
+        limit: 5,
+      }),
+      {
+        action: "list_open_pull_requests",
+        repositoryId: "saleor-core",
+        limit: 5,
+      },
+    );
+    assert.deepEqual(
+      repositoryMetadataToolInputSchema.parse({
+        action: "list_tags",
+        repositoryId: "saleor-core",
+        limit: 5,
+      }),
+      {
+        action: "list_tags",
+        repositoryId: "saleor-core",
+        limit: 5,
+      },
+    );
+    assert.deepEqual(
+      repositoryMetadataToolInputSchema.parse({
+        action: "list_commits",
+        repositoryId: "saleor-core",
+        limit: 5,
+      }),
+      {
+        action: "list_commits",
+        repositoryId: "saleor-core",
+        limit: 5,
+      },
+    );
+  });
+
+  test("rejects arbitrary coordinates and out-of-range limits", () => {
+    assert.throws(() =>
+      repositoryMetadataToolInputSchema.parse({
+        action: "list_releases",
+        repositoryId: "saleor-core",
+        owner: "someone",
+        name: "unconfigured",
+      })
+    );
+    assert.throws(() =>
+      repositoryMetadataToolInputSchema.parse({
+        action: "list_commits",
+        repositoryId: "saleor-core",
+        limit: 101,
+      })
+    );
+  });
+});
+
 describe("documentation tool contract", () => {
   test("separates local authoring from approval-gated publication", async () => {
     assert.deepEqual(
@@ -270,21 +354,14 @@ describe("documentation tool contract", () => {
   });
 });
 
-describe("future repository capabilities", () => {
-  test("keeps repository metadata deferred and separate from Git comparisons", () => {
+describe("repository metadata service contract", () => {
+  test("keeps metadata separate from Git comparisons", () => {
     assert.deepEqual(metadataServiceMethods, [
       "listReleases",
       "listOpenIssues",
       "listOpenPullRequests",
       "listTags",
       "listCommits",
-    ]);
-    assert.deepEqual(repositoryMetadataTodos, [
-      "list-releases",
-      "list-open-issues",
-      "list-open-pull-requests",
-      "list-tags",
-      "list-commits",
     ]);
   });
 });

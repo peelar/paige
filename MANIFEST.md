@@ -17,8 +17,9 @@ supports exact-revision reads and comparisons without requiring a populated
 working tree. Evidence repositories remain read-only. The documentation
 repository can be edited in a protected worktree, reviewed as a digest-bound
 patch, and published only through an explicitly approved draft-PR writeback.
-GitHub metadata remains a typed implementation shell. There is no product
-database or automated writeback.
+Paige can also read bounded GitHub releases, open issues, open pull requests,
+tags, and recent commits for configured repositories without entering the
+sandbox. There is no product database or automated writeback.
 
 ## Stack
 
