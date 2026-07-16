@@ -5,8 +5,8 @@
   "packageManager": "pnpm@11.12.0",
   "scripts": {
     "build": "turbo run build",
-    "check": "pnpm lint && turbo run typecheck test --affected",
-    "check:full": "pnpm lint && turbo run typecheck test build",
+    "check": "pnpm lint && pnpm knip && turbo run typecheck test --affected",
+    "check:full": "pnpm lint && pnpm knip && turbo run typecheck test build",
     "dev": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} portless",
     "dev:agent": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} pnpm --filter paige exec portless run --name agent.paige pnpm dev",
     "dev:web": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} pnpm --filter @paige/web exec portless run --name paige pnpm dev:portless",
@@ -16,11 +16,13 @@
     "eval:smoke": "pnpm --filter paige eval --tag smoke --max-concurrency 1",
     "lint": "oxlint . --deny-warnings",
     "lint:fix": "oxlint . --fix",
+    "knip": "knip",
     "start": "pnpm --filter paige start",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "knip": "^6.26.0",
     "oxlint": "1.73.0",
     "portless": "0.15.1",
     "turbo": "2.10.5",

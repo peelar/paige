@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "rules": {
+    "exports": "error",
+    "types": "error",
+    "nsExports": "error",
+    "nsTypes": "error"
+  },
+  "workspaces": {
+    "apps/agent": {
+      "entry": [
+        "agent/channels/*.ts",
+        "agent/tools/*.ts",
+        "evals/**/*.ts",
+        "tests/**/*.ts"
+      ]
+    }
+  }
+}
