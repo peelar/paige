@@ -14,6 +14,8 @@
     "eval": "pnpm --filter paige eval",
     "eval:feature": "pnpm --filter paige eval",
     "eval:full": "pnpm --filter paige eval",
+    "eval:onboarding": "PAIGE_EVAL_AUTH_TOKEN=local-onboarding-eval PAIGE_DATABASE_URL=file:/tmp/paige-onboarding-evals.db pnpm --filter paige eval --tag repository-onboarding --max-concurrency 1",
+    "eval:onboarding:access": "PAIGE_EVAL_AUTH_TOKEN=local-onboarding-eval PAIGE_DATABASE_URL=file:/tmp/paige-onboarding-evals.db pnpm --filter paige eval --tag repository-onboarding-access --max-concurrency 1",
     "eval:smoke": "pnpm --filter paige eval --tag smoke --max-concurrency 1",
     "lint": "oxlint . --deny-warnings",
     "lint:fix": "oxlint . --fix",
