@@ -4,17 +4,14 @@ import { err, ok, Result, ResultAsync } from "neverthrow";
 
 import {
   assertDocumentationRepository,
-  repositories,
 } from "../config";
+import { resolveRepositoryCatalog } from "../configuration/resolver";
 import {
   assertRepositoryRelativePath,
   assertSearchQuery,
 } from "../files";
 import { SandboxGit } from "../git";
-import type {
-  RepositoryResult,
-  RepositoryResultAsync,
-} from "../shared/errors";
+import type { RepositoryResultAsync } from "../shared/errors";
 import { RepositoryError } from "../shared/errors";
 import {
   createGitHubRequest,
@@ -43,7 +40,7 @@ interface DocumentationRepositoryServiceOptions {
 
 export class DocumentationRepositoryService {
   readonly #ctx: ToolContext;
-  readonly #repositories: RepositoryConfig[];
+  readonly #repositories?: RepositoryConfig[];
   readonly #getGitHubToken: (
     repository: RepositoryConfig,
   ) => RepositoryResultAsync<string>;
@@ -53,13 +50,13 @@ export class DocumentationRepositoryService {
     options: DocumentationRepositoryServiceOptions = {},
   ) {
     this.#ctx = ctx;
-    this.#repositories = options.repositories ?? repositories;
+    this.#repositories = options.repositories;
     this.#getGitHubToken =
       options.getGitHubToken ?? resolveGitHubToken;
   }
 
   prepareWorkspace() {
-    return this.#documentationRepository().asyncAndThen((repository) =>
+    return this.#documentationRepository().andThen((repository) =>
       this.#getGitHubToken(repository).andThen((token) =>
         this.#github(repository, token).resolveCommit().andThen((resolved) =>
           this.#withSandbox((sandbox) =>
@@ -159,7 +156,7 @@ export class DocumentationRepositoryService {
     if (normalized.isErr()) {
       return new ResultAsync(Promise.resolve(err(normalized.error)));
     }
-    return this.#documentationRepository().asyncAndThen((repository) =>
+    return this.#documentationRepository().andThen((repository) =>
       this.#getGitHubToken(repository).andThen((token) =>
         this.#withSandbox((sandbox) => {
           const workspace = new DocumentationWorkspace({
@@ -188,7 +185,7 @@ export class DocumentationRepositoryService {
   #withReadyDraft<T>(
     operation: (draft: DocumentationDraft) => RepositoryResultAsync<T>,
   ): RepositoryResultAsync<T> {
-    return this.#documentationRepository().asyncAndThen((repository) =>
+    return this.#documentationRepository().andThen((repository) =>
       this.#withSandbox((sandbox) => {
         const workspace = new DocumentationWorkspace({
           sandbox,
@@ -205,17 +202,22 @@ export class DocumentationRepositoryService {
     );
   }
 
-  #documentationRepository(): RepositoryResult<DocumentationRepository> {
-    const candidates = this.#repositories.filter(
-      (repository) => repository.role === "documentation",
-    );
-    if (candidates.length !== 1) {
-      return err(new RepositoryError(
-        "REPOSITORY_NOT_CONFIGURED",
-        "Configure exactly one documentation repository.",
-      ));
-    }
-    return assertDocumentationRepository(candidates[0]);
+  #documentationRepository(): RepositoryResultAsync<DocumentationRepository> {
+    const catalog = this.#repositories === undefined
+      ? resolveRepositoryCatalog(this.#ctx)
+      : new ResultAsync(Promise.resolve(ok(this.#repositories)));
+    return catalog.andThen((repositories) => {
+      const candidates = repositories.filter(
+        (repository) => repository.role === "documentation",
+      );
+      if (candidates.length !== 1) {
+        return err(new RepositoryError(
+          "REPOSITORY_NOT_CONFIGURED",
+          "Configure exactly one documentation repository.",
+        ));
+      }
+      return assertDocumentationRepository(candidates[0]);
+    });
   }
 
   #github(

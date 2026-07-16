@@ -4,9 +4,9 @@ import { err, ok, Result, ResultAsync } from "neverthrow";
 
 import {
   catalogRepositories,
-  repositories,
   resolveConfiguredRepository,
 } from "./config";
+import { resolveRepositoryCatalog } from "./configuration/resolver";
 import { SandboxGit } from "./git";
 import {
   assertRepositoryRelativePath,
@@ -35,7 +35,7 @@ interface RepositoryServiceOptions {
 
 export class RepositoryService {
   readonly #ctx: ToolContext;
-  readonly #repositories: RepositoryConfig[];
+  readonly #repositories?: RepositoryConfig[];
   readonly #getGitHubToken: (
     repository: RepositoryConfig,
   ) => RepositoryResultAsync<string>;
@@ -45,14 +45,14 @@ export class RepositoryService {
     options: RepositoryServiceOptions = {},
   ) {
     this.#ctx = ctx;
-    this.#repositories = options.repositories ?? repositories;
+    this.#repositories = options.repositories;
     this.#getGitHubToken =
       options.getGitHubToken ?? resolveGitHubToken;
   }
 
-  /** Describes the fixed repository catalog without acquiring a sandbox. */
-  catalog(): RepositoryConfig[] {
-    return catalogRepositories(this.#repositories);
+  /** Describes the active Slack workspace's repository catalog. */
+  catalog(): RepositoryResultAsync<RepositoryConfig[]> {
+    return this.#catalog().map(catalogRepositories);
   }
 
   listFiles(input: {
@@ -61,16 +61,21 @@ export class RepositoryService {
     pathPrefix: string;
     limit: number;
   }) {
-    return Result.combine([
-      assertRepositoryRelativePath(input.pathPrefix, { allowRoot: true }),
-      resolveConfiguredRepository(this.#repositories, input.repositoryId),
-    ]).asyncAndThen(([pathPrefix, repository]) =>
-      this.#files(repository, input.ref, (files) =>
-        files.list({
-          pathPrefix,
-          limit: input.limit,
-        }),
-      ),
+    return assertRepositoryRelativePath(
+      input.pathPrefix,
+      { allowRoot: true },
+    ).asyncAndThen((pathPrefix) =>
+      this.#catalog().andThen((repositories) =>
+        resolveConfiguredRepository(repositories, input.repositoryId)
+          .asyncAndThen((repository) =>
+            this.#files(repository, input.ref, (files) =>
+              files.list({
+                pathPrefix,
+                limit: input.limit,
+              }),
+            )
+          )
+      )
     );
   }
 
@@ -84,15 +89,19 @@ export class RepositoryService {
     return Result.combine([
       assertSearchQuery(input.query),
       assertRepositoryRelativePath(input.pathPrefix, { allowRoot: true }),
-      resolveConfiguredRepository(this.#repositories, input.repositoryId),
-    ]).asyncAndThen(([query, pathPrefix, repository]) =>
-      this.#files(repository, input.ref, (files) =>
-        files.search({
-          query,
-          pathPrefix,
-          limit: input.limit,
-        }),
-      ),
+    ]).asyncAndThen(([query, pathPrefix]) =>
+      this.#catalog().andThen((repositories) =>
+        resolveConfiguredRepository(repositories, input.repositoryId)
+          .asyncAndThen((repository) =>
+            this.#files(repository, input.ref, (files) =>
+              files.search({
+                query,
+                pathPrefix,
+                limit: input.limit,
+              }),
+            )
+          )
+      )
     );
   }
 
@@ -104,18 +113,23 @@ export class RepositoryService {
     endLine?: number;
     maxCharacters: number;
   }) {
-    return Result.combine([
-      assertRepositoryRelativePath(input.path, { allowRoot: false }),
-      resolveConfiguredRepository(this.#repositories, input.repositoryId),
-    ]).asyncAndThen(([path, repository]) =>
-      this.#files(repository, input.ref, (files) =>
-        files.read({
-          path,
-          startLine: input.startLine,
-          endLine: input.endLine,
-          maxCharacters: input.maxCharacters,
-        }),
-      ),
+    return assertRepositoryRelativePath(
+      input.path,
+      { allowRoot: false },
+    ).asyncAndThen((path) =>
+      this.#catalog().andThen((repositories) =>
+        resolveConfiguredRepository(repositories, input.repositoryId)
+          .asyncAndThen((repository) =>
+            this.#files(repository, input.ref, (files) =>
+              files.read({
+                path,
+                startLine: input.startLine,
+                endLine: input.endLine,
+                maxCharacters: input.maxCharacters,
+              }),
+            )
+          )
+      )
     );
   }
 
@@ -126,26 +140,40 @@ export class RepositoryService {
     pathPrefix: string;
     limit: number;
   }) {
-    return Result.combine([
-      assertRepositoryRelativePath(input.pathPrefix, { allowRoot: true }),
-      resolveConfiguredRepository(this.#repositories, input.repositoryId),
-    ]).asyncAndThen(([pathPrefix, repository]) =>
-      this.#resolve(repository, [input.baseRef, input.headRef])
-        .andThen(({ token, commits }) =>
-          this.#withSandbox(
-            repository,
-            commits,
-            token,
-            (sandbox, workspaces) => {
-              const files = new RepositoryFiles(sandbox, workspaces[1]);
-              return files.compareWith(workspaces[0], {
-                pathPrefix,
-                limit: input.limit,
-              });
-            },
+    return assertRepositoryRelativePath(
+      input.pathPrefix,
+      { allowRoot: true },
+    ).asyncAndThen((pathPrefix) =>
+      this.#catalog().andThen((repositories) =>
+        resolveConfiguredRepository(repositories, input.repositoryId)
+          .asyncAndThen((repository) =>
+            this.#resolve(repository, [input.baseRef, input.headRef])
+              .andThen(({ token, commits }) =>
+                this.#withSandbox(
+                  repository,
+                  commits,
+                  token,
+                  (sandbox, workspaces) => {
+                    const files = new RepositoryFiles(
+                      sandbox,
+                      workspaces[1],
+                    );
+                    return files.compareWith(workspaces[0], {
+                      pathPrefix,
+                      limit: input.limit,
+                    });
+                  },
+                )
+              )
           )
-        ),
+      )
     );
+  }
+
+  #catalog(): RepositoryResultAsync<RepositoryConfig[]> {
+    return this.#repositories === undefined
+      ? resolveRepositoryCatalog(this.#ctx)
+      : new ResultAsync(Promise.resolve(ok(this.#repositories)));
   }
 
   #files<T>(

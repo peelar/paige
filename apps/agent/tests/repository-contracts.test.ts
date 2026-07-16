@@ -17,8 +17,6 @@ import {
 import {
   assertDocumentationRepository,
   catalogRepositories,
-  documentationRepository,
-  repositories,
   resolveConfiguredRepository,
 } from "../repositories/config";
 import {
@@ -28,6 +26,7 @@ import {
 } from "../repositories/files";
 import type { RepositoryMetadataService } from "../repositories/metadata/service";
 import { RepositoryError } from "../repositories/shared/errors";
+import type { RepositoryConfig } from "../repositories/types";
 
 const metadataServiceMethods = [
   "listReleases",
@@ -37,11 +36,39 @@ const metadataServiceMethods = [
   "listCommits",
 ] satisfies Array<keyof RepositoryMetadataService>;
 
+const repositories = [
+  {
+    id: "saleor-core",
+    owner: "saleor",
+    name: "saleor",
+    role: "evidence",
+  },
+  {
+    id: "saleor-dashboard",
+    owner: "saleor",
+    name: "saleor-dashboard",
+    role: "evidence",
+  },
+  {
+    id: "saleor-apps",
+    owner: "saleor",
+    name: "apps",
+    role: "evidence",
+  },
+  {
+    id: "saleor-docs",
+    owner: "peelar",
+    name: "saleor-docs",
+    role: "documentation",
+  },
+] satisfies RepositoryConfig[];
+const documentationRepository = repositories[3];
+
 describe("repository configuration", () => {
   test("keeps one catalog and distinguishes only repository authority", () => {
     assert.equal(documentationRepository.id, "saleor-docs");
     assert.deepEqual(
-      catalogRepositories().map(({ id, role }) => ({ id, role })),
+      catalogRepositories(repositories).map(({ id, role }) => ({ id, role })),
       [
         { id: "saleor-core", role: "evidence" },
         { id: "saleor-dashboard", role: "evidence" },

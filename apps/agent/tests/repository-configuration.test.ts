@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
 import { createClient } from "@libsql/client";
+import type { ToolContext } from "eve/tools";
 import { describe, test } from "vitest";
 
 import {
@@ -15,6 +16,9 @@ import {
 import {
   LibsqlRepositoryConfigurationStore,
 } from "../repositories/configuration/store";
+import {
+  resolveRepositoryCatalog,
+} from "../repositories/configuration/resolver";
 
 describe("repository configuration normalization", () => {
   test("normalizes GitHub URLs and removes duplicate evidence repositories", () => {
@@ -197,6 +201,45 @@ describe("conversation-scoped repository setup", () => {
   });
 });
 
+describe("active repository resolution", () => {
+  test("keeps missing configuration explicit", async () => {
+    const result = await resolveRepositoryCatalog(
+      slackContext("T-missing", "U-one"),
+      createStore(),
+    );
+
+    assert(result.isErr());
+    assert.equal(result.error.code, "REPOSITORY_NOT_CONFIGURED");
+  });
+
+  test("shares the active setup with teammates in the same Slack workspace", async () => {
+    const store = createStore();
+    const saved = await store.save({
+      workspaceId: "T-team",
+      configuration: configuration("shared"),
+      expectedRevision: null,
+    });
+    assert(saved.isOk());
+
+    const firstTeammate = await resolveRepositoryCatalog(
+      slackContext("T-team", "U-one"),
+      store,
+    );
+    const secondTeammate = await resolveRepositoryCatalog(
+      slackContext("T-team", "U-two"),
+      store,
+    );
+
+    assert(firstTeammate.isOk());
+    assert(secondTeammate.isOk());
+    assert.deepEqual(secondTeammate.value, firstTeammate.value);
+    assert.deepEqual(
+      secondTeammate.value.map((repository) => repository.name),
+      ["product-shared", "docs-shared"],
+    );
+  });
+});
+
 function createStore(): LibsqlRepositoryConfigurationStore {
   return new LibsqlRepositoryConfigurationStore(
     createClient({ url: ":memory:" }),
@@ -213,4 +256,23 @@ function configuration(suffix: string) {
   });
   assert(result.isOk());
   return result.value;
+}
+
+function slackContext(
+  workspaceId: string,
+  userId: string,
+): ToolContext {
+  return {
+    session: {
+      auth: {
+        current: {
+          authenticator: "slack",
+          principalType: "user",
+          principalId: userId,
+          attributes: { slackWorkspaceId: workspaceId },
+        },
+        initiator: null,
+      },
+    },
+  } as unknown as ToolContext;
 }

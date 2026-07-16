@@ -7,38 +7,9 @@ import type {
   RepositoryConfig,
 } from "./types";
 
-export const documentationRepository = {
-  id: "saleor-docs",
-  owner: "peelar",
-  name: "saleor-docs",
-  role: "documentation",
-} satisfies DocumentationRepository;
-
-export const repositories = [
-  {
-    id: "saleor-core",
-    owner: "saleor",
-    name: "saleor",
-    role: "evidence",
-  },
-  {
-    id: "saleor-dashboard",
-    owner: "saleor",
-    name: "saleor-dashboard",
-    role: "evidence",
-  },
-  {
-    id: "saleor-apps",
-    owner: "saleor",
-    name: "apps",
-    role: "evidence",
-  },
-  documentationRepository,
-] satisfies RepositoryConfig[];
-
 /** Returns the repositories Paige is explicitly allowed to inspect. */
 export function catalogRepositories(
-  config: RepositoryConfig[] = repositories,
+  config: RepositoryConfig[],
 ): RepositoryConfig[] {
   return [...config];
 }

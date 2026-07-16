@@ -65,7 +65,10 @@ export default defineTool({
 
     switch (input.action) {
       case "catalog":
-        return { action: input.action, repositories: service.catalog() };
+        return await service.catalog().match(
+          (repositories) => ({ action: input.action, repositories }),
+          raiseRepositoryError,
+        );
       case "list_files":
         return await service.listFiles(input).match(
           (output) => ({ action: input.action, ...output }),

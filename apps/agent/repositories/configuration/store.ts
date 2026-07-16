@@ -11,7 +11,7 @@ import type {
   SaveRepositoryConfigurationInput,
 } from "./types";
 
-interface RepositoryConfigurationStore {
+export interface RepositoryConfigurationStore {
   get(
     workspaceId: string,
   ): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined>;

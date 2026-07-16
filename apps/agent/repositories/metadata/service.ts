@@ -1,11 +1,11 @@
 import type { ToolContext } from "eve/tools";
-import { err, ok, Result } from "neverthrow";
+import { err, ok, Result, ResultAsync } from "neverthrow";
 import { z } from "zod";
 
 import {
-  repositories,
   resolveConfiguredRepository,
 } from "../config";
+import { resolveRepositoryCatalog } from "../configuration/resolver";
 import {
   createGitHubRequest,
   resolveGitHubToken,
@@ -114,7 +114,7 @@ interface GitHubRepositoryMetadataServiceOptions {
 export class GitHubRepositoryMetadataService
   implements RepositoryMetadataService {
   readonly #ctx: ToolContext;
-  readonly #repositories: RepositoryConfig[];
+  readonly #repositories?: RepositoryConfig[];
   readonly #getGitHubToken: (
     repository: RepositoryConfig,
   ) => RepositoryResultAsync<string>;
@@ -124,7 +124,7 @@ export class GitHubRepositoryMetadataService
     options: GitHubRepositoryMetadataServiceOptions = {},
   ) {
     this.#ctx = ctx;
-    this.#repositories = options.repositories ?? repositories;
+    this.#repositories = options.repositories;
     this.#getGitHubToken =
       options.getGitHubToken ?? resolveGitHubToken;
   }
@@ -260,32 +260,40 @@ export class GitHubRepositoryMetadataService
     parse: (value: unknown) => RepositoryResult<T[]>,
     parameters: Record<string, string> = {},
   ): RepositoryResultAsync<T[]> {
-    return Result.combine([
-      assertMetadataLimit(input.limit),
-      resolveConfiguredRepository(this.#repositories, input.repositoryId),
-    ]).asyncAndThen(([, repository]) =>
-      this.#getGitHubToken(repository).andThen((token) => {
-        const query = new URLSearchParams({
-          ...parameters,
-          per_page: String(perPage),
-        });
-        const path =
-          `/repos/${encodeURIComponent(repository.owner)}` +
-          `/${encodeURIComponent(repository.name)}/${resource}` +
-          `?${query.toString()}`;
-        return createGitHubRequest({
-          token,
-          abortSignal: this.#ctx.abortSignal,
-        }).json(path).andThen((value) =>
-          value === undefined
-            ? err(new RepositoryError(
-                "REPOSITORY_GITHUB_FAILED",
-                `GitHub metadata resource was not found: ${path}`,
-              ))
-            : parse(value)
-        );
-      })
+    return this.#catalog().andThen((repositories) =>
+      Result.combine([
+        assertMetadataLimit(input.limit),
+        resolveConfiguredRepository(repositories, input.repositoryId),
+      ]).asyncAndThen(([, repository]) =>
+        this.#getGitHubToken(repository).andThen((token) => {
+          const query = new URLSearchParams({
+            ...parameters,
+            per_page: String(perPage),
+          });
+          const path =
+            `/repos/${encodeURIComponent(repository.owner)}` +
+            `/${encodeURIComponent(repository.name)}/${resource}` +
+            `?${query.toString()}`;
+          return createGitHubRequest({
+            token,
+            abortSignal: this.#ctx.abortSignal,
+          }).json(path).andThen((value) =>
+            value === undefined
+              ? err(new RepositoryError(
+                  "REPOSITORY_GITHUB_FAILED",
+                  `GitHub metadata resource was not found: ${path}`,
+                ))
+              : parse(value)
+          );
+        })
+      )
     );
+  }
+
+  #catalog(): RepositoryResultAsync<RepositoryConfig[]> {
+    return this.#repositories === undefined
+      ? resolveRepositoryCatalog(this.#ctx)
+      : new ResultAsync(Promise.resolve(ok(this.#repositories)));
   }
 }
 

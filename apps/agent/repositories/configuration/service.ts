@@ -10,7 +10,7 @@ import {
 } from "../shared/github";
 import type { RepositoryConfig } from "../types";
 import { normalizeRepositoryConfiguration } from "./normalize";
-import type { LibsqlRepositoryConfigurationStore } from "./store";
+import type { RepositoryConfigurationStore } from "./store";
 import type {
   ActiveRepositoryConfiguration,
   RepositoryConfigurationData,
@@ -24,14 +24,14 @@ interface RepositoryConfigurationServiceOptions {
 
 export class RepositoryConfigurationService {
   readonly #ctx: ToolContext;
-  readonly #store: LibsqlRepositoryConfigurationStore;
+  readonly #store: RepositoryConfigurationStore;
   readonly #validateRepository: (
     repository: RepositoryConfig,
   ) => RepositoryResultAsync<void>;
 
   constructor(
     ctx: ToolContext,
-    store: LibsqlRepositoryConfigurationStore,
+    store: RepositoryConfigurationStore,
     options: RepositoryConfigurationServiceOptions = {},
   ) {
     this.#ctx = ctx;
