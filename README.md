@@ -47,8 +47,8 @@ Slack · Linear · Releases · Repositories
 | Operator app        | Next.js control plane with explicit local access or allowlisted GitHub authentication   |
 | Workspace           | pnpm and Turborepo with `apps/agent` and `apps/web`                                     |
 | Team context        | Explicit Slack mentions and Linear Agent Sessions                                       |
-| Repository evidence | GitHub working repository plus optional read-only watched repositories                  |
-| Isolation           | Eve sandbox with the working documentation repository at `/workspace/working-docs`      |
+| Repository evidence | Immutable GitHub snapshots for configured read-only evidence repositories               |
+| Isolation           | Eve sandbox with evidence snapshots under `/workspace/evidence-repositories`             |
 | Durable state       | Drizzle with local SQLite or a deployed libSQL-compatible database                      |
-| Writeback           | Small checked diff, followed by an explicitly approved branch and draft PR              |
-| Regression proof    | Live Eve evals covering patches, no-change decisions, signals, safety, and conversation |
+| Writeback           | Planned: checked diff followed by an explicitly approved branch and draft PR             |
+| Regression proof    | Unit tests and live Eve evals for evidence catalog, browse, search, and bounded reads    |

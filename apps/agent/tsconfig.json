@@ -10,5 +10,10 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["agent/**/*.ts", "evals/**/*.ts", ".eve/**/*.d.ts"]
+  "include": [
+    "agent/**/*.ts",
+    "evals/**/*.ts",
+    "repositories/**/*.ts",
+    ".eve/**/*.d.ts"
+  ]
 }

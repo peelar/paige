@@ -11,8 +11,12 @@ change—or whether nothing should change.
 Paige currently responds only to direct messages in Slack. Chat SDK handles the
 Slack transport and Eve runs the model conversation.
 
-There is no repository access, documentation workflow, Paige-authored tool or
-skill surface, product database, or automated writeback.
+Paige can inspect configured read-only evidence repositories through a GitHub
+API-backed evidence repository tool. Public and GitHub App-authorized access
+are explicit repository settings. The configured documentation repository
+and GitHub metadata surfaces have typed implementation shells, but are not
+model-facing capabilities yet. There is no documentation workflow, product
+database, or automated writeback.
 
 ## Stack
 
