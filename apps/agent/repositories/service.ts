@@ -28,13 +28,17 @@ import type {
 
 interface RepositoryServiceOptions {
   repositories?: RepositoryConfig[];
-  getGitHubToken?: () => RepositoryResultAsync<string>;
+  getGitHubToken?: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 }
 
 export class RepositoryService {
   readonly #ctx: ToolContext;
   readonly #repositories: RepositoryConfig[];
-  readonly #getGitHubToken: () => RepositoryResultAsync<string>;
+  readonly #getGitHubToken: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 
   constructor(
     ctx: ToolContext,
@@ -168,7 +172,7 @@ export class RepositoryService {
     token: string;
     commits: ResolvedRepository[];
   }> {
-    return this.#getGitHubToken().andThen((token) =>
+    return this.#getGitHubToken(repository).andThen((token) =>
       new ResultAsync((async () => {
         const github = new GitHubRepository(
           repository,

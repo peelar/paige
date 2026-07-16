@@ -99,7 +99,9 @@ export interface RepositoryMetadataService {
 
 interface GitHubRepositoryMetadataServiceOptions {
   repositories?: RepositoryConfig[];
-  getGitHubToken?: () => RepositoryResultAsync<string>;
+  getGitHubToken?: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 }
 
 /**
@@ -113,7 +115,9 @@ export class GitHubRepositoryMetadataService
   implements RepositoryMetadataService {
   readonly #ctx: ToolContext;
   readonly #repositories: RepositoryConfig[];
-  readonly #getGitHubToken: () => RepositoryResultAsync<string>;
+  readonly #getGitHubToken: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 
   constructor(
     ctx: ToolContext,
@@ -260,7 +264,7 @@ export class GitHubRepositoryMetadataService
       assertMetadataLimit(input.limit),
       resolveConfiguredRepository(this.#repositories, input.repositoryId),
     ]).asyncAndThen(([, repository]) =>
-      this.#getGitHubToken().andThen((token) => {
+      this.#getGitHubToken(repository).andThen((token) => {
         const query = new URLSearchParams({
           ...parameters,
           per_page: String(perPage),

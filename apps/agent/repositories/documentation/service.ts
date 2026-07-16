@@ -36,13 +36,17 @@ import { DocumentationWorkspace } from "./workspace";
 
 interface DocumentationRepositoryServiceOptions {
   repositories?: RepositoryConfig[];
-  getGitHubToken?: () => RepositoryResultAsync<string>;
+  getGitHubToken?: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 }
 
 export class DocumentationRepositoryService {
   readonly #ctx: ToolContext;
   readonly #repositories: RepositoryConfig[];
-  readonly #getGitHubToken: () => RepositoryResultAsync<string>;
+  readonly #getGitHubToken: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 
   constructor(
     ctx: ToolContext,
@@ -56,7 +60,7 @@ export class DocumentationRepositoryService {
 
   prepareWorkspace() {
     return this.#documentationRepository().asyncAndThen((repository) =>
-      this.#getGitHubToken().andThen((token) =>
+      this.#getGitHubToken(repository).andThen((token) =>
         this.#github(repository, token).resolveCommit().andThen((resolved) =>
           this.#withSandbox((sandbox) =>
             new SandboxGit(sandbox).ensureCommits({
@@ -156,7 +160,7 @@ export class DocumentationRepositoryService {
       return new ResultAsync(Promise.resolve(err(normalized.error)));
     }
     return this.#documentationRepository().asyncAndThen((repository) =>
-      this.#getGitHubToken().andThen((token) =>
+      this.#getGitHubToken(repository).andThen((token) =>
         this.#withSandbox((sandbox) => {
           const workspace = new DocumentationWorkspace({
             sandbox,

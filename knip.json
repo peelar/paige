@@ -11,6 +11,7 @@
       "ignoreDependencies": ["drizzle-kit"],
       "entry": [
         "agent/channels/*.ts",
+        "agent/instructions/*.ts",
         "agent/tools/*.ts",
         "evals/**/*.ts",
         "tests/**/*.ts"

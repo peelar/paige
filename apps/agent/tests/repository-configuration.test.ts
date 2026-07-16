@@ -8,6 +8,11 @@ import {
   normalizeRepositoryConfiguration,
 } from "../repositories/configuration/normalize";
 import {
+  deferRepositoryConfiguration,
+  proposeRepositoryConfiguration,
+  stateForWorkspace,
+} from "../repositories/configuration/draft";
+import {
   LibsqlRepositoryConfigurationStore,
 } from "../repositories/configuration/store";
 
@@ -157,6 +162,38 @@ describe("repository configuration store", () => {
     });
     assert(stale.isErr());
     assert.equal(stale.error.code, "REPOSITORY_CONFLICT");
+  });
+});
+
+describe("conversation-scoped repository setup", () => {
+  test("records deferral without carrying it into another Slack workspace", () => {
+    const deferred = deferRepositoryConfiguration("T-one");
+    assert.equal(deferred.deferred, true);
+    assert.equal(deferred.proposal, undefined);
+
+    assert.deepEqual(stateForWorkspace(deferred, "T-two"), {
+      workspaceId: "T-two",
+      deferred: false,
+    });
+  });
+
+  test("replaces the complete proposal when the user makes a correction", () => {
+    const first = proposeRepositoryConfiguration(
+      "T-team",
+      null,
+      configuration("first"),
+    );
+    const corrected = proposeRepositoryConfiguration(
+      "T-team",
+      first.proposal?.baseRevision ?? null,
+      configuration("corrected"),
+    );
+
+    assert.equal(
+      corrected.proposal?.configuration.documentationRepository.name,
+      "docs-corrected",
+    );
+    assert.equal(corrected.deferred, false);
   });
 });
 

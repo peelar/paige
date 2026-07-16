@@ -3,7 +3,6 @@ import { err, ok, Result, ResultAsync } from "neverthrow";
 
 import { RepositoryError } from "./errors";
 import type { RepositoryResult, RepositoryResultAsync } from "./errors";
-import { documentationRepository } from "../config";
 import type {
   RepositoryConfig,
   ResolvedRepository,
@@ -12,8 +11,10 @@ import type {
 const DEFAULT_GITHUB_CONNECTOR = "github/docs-agent";
 const GITHUB_API_VERSION = "2026-03-10";
 
-/** Obtains the one GitHub App token used for every repository operation. */
-export function resolveGitHubToken(): RepositoryResultAsync<string> {
+/** Obtains a GitHub App token scoped to the repository being accessed. */
+export function resolveGitHubToken(
+  repository: RepositoryConfig,
+): RepositoryResultAsync<string> {
   const connector =
     process.env.PAIGE_GITHUB_CONNECTOR?.trim() || DEFAULT_GITHUB_CONNECTOR;
 
@@ -23,16 +24,18 @@ export function resolveGitHubToken(): RepositoryResultAsync<string> {
       authorizationDetails: [
         {
           type: "github_app_installation",
-          org: documentationRepository.owner,
-          repositories: [documentationRepository.name],
-          permissions: ["contents:write", "pull_requests:write"],
+          org: repository.owner,
+          repositories: [repository.name],
+          permissions: repository.role === "documentation"
+            ? ["contents:write", "pull_requests:write"]
+            : ["contents:read"],
         },
       ],
     }),
     (cause) =>
       new RepositoryError(
         "REPOSITORY_GITHUB_AUTH_FAILED",
-        `Failed to authenticate GitHub connector ${connector}.`,
+        `Failed to authenticate GitHub access for ${repository.owner}/${repository.name}.`,
         { cause },
       ),
   );
