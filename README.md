@@ -15,21 +15,22 @@ Paige is currently under heavy development. Feel free to follow along.
 
 ## Get Started
 
-```sh
-pnpm install
-mkdir -p .paige
-export PAIGE_DATABASE_URL=file:.paige/paige.db
-export PAIGE_OPERATOR_WORKSPACE_ID=<your-slack-workspace-id>
-pnpm eval
-pnpm dev
-```
+Ask your coding agent to **use the
+[`$setup`](./.agents/skills/setup/SKILL.md) skill to prepare the checkout for
+local development**. It installs dependencies, pulls the linked Vercel
+production environment, connects the shared Turso database, and verifies the
+coding harness. Then run `pnpm dev`.
+
+Paige requires the shared Turso database provisioned through the linked Vercel
+project. Local development does not silently create a separate database.
 
 On the first Slack direct message, Paige offers to connect one documentation
 repository and any optional product repositories it should use as evidence.
 Paige checks access, shows the complete setup, and saves it only after
-confirmation. The active setup is shared by everyone in the Slack workspace.
-The local web app can connect or replace the documentation repository with one
-GitHub URL for the workspace selected by `PAIGE_OPERATOR_WORKSPACE_ID`.
+confirmation. The active setup belongs to the Paige agent, regardless of
+whether a request arrives from Slack, Linear, Teams, or the local web app. The
+local web app can connect or replace the documentation repository with one
+GitHub URL.
 
 ## How It Works
 

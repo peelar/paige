@@ -1,0 +1,4 @@
+interface:
+  display_name: "Set up local development"
+  short_description: "Provision this checkout for coding and testing"
+  default_prompt: "Use $setup to prepare this checkout for local development."

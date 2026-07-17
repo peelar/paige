@@ -14,12 +14,20 @@
     },
     "dev": {
       "cache": false,
-      "env": ["PAIGE_OPERATOR_ACCESS", "PAIGE_OPERATOR_WORKSPACE_ID"],
+      "env": [
+        "PAIGE_DATABASE_AUTH_TOKEN",
+        "PAIGE_DATABASE_URL",
+        "PAIGE_OPERATOR_ACCESS"
+      ],
       "persistent": true
     },
     "dev:portless": {
       "cache": false,
-      "env": ["PAIGE_OPERATOR_ACCESS", "PAIGE_OPERATOR_WORKSPACE_ID"],
+      "env": [
+        "PAIGE_DATABASE_AUTH_TOKEN",
+        "PAIGE_DATABASE_URL",
+        "PAIGE_OPERATOR_ACCESS"
+      ],
       "persistent": true
     },
     "test": {
