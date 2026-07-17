@@ -14,8 +14,8 @@ Slack transport and Eve runs the model conversation.
 On first contact, Paige offers to connect one documentation repository and
 optional product evidence repositories. It validates access, summarizes the
 complete proposal, and activates it only after confirmation. The active setup
-is stored per Slack workspace, so teammates share it; unconfirmed changes stay
-inside the conversation.
+is stored once for the agent, so every connected channel shares it;
+unconfirmed changes stay inside the conversation.
 
 Paige can inspect active repositories through authenticated tools. Evidence
 repositories remain read-only. The documentation repository can be edited in a

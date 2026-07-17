@@ -58,7 +58,7 @@ Slack · Linear · Releases · Repositories
 | Operator app        | Next.js control plane with explicit local access or allowlisted GitHub authentication   |
 | Workspace           | pnpm and Turborepo with `apps/agent` and `apps/web`                                     |
 | Team context        | Explicit Slack mentions and Linear Agent Sessions                                       |
-| Repositories        | Slack workspace setup for one writable documentation repository and optional read-only evidence repositories |
+| Repositories        | One agent-level setup for a writable documentation repository and optional read-only evidence repositories |
 | Isolation           | Eve sandbox with Git object caches under `/workspace/repositories`                       |
 | Durable state       | Drizzle with local SQLite or a deployed libSQL-compatible database                      |
 | Writeback           | Digest-bound documentation diff followed by an explicitly approved branch and draft PR   |
