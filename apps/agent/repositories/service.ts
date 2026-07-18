@@ -50,7 +50,7 @@ export class RepositoryService {
       options.getGitHubToken ?? resolveGitHubToken;
   }
 
-  /** Describes the active Slack workspace's repository catalog. */
+  /** Describes the agent's active repository catalog. */
   catalog(): RepositoryResultAsync<RepositoryConfig[]> {
     return this.#catalog().map(catalogRepositories);
   }
@@ -172,7 +172,7 @@ export class RepositoryService {
 
   #catalog(): RepositoryResultAsync<RepositoryConfig[]> {
     return this.#repositories === undefined
-      ? resolveRepositoryCatalog(this.#ctx)
+      ? resolveRepositoryCatalog()
       : new ResultAsync(Promise.resolve(ok(this.#repositories)));
   }
 

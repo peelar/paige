@@ -3,19 +3,14 @@ import {
   UnauthenticatedError,
 } from "eve/channels/auth";
 
-const workspaceHeader = "x-paige-operator-workspace";
+const operatorHeader = "x-paige-operator";
 
 export function operatorWebAuth(): AuthFn<Request> {
   return (request) => {
-    const suppliedWorkspaceId = request.headers.get(workspaceHeader)?.trim();
-    if (!suppliedWorkspaceId) return null;
+    if (request.headers.get(operatorHeader) !== "local") return null;
 
-    const configuredWorkspaceId =
-      process.env.PAIGE_OPERATOR_WORKSPACE_ID?.trim();
     if (
       process.env.PAIGE_OPERATOR_ACCESS !== "local" ||
-      !configuredWorkspaceId ||
-      suppliedWorkspaceId !== configuredWorkspaceId ||
       !isLocalHostname(new URL(request.url).hostname)
     ) {
       throw new UnauthenticatedError({
@@ -24,10 +19,10 @@ export function operatorWebAuth(): AuthFn<Request> {
     }
 
     return {
-      authenticator: "slack",
+      authenticator: "paige-operator",
       principalType: "user",
-      principalId: `operator:${configuredWorkspaceId}`,
-      attributes: { slackWorkspaceId: configuredWorkspaceId },
+      principalId: "operator:local",
+      attributes: {},
     };
   };
 }

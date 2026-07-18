@@ -2,10 +2,10 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type { RepositoryConfigurationData } from "./types";
 
-export const repositoryConfigurations = sqliteTable(
-  "repository_configurations",
+export const repositoryConfiguration = sqliteTable(
+  "agent_repository_configuration",
   {
-    workspaceId: text("workspace_id").primaryKey(),
+    id: integer("id").primaryKey(),
     configuration: text("configuration", { mode: "json" })
       .$type<RepositoryConfigurationData>()
       .notNull(),

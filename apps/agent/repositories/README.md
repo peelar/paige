@@ -3,8 +3,8 @@
 All configured repositories use one authenticated shallow Git cache under
 `/workspace/repositories`.
 
-- `configuration/` owns the Slack workspace setup. The active configuration is
-  durable and shared by teammates; an unconfirmed proposal stays in the
+- `configuration/` owns the agent's repository setup. The active configuration
+  is durable and shared across channels; an unconfirmed proposal stays in the
   conversation until the user confirms it.
 - `configuration/resolver.ts` turns that active setup into the bounded catalog
   used by repository tools. One repository has the `documentation` role and

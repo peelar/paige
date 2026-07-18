@@ -1,20 +1,18 @@
 import type { Client } from "@libsql/client";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { err, ok, ResultAsync } from "neverthrow";
 
 import { RepositoryError } from "../shared/errors";
 import type { RepositoryResultAsync } from "../shared/errors";
-import { repositoryConfigurations } from "./schema";
+import { repositoryConfiguration } from "./schema";
 import type {
   ActiveRepositoryConfiguration,
   SaveRepositoryConfigurationInput,
 } from "./types";
 
 export interface RepositoryConfigurationStore {
-  get(
-    workspaceId: string,
-  ): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined>;
+  get(): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined>;
   save(
     input: SaveRepositoryConfigurationInput,
   ): RepositoryResultAsync<ActiveRepositoryConfiguration>;
@@ -30,15 +28,13 @@ export class LibsqlRepositoryConfigurationStore
     this.#ready = createSchema(client);
   }
 
-  get(
-    workspaceId: string,
-  ): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined> {
+  get(): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined> {
     return ResultAsync.fromPromise(
       this.#ready.then(async () => {
         const [row] = await this.#database
           .select()
-          .from(repositoryConfigurations)
-          .where(eq(repositoryConfigurations.workspaceId, workspaceId))
+          .from(repositoryConfiguration)
+          .where(eq(repositoryConfiguration.id, 1))
           .limit(1);
         return row === undefined ? undefined : fromRow(row);
       }),
@@ -56,30 +52,27 @@ export class LibsqlRepositoryConfigurationStore
       this.#ready.then(async () => {
         if (input.expectedRevision === null) {
           return await this.#database
-            .insert(repositoryConfigurations)
+            .insert(repositoryConfiguration)
             .values({
-              workspaceId: input.workspaceId,
+              id: 1,
               configuration: input.configuration,
               revision: nextRevision,
               updatedAt,
             })
             .onConflictDoNothing({
-              target: repositoryConfigurations.workspaceId,
+              target: repositoryConfiguration.id,
             })
             .returning();
         }
 
         return await this.#database
-          .update(repositoryConfigurations)
+          .update(repositoryConfiguration)
           .set({
             configuration: input.configuration,
             revision: nextRevision,
             updatedAt,
           })
-          .where(and(
-            eq(repositoryConfigurations.workspaceId, input.workspaceId),
-            eq(repositoryConfigurations.revision, input.expectedRevision),
-          ))
+          .where(eq(repositoryConfiguration.revision, input.expectedRevision))
           .returning();
       }),
       configurationStoreError,
@@ -96,8 +89,8 @@ export class LibsqlRepositoryConfigurationStore
 
 async function createSchema(client: Client): Promise<void> {
   await client.execute(`
-    CREATE TABLE IF NOT EXISTS repository_configurations (
-      workspace_id TEXT PRIMARY KEY NOT NULL,
+    CREATE TABLE IF NOT EXISTS agent_repository_configuration (
+      id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
       configuration TEXT NOT NULL,
       revision INTEGER NOT NULL,
       updated_at TEXT NOT NULL
@@ -106,10 +99,9 @@ async function createSchema(client: Client): Promise<void> {
 }
 
 function fromRow(
-  row: typeof repositoryConfigurations.$inferSelect,
+  row: typeof repositoryConfiguration.$inferSelect,
 ): ActiveRepositoryConfiguration {
   return {
-    workspaceId: row.workspaceId,
     ...row.configuration,
     revision: row.revision,
     updatedAt: row.updatedAt,

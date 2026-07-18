@@ -3,51 +3,47 @@ import { afterEach, describe, expect, it } from "vitest";
 import { operatorWebAuth } from "../repositories/configuration/operator-auth";
 
 const originalAccess = process.env.PAIGE_OPERATOR_ACCESS;
-const originalWorkspaceId = process.env.PAIGE_OPERATOR_WORKSPACE_ID;
 
 afterEach(() => {
   restoreEnvironment("PAIGE_OPERATOR_ACCESS", originalAccess);
-  restoreEnvironment("PAIGE_OPERATOR_WORKSPACE_ID", originalWorkspaceId);
 });
 
 describe("operatorWebAuth", () => {
-  it("ignores requests without an operator workspace header", () => {
+  it("ignores requests without the local operator header", () => {
     expect(
       operatorWebAuth()(new Request("http://agent.paige.localhost")),
     ).toBeNull();
   });
 
-  it("returns the configured workspace identity for local operator requests", () => {
+  it("returns a channel-neutral identity for local operator requests", () => {
     process.env.PAIGE_OPERATOR_ACCESS = "local";
-    process.env.PAIGE_OPERATOR_WORKSPACE_ID = "T_LOCAL";
 
-    expect(operatorWebAuth()(operatorRequest("T_LOCAL"))).toEqual({
-      authenticator: "slack",
+    expect(operatorWebAuth()(operatorRequest())).toEqual({
+      authenticator: "paige-operator",
       principalType: "user",
-      principalId: "operator:T_LOCAL",
-      attributes: { slackWorkspaceId: "T_LOCAL" },
+      principalId: "operator:local",
+      attributes: {},
     });
   });
 
-  it("rejects mismatched or non-local operator requests", () => {
+  it("rejects disabled or non-local operator requests", () => {
     process.env.PAIGE_OPERATOR_ACCESS = "local";
-    process.env.PAIGE_OPERATOR_WORKSPACE_ID = "T_LOCAL";
+    expect(() =>
+      operatorWebAuth()(operatorRequest("https://agent.example.com"))
+    ).toThrow("Invalid Paige operator authentication.");
 
-    expect(() => operatorWebAuth()(operatorRequest("T_OTHER"))).toThrow(
+    delete process.env.PAIGE_OPERATOR_ACCESS;
+    expect(() => operatorWebAuth()(operatorRequest())).toThrow(
       "Invalid Paige operator authentication.",
     );
-    expect(() =>
-      operatorWebAuth()(operatorRequest("T_LOCAL", "https://agent.example.com"))
-    ).toThrow("Invalid Paige operator authentication.");
   });
 });
 
 function operatorRequest(
-  workspaceId: string,
   url = "http://agent.paige.localhost",
 ): Request {
   return new Request(url, {
-    headers: { "x-paige-operator-workspace": workspaceId },
+    headers: { "x-paige-operator": "local" },
   });
 }
 

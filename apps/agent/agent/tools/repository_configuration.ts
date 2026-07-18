@@ -1,14 +1,12 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
-import { resolveSlackWorkspaceId } from "../../repositories/configuration/context";
 import { repositoryConfigurationStore } from "../../repositories/configuration/database";
 import {
   clearRepositoryConfigurationProposal,
   deferRepositoryConfiguration,
   proposeRepositoryConfiguration,
   repositoryConfigurationSessionState,
-  stateForWorkspace,
 } from "../../repositories/configuration/draft";
 import {
   RepositoryConfigurationService,
@@ -35,29 +33,21 @@ export const repositoryConfigurationToolInputSchema = z.object({
 
 export default defineTool({
   description:
-    "Manage the Slack team's repository setup. Read the active and proposed setup; propose a complete replacement after collecting one documentation GitHub URL and any optional product-evidence GitHub URLs; confirm only after the user explicitly says the summary is correct; discard a proposal for corrections; or defer when the user says not now. Proposals validate access but do not activate anything.",
+    "Manage this agent's repository setup. Read the active and proposed setup; propose a complete replacement after collecting one documentation GitHub URL and any optional product-evidence GitHub URLs; confirm only after the user explicitly says the summary is correct; discard a proposal for corrections; or defer when the user says not now. Proposals validate access but do not activate anything.",
   inputSchema: repositoryConfigurationToolInputSchema,
   async execute(input, ctx) {
-    const workspaceId = resolveSlackWorkspaceId(ctx).match(
-      (value) => value,
-      raiseRepositoryError,
-    );
     const service = new RepositoryConfigurationService(
       ctx,
       repositoryConfigurationStore(),
     );
-    const session = stateForWorkspace(
-      repositoryConfigurationSessionState.get(),
-      workspaceId,
-    );
+    const session = repositoryConfigurationSessionState.get();
 
     switch (input.action) {
       case "read": {
-        const active = await service.get(workspaceId).match(
+        const active = await service.get().match(
           (value) => value,
           raiseRepositoryError,
         );
-        repositoryConfigurationSessionState.update(() => session);
         return {
           action: input.action,
           configured: active !== undefined,
@@ -76,7 +66,7 @@ export default defineTool({
         };
       }
       case "propose": {
-        const active = await service.get(workspaceId).match(
+        const active = await service.get().match(
           (value) => value,
           raiseRepositoryError,
         );
@@ -86,7 +76,6 @@ export default defineTool({
         );
         repositoryConfigurationSessionState.update(() =>
           proposeRepositoryConfiguration(
-            workspaceId,
             active?.revision ?? null,
             configuration,
           )
@@ -104,12 +93,11 @@ export default defineTool({
           );
         }
         const active = await service.confirm({
-          workspaceId,
           configuration: session.proposal.configuration,
           expectedRevision: session.proposal.baseRevision,
         }).match((value) => value, raiseRepositoryError);
         repositoryConfigurationSessionState.update(() =>
-          clearRepositoryConfigurationProposal(workspaceId)
+          clearRepositoryConfigurationProposal()
         );
         return {
           action: input.action,
@@ -122,12 +110,12 @@ export default defineTool({
       }
       case "discard":
         repositoryConfigurationSessionState.update(() =>
-          clearRepositoryConfigurationProposal(workspaceId)
+          clearRepositoryConfigurationProposal()
         );
         return { action: input.action, discarded: true };
       case "defer":
         repositoryConfigurationSessionState.update(() =>
-          deferRepositoryConfiguration(workspaceId)
+          deferRepositoryConfiguration()
         );
         return { action: input.action, deferred: true };
     }

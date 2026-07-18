@@ -204,7 +204,7 @@ export class DocumentationRepositoryService {
 
   #documentationRepository(): RepositoryResultAsync<DocumentationRepository> {
     const catalog = this.#repositories === undefined
-      ? resolveRepositoryCatalog(this.#ctx)
+      ? resolveRepositoryCatalog()
       : new ResultAsync(Promise.resolve(ok(this.#repositories)));
     return catalog.andThen((repositories) => {
       const candidates = repositories.filter(

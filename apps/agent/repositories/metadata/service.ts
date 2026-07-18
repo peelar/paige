@@ -243,7 +243,7 @@ export class GitHubRepositoryMetadataService
 
   #catalog(): RepositoryResultAsync<RepositoryConfig[]> {
     return this.#repositories === undefined
-      ? resolveRepositoryCatalog(this.#ctx)
+      ? resolveRepositoryCatalog()
       : new ResultAsync(Promise.resolve(ok(this.#repositories)));
   }
 }

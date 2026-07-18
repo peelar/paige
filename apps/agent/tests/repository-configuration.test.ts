@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 
 import { createClient } from "@libsql/client";
-import type { ToolContext } from "eve/tools";
 import { describe, test } from "vitest";
 
 import {
@@ -11,7 +10,6 @@ import {
 import {
   deferRepositoryConfiguration,
   proposeRepositoryConfiguration,
-  stateForWorkspace,
 } from "../repositories/configuration/draft";
 import {
   LibsqlRepositoryConfigurationStore,
@@ -79,27 +77,22 @@ describe("repository configuration normalization", () => {
 });
 
 describe("repository configuration store", () => {
-  test("isolates Slack workspaces and returns missing setup explicitly", async () => {
+  test("stores one repository setup for the agent", async () => {
     const store = createStore();
-    const missing = await store.get("T-missing");
+    const missing = await store.get();
     assert(missing.isOk());
     assert.equal(missing.value, undefined);
 
     const saved = await store.save({
-      workspaceId: "T-one",
       configuration: configuration("one"),
       expectedRevision: null,
     });
     assert(saved.isOk());
 
-    const otherWorkspace = await store.get("T-two");
-    assert(otherWorkspace.isOk());
-    assert.equal(otherWorkspace.value, undefined);
-
-    const firstWorkspace = await store.get("T-one");
-    assert(firstWorkspace.isOk());
+    const active = await store.get();
+    assert(active.isOk());
     assert.equal(
-      firstWorkspace.value?.documentationRepository.name,
+      active.value?.documentationRepository.name,
       "docs-one",
     );
   });
@@ -108,12 +101,11 @@ describe("repository configuration store", () => {
     const store = createStore();
     const proposed = configuration("proposed");
 
-    const beforeConfirmation = await store.get("T-team");
+    const beforeConfirmation = await store.get();
     assert(beforeConfirmation.isOk());
     assert.equal(beforeConfirmation.value, undefined);
 
     const confirmed = await store.save({
-      workspaceId: "T-team",
       configuration: proposed,
       expectedRevision: null,
     });
@@ -125,12 +117,10 @@ describe("repository configuration store", () => {
     const store = createStore();
     const [first, second] = await Promise.all([
       store.save({
-        workspaceId: "T-team",
         configuration: configuration("first"),
         expectedRevision: null,
       }),
       store.save({
-        workspaceId: "T-team",
         configuration: configuration("second"),
         expectedRevision: null,
       }),
@@ -145,14 +135,12 @@ describe("repository configuration store", () => {
   test("uses revisions to reject stale repository changes", async () => {
     const store = createStore();
     const initial = await store.save({
-      workspaceId: "T-team",
       configuration: configuration("initial"),
       expectedRevision: null,
     });
     assert(initial.isOk());
 
     const updated = await store.save({
-      workspaceId: "T-team",
       configuration: configuration("updated"),
       expectedRevision: initial.value.revision,
     });
@@ -160,7 +148,6 @@ describe("repository configuration store", () => {
     assert.equal(updated.value.revision, 2);
 
     const stale = await store.save({
-      workspaceId: "T-team",
       configuration: configuration("stale"),
       expectedRevision: initial.value.revision,
     });
@@ -170,25 +157,18 @@ describe("repository configuration store", () => {
 });
 
 describe("conversation-scoped repository setup", () => {
-  test("records deferral without carrying it into another Slack workspace", () => {
-    const deferred = deferRepositoryConfiguration("T-one");
+  test("records deferral in the current conversation", () => {
+    const deferred = deferRepositoryConfiguration();
     assert.equal(deferred.deferred, true);
     assert.equal(deferred.proposal, undefined);
-
-    assert.deepEqual(stateForWorkspace(deferred, "T-two"), {
-      workspaceId: "T-two",
-      deferred: false,
-    });
   });
 
   test("replaces the complete proposal when the user makes a correction", () => {
     const first = proposeRepositoryConfiguration(
-      "T-team",
       null,
       configuration("first"),
     );
     const corrected = proposeRepositoryConfiguration(
-      "T-team",
       first.proposal?.baseRevision ?? null,
       configuration("corrected"),
     );
@@ -204,7 +184,6 @@ describe("conversation-scoped repository setup", () => {
 describe("active repository resolution", () => {
   test("keeps missing configuration explicit", async () => {
     const result = await resolveRepositoryCatalog(
-      slackContext("T-missing", "U-one"),
       createStore(),
     );
 
@@ -212,29 +191,22 @@ describe("active repository resolution", () => {
     assert.equal(result.error.code, "REPOSITORY_NOT_CONFIGURED");
   });
 
-  test("shares the active setup with teammates in the same Slack workspace", async () => {
+  test("shares the active setup across channel identities", async () => {
     const store = createStore();
     const saved = await store.save({
-      workspaceId: "T-team",
       configuration: configuration("shared"),
       expectedRevision: null,
     });
     assert(saved.isOk());
 
-    const firstTeammate = await resolveRepositoryCatalog(
-      slackContext("T-team", "U-one"),
-      store,
-    );
-    const secondTeammate = await resolveRepositoryCatalog(
-      slackContext("T-team", "U-two"),
-      store,
-    );
+    const firstChannel = await resolveRepositoryCatalog(store);
+    const secondChannel = await resolveRepositoryCatalog(store);
 
-    assert(firstTeammate.isOk());
-    assert(secondTeammate.isOk());
-    assert.deepEqual(secondTeammate.value, firstTeammate.value);
+    assert(firstChannel.isOk());
+    assert(secondChannel.isOk());
+    assert.deepEqual(secondChannel.value, firstChannel.value);
     assert.deepEqual(
-      secondTeammate.value.map((repository) => repository.name),
+      secondChannel.value.map((repository) => repository.name),
       ["product-shared", "docs-shared"],
     );
   });
@@ -256,23 +228,4 @@ function configuration(suffix: string) {
   });
   assert(result.isOk());
   return result.value;
-}
-
-function slackContext(
-  workspaceId: string,
-  userId: string,
-): ToolContext {
-  return {
-    session: {
-      auth: {
-        current: {
-          authenticator: "slack",
-          principalType: "user",
-          principalId: userId,
-          attributes: { slackWorkspaceId: workspaceId },
-        },
-        initiator: null,
-      },
-    },
-  } as unknown as ToolContext;
 }

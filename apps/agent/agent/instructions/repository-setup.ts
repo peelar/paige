@@ -1,10 +1,8 @@
 import { defineDynamic, defineInstructions } from "eve/instructions";
 
-import { resolveSlackWorkspaceId } from "../../repositories/configuration/context";
 import { repositoryConfigurationStore } from "../../repositories/configuration/database";
 import {
   repositoryConfigurationSessionState,
-  stateForWorkspace,
 } from "../../repositories/configuration/draft";
 import {
   summarizeRepositoryConfiguration,
@@ -12,17 +10,10 @@ import {
 
 export default defineDynamic({
   events: {
-    "turn.started": async (_event, ctx) => {
-      const workspaceId = resolveSlackWorkspaceId(ctx);
-      if (workspaceId.isErr()) return null;
-
-      const session = stateForWorkspace(
-        repositoryConfigurationSessionState.get(),
-        workspaceId.value,
-      );
-      repositoryConfigurationSessionState.update(() => session);
+    "turn.started": async (_event, _ctx) => {
+      const session = repositoryConfigurationSessionState.get();
       const active = await repositoryConfigurationStore()
-        .get(workspaceId.value);
+        .get();
       if (active.isErr()) throw active.error;
 
       if (session.proposal !== undefined) {
@@ -37,7 +28,7 @@ export default defineDynamic({
       if (active.value !== undefined) {
         return defineInstructions({
           markdown:
-            "This Slack workspace has an active repository setup. Use repository_configuration read when the user asks to see or change it. Any change must be proposed as a complete summary and activated only after the user confirms that summary.",
+            "This agent has an active repository setup. Use repository_configuration read when the user asks to see or change it. Any change must be proposed as a complete summary and activated only after the user confirms that summary.",
         });
       }
 
@@ -51,7 +42,7 @@ export default defineDynamic({
 });
 
 const firstRunInstructions = `
-This Slack workspace has not connected repositories yet.
+This agent has not connected repositories yet.
 
 Welcome the user and briefly explain that connecting repositories lets Paige
 maintain their documentation and check it against where the product is built.
@@ -64,7 +55,7 @@ scopes, catalogs, tokens, worktrees, databases, or runtime architecture.
 `;
 
 const deferredInstructions = `
-This Slack workspace has no repository setup, and someone already chose not to
+This agent has no repository setup, and someone already chose not to
 set it up for now. Do not mention setup during ordinary conversation. If the
 current request actually needs repository access, briefly explain why
 connecting repositories is needed and offer to resume setup.
@@ -78,7 +69,7 @@ function proposalInstructions(proposal: {
     ? "No product repositories"
     : proposal.evidenceRepositories.join(", ");
   return `
-There is an unconfirmed repository setup for this Slack workspace:
+There is an unconfirmed repository setup for this agent:
 
 - Documentation to maintain: ${proposal.documentationRepository}
 - Product repositories to check: ${evidence}

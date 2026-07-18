@@ -39,10 +39,8 @@ export class RepositoryConfigurationService {
       ((repository) => this.#validateGitHubRepository(repository));
   }
 
-  get(
-    workspaceId: string,
-  ): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined> {
-    return this.#store.get(workspaceId);
+  get(): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined> {
+    return this.#store.get();
   }
 
   propose(input: {
@@ -71,7 +69,6 @@ export class RepositoryConfigurationService {
   }
 
   confirm(input: {
-    workspaceId: string;
     configuration: RepositoryConfigurationData;
     expectedRevision: number | null;
   }): RepositoryResultAsync<ActiveRepositoryConfiguration> {
