@@ -7,6 +7,7 @@
     "build": "turbo run build",
     "check": "pnpm lint && pnpm knip && turbo run typecheck test --affected",
     "check:full": "pnpm lint && pnpm knip && turbo run typecheck test build",
+    "db:studio": "pnpm --filter paige db:studio",
     "dev": "PAIGE_OPERATOR_ACCESS=local PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} node node_modules/portless/dist/cli.js",
     "dev:agent": "PORTLESS_PORT=${PORTLESS_PORT:-1355} PORTLESS_HTTPS=${PORTLESS_HTTPS:-0} pnpm --filter paige exec portless run --name agent.paige pnpm dev",
     "dev:inspect": "pnpm --filter paige dev:inspect",

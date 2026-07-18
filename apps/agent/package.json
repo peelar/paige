@@ -6,6 +6,7 @@
   "scripts": {
     "build": "eve build",
     "check": "pnpm typecheck && pnpm test",
+    "db:studio": "drizzle-kit studio",
     "dev": "eve dev",
     "dev:inspect": "eve dev --tools full --logs all",
     "dev:portless": "pnpm dev",
