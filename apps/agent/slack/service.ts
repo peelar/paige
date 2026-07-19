@@ -21,7 +21,7 @@ export type SlackChannelErrorCode =
   | "SLACK_INVALID_MESSAGE"
   | "SLACK_SESSION_DISPATCH_FAILED";
 
-/** A failure while turning a verified Slack direct message into an Eve session. */
+/** A failure while turning a verified Slack message into an Eve session. */
 export class SlackChannelError extends Error {
   override readonly name = "SlackChannelError";
 
@@ -41,7 +41,7 @@ export class SlackChannelService {
     this.#sendMessage = sendMessage;
   }
 
-  handleDirectMessage(
+  handleMessage(
     thread: Thread,
     message: Message,
   ): ResultAsync<void, SlackChannelError> {

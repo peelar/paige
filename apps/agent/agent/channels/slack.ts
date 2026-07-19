@@ -23,23 +23,31 @@ export const { bot, channel, send } = chatSdkChannel({
   userName: "Paige",
 });
 
-type DirectMessageBot = {
+type SlackMessageBot = {
   onDirectMessage(
+    handler: (thread: Thread, message: Message) => void | Promise<void>,
+  ): void;
+  onNewMention(
     handler: (thread: Thread, message: Message) => void | Promise<void>,
   ): void;
 };
 
-export function registerDirectMessages(
-  directMessageBot: DirectMessageBot,
-  service: Pick<SlackChannelService, "handleDirectMessage">,
+export function registerSlackMessages(
+  slackMessageBot: SlackMessageBot,
+  service: Pick<SlackChannelService, "handleMessage">,
 ): void {
-  directMessageBot.onDirectMessage(async (thread, message) => {
-    const result = await service.handleDirectMessage(thread, message);
+  const handleMessage = async (thread: Thread, message: Message) => {
+    const result = await service.handleMessage(thread, message);
     if (result.isErr()) throw result.error;
-  });
+  };
+
+  slackMessageBot.onDirectMessage(handleMessage);
+  // Do not subscribe to mentioned threads: Paige should keep listening only
+  // when someone explicitly asks for her with another @mention.
+  slackMessageBot.onNewMention(handleMessage);
 }
 
-registerDirectMessages(
+registerSlackMessages(
   bot,
   new SlackChannelService(send),
 );

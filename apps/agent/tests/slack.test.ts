@@ -3,20 +3,26 @@ import assert from "node:assert/strict";
 import type { Message, Thread } from "chat";
 import { test } from "vitest";
 
-import { registerDirectMessages } from "../agent/channels/slack";
+import { registerSlackMessages } from "../agent/channels/slack";
 import { postSlackAuthorizationRequired } from "../slack/authorization";
 import {
   extractSlackWorkspaceId,
   SlackChannelService,
 } from "../slack/service";
 
-test("Slack registers only the direct-message path", async () => {
-  let handler:
+test("Slack dispatches direct messages and new mentions", async () => {
+  let directMessageHandler:
+    | ((thread: Thread, message: Message) => void | Promise<void>)
+    | undefined;
+  let mentionHandler:
     | ((thread: Thread, message: Message) => void | Promise<void>)
     | undefined;
   const bot = {
-    onDirectMessage(candidate: NonNullable<typeof handler>) {
-      handler = candidate;
+    onDirectMessage(candidate: NonNullable<typeof directMessageHandler>) {
+      directMessageHandler = candidate;
+    },
+    onNewMention(candidate: NonNullable<typeof mentionHandler>) {
+      mentionHandler = candidate;
     },
   };
   const calls: Array<{
@@ -35,25 +41,44 @@ test("Slack registers only the direct-message path", async () => {
       return undefined;
     },
   );
-  registerDirectMessages(bot, service);
+  registerSlackMessages(bot, service);
 
-  assert.ok(handler, "the direct-message handler is registered");
-  const thread = { id: "slack:D123:" } as Thread;
-  await handler(thread, {
+  assert.ok(directMessageHandler, "the direct-message handler is registered");
+  assert.ok(mentionHandler, "the mention handler is registered");
+  const directMessageThread = { id: "slack:D123:" } as Thread;
+  await directMessageHandler(directMessageThread, {
     text: "Hello Paige",
     raw: { team_id: "T123" },
     author: { userId: "U123" },
   } as Message);
-  assert.deepEqual(calls, [{
-    message: "Hello Paige",
-    thread,
-    auth: {
-      authenticator: "slack",
-      principalType: "user",
-      principalId: "U123",
-      attributes: { slackWorkspaceId: "T123" },
+  const mentionThread = { id: "slack:C123:1234.5678" } as Thread;
+  await mentionHandler(mentionThread, {
+    text: "<@UPAIGE> can you help?",
+    raw: { team_id: "T123" },
+    author: { userId: "U456" },
+  } as Message);
+  assert.deepEqual(calls, [
+    {
+      message: "Hello Paige",
+      thread: directMessageThread,
+      auth: {
+        authenticator: "slack",
+        principalType: "user",
+        principalId: "U123",
+        attributes: { slackWorkspaceId: "T123" },
+      },
     },
-  }]);
+    {
+      message: "<@UPAIGE> can you help?",
+      thread: mentionThread,
+      auth: {
+        authenticator: "slack",
+        principalType: "user",
+        principalId: "U456",
+        attributes: { slackWorkspaceId: "T123" },
+      },
+    },
+  ]);
 });
 
 test("Slack workspace identity fails closed when the verified payload omits it", () => {
@@ -72,7 +97,7 @@ test("Slack maps Eve dispatch failures into its channel contract", async () => {
     },
   );
 
-  const result = await service.handleDirectMessage(
+  const result = await service.handleMessage(
     { id: "slack:D123:" } as Thread,
     {
       text: "Hello Paige",
