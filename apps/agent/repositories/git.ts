@@ -31,7 +31,7 @@ export class SandboxGit {
   ensureCommits<TRepository extends RepositoryConfig>(input: {
     repository: TRepository;
     commits: ResolvedRepository<TRepository>[];
-    token: string;
+    token?: string;
   }): RepositoryResultAsync<RepositoryWorkspace<TRepository>[]> {
     return new ResultAsync((async () => {
       if (input.commits.length === 0) {
@@ -181,10 +181,16 @@ export class SandboxGit {
   }
 
   async #withGitHubAccess<T>(
-    token: string,
+    token: string | undefined,
     authenticated: boolean,
     operation: () => Promise<RepositoryResult<T>>,
   ): Promise<RepositoryResult<T>> {
+    if (authenticated && token === undefined) {
+      return err(new RepositoryError(
+        "REPOSITORY_GITHUB_AUTH_FAILED",
+        "Private repository access requires a GitHub installation token.",
+      ));
+    }
     try {
       await this.#sandbox.setNetworkPolicy(
         this.#githubNetworkPolicy(token, authenticated),
@@ -195,8 +201,8 @@ export class SandboxGit {
     }
   }
 
-  #githubNetworkPolicy(token: string, authenticated: boolean) {
-    const rules = authenticated
+  #githubNetworkPolicy(token: string | undefined, authenticated: boolean) {
+    const rules = authenticated && token !== undefined
       ? [
           {
             transform: [

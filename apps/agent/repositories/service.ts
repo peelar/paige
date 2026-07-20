@@ -15,8 +15,8 @@ import {
 } from "./files";
 import type { RepositoryResultAsync } from "./shared/errors";
 import {
-  createGitHubRequest,
   GitHubRepository,
+  resolveRepositoryGitHubAccess,
   resolveGitHubToken,
 } from "./shared/github";
 import { serializeSandbox } from "./shared/serialization";
@@ -197,18 +197,16 @@ export class RepositoryService {
     repository: RepositoryConfig,
     refs: Array<string | undefined>,
   ): RepositoryResultAsync<{
-    token: string;
+    token?: string;
     commits: ResolvedRepository[];
   }> {
-    return this.#getGitHubToken(repository).andThen((token) =>
+    return resolveRepositoryGitHubAccess(
+      repository,
+      this.#ctx.abortSignal,
+      this.#getGitHubToken,
+    ).andThen(({ request, token }) =>
       new ResultAsync((async () => {
-        const github = new GitHubRepository(
-          repository,
-          createGitHubRequest({
-            token,
-            abortSignal: this.#ctx.abortSignal,
-          }),
-        );
+        const github = new GitHubRepository(repository, request);
         const results = await Promise.all(
           refs.map(async (ref) => await github.resolveCommit(ref)),
         );
@@ -225,7 +223,7 @@ export class RepositoryService {
   #withSandbox<T>(
     repository: RepositoryConfig,
     commits: ResolvedRepository[],
-    token: string,
+    token: string | undefined,
     operation: (
       sandbox: SandboxSession,
       workspaces: RepositoryWorkspace[],

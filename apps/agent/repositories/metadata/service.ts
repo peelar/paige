@@ -7,7 +7,7 @@ import {
 } from "../config";
 import { resolveRepositoryCatalog } from "../configuration/resolver";
 import {
-  createGitHubRequest,
+  resolveRepositoryGitHubAccess,
   resolveGitHubToken,
 } from "../shared/github";
 import { RepositoryError } from "../shared/errors";
@@ -216,7 +216,11 @@ export class GitHubRepositoryMetadataService
         assertMetadataLimit(input.limit),
         resolveConfiguredRepository(repositories, input.repositoryId),
       ]).asyncAndThen(([, repository]) =>
-        this.#getGitHubToken(repository).andThen((token) => {
+        resolveRepositoryGitHubAccess(
+          repository,
+          this.#ctx.abortSignal,
+          this.#getGitHubToken,
+        ).andThen(({ request }) => {
           const query = new URLSearchParams({
             ...parameters,
             per_page: String(perPage),
@@ -225,10 +229,7 @@ export class GitHubRepositoryMetadataService
             `/repos/${encodeURIComponent(repository.owner)}` +
             `/${encodeURIComponent(repository.name)}/${resource}` +
             `?${query.toString()}`;
-          return createGitHubRequest({
-            token,
-            abortSignal: this.#ctx.abortSignal,
-          }).json(path).andThen((value) =>
+          return request.json(path).andThen((value) =>
             value === undefined
               ? err(new RepositoryError(
                   "REPOSITORY_GITHUB_FAILED",

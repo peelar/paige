@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 
 import { createClient } from "@libsql/client";
-import { describe, test } from "vitest";
+import { ResultAsync } from "neverthrow";
+import { afterEach, describe, test, vi } from "vitest";
 
 import {
   normalizeGitHubRepository,
@@ -20,6 +21,11 @@ import {
 import {
   resolveRepositoryCatalog,
 } from "../repositories/configuration/resolver";
+import { RepositoryConfigurationService } from "../repositories/configuration/service";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("repository configuration database", () => {
   test("returns a typed error when storage is not configured", () => {
@@ -100,6 +106,86 @@ describe("repository configuration normalization", () => {
       assert.equal(result.error.code, "REPOSITORY_INVALID_INPUT");
       assert.match(result.error.message, /GitHub repository URL/);
     }
+  });
+});
+
+describe("repository configuration access validation", () => {
+  test("connects public evidence without requesting an installation token", async () => {
+    const tokenRequests: string[] = [];
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const url = input.toString();
+      const headers = init?.headers as Record<string, string>;
+      if (url.includes("/repos/example/docs")) {
+        assert.equal(headers.authorization, "Bearer docs-token");
+        return url.endsWith("/repos/example/docs")
+          ? jsonResponse({ default_branch: "main", private: true })
+          : jsonResponse({ sha: "docs-commit" });
+      }
+      assert.match(url, /\/repos\/saleor\/saleor/);
+      assert.equal(headers.authorization, undefined);
+      return url.endsWith("/repos/saleor/saleor")
+        ? jsonResponse({ default_branch: "main", private: false })
+        : jsonResponse({ sha: "saleor-commit" });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const service = new RepositoryConfigurationService(
+      { abortSignal: new AbortController().signal },
+      createStore(),
+      {
+        getGitHubToken: (repository) => {
+          tokenRequests.push(`${repository.owner}/${repository.name}`);
+          return ResultAsync.fromSafePromise(Promise.resolve("docs-token"));
+        },
+      },
+    );
+
+    const result = await service.propose({
+      documentationRepositoryUrl: "https://github.com/example/docs",
+      evidenceRepositoryUrls: ["https://github.com/saleor/saleor"],
+    });
+
+    assert(result.isOk());
+    assert.equal(result.value.documentationRepository.access, "installation");
+    assert.equal(result.value.evidenceRepositories[0].access, "public");
+    assert.deepEqual(tokenRequests, ["example/docs"]);
+  });
+
+  test("does not present a public GitHub rate limit as missing access", async () => {
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (input, init) => {
+      const url = input.toString();
+      if (url.includes("/repos/example/docs")) {
+        const headers = init?.headers as Record<string, string>;
+        assert.equal(headers.authorization, "Bearer docs-token");
+        return url.endsWith("/repos/example/docs")
+          ? jsonResponse({ default_branch: "main", private: true })
+          : jsonResponse({ sha: "docs-commit" });
+      }
+      return new Response(null, {
+        status: 403,
+        headers: {
+          "x-ratelimit-remaining": "0",
+          "x-ratelimit-reset": "2000000000",
+        },
+      });
+    }));
+    const service = new RepositoryConfigurationService(
+      { abortSignal: new AbortController().signal },
+      createStore(),
+      {
+        getGitHubToken: () =>
+          ResultAsync.fromSafePromise(Promise.resolve("docs-token")),
+      },
+    );
+
+    const result = await service.propose({
+      documentationRepositoryUrl: "https://github.com/example/docs",
+      evidenceRepositoryUrls: ["https://github.com/saleor/saleor"],
+    });
+
+    assert(result.isErr());
+    assert.equal(result.error.code, "REPOSITORY_GITHUB_RATE_LIMITED");
+    assert.match(result.error.message, /Try again after/);
+    assert.doesNotMatch(result.error.message, /couldn't access/);
   });
 });
 
@@ -243,6 +329,13 @@ function createStore(): LibsqlRepositoryConfigurationStore {
   return new LibsqlRepositoryConfigurationStore(
     createClient({ url: ":memory:" }),
   );
+}
+
+function jsonResponse(value: unknown): Response {
+  return new Response(JSON.stringify(value), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
 }
 
 function configuration(suffix: string) {

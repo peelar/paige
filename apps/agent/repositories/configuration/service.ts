@@ -1,5 +1,6 @@
 import { err, Result, ResultAsync } from "neverthrow";
 
+import { assertDocumentationRepository } from "../config";
 import { RepositoryError } from "../shared/errors";
 import type { RepositoryResultAsync } from "../shared/errors";
 import {
@@ -18,7 +19,10 @@ import type {
 interface RepositoryConfigurationServiceOptions {
   validateRepository?: (
     repository: RepositoryConfig,
-  ) => RepositoryResultAsync<void>;
+  ) => RepositoryResultAsync<RepositoryConfig>;
+  getGitHubToken?: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 }
 
 export class RepositoryConfigurationService {
@@ -26,7 +30,10 @@ export class RepositoryConfigurationService {
   readonly #store: RepositoryConfigurationStore;
   readonly #validateRepository: (
     repository: RepositoryConfig,
-  ) => RepositoryResultAsync<void>;
+  ) => RepositoryResultAsync<RepositoryConfig>;
+  readonly #getGitHubToken: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string>;
 
   constructor(
     request: { abortSignal: AbortSignal },
@@ -35,6 +42,7 @@ export class RepositoryConfigurationService {
   ) {
     this.#abortSignal = request.abortSignal;
     this.#store = store;
+    this.#getGitHubToken = options.getGitHubToken ?? resolveGitHubToken;
     this.#validateRepository = options.validateRepository ??
       ((repository) => this.#validateGitHubRepository(repository));
   }
@@ -64,7 +72,14 @@ export class RepositoryConfigurationService {
           ),
         ),
       );
-      return validated.map(() => normalized.value);
+      return validated.andThen(([documentationRepository, ...evidenceRepositories]) =>
+        assertDocumentationRepository(documentationRepository).map(
+          (validatedDocumentationRepository) => ({
+            documentationRepository: validatedDocumentationRepository,
+            evidenceRepositories,
+          }),
+        )
+      );
     })());
   }
 
@@ -77,8 +92,30 @@ export class RepositoryConfigurationService {
 
   #validateGitHubRepository(
     repository: RepositoryConfig,
-  ): RepositoryResultAsync<void> {
-    return resolveGitHubToken(repository)
+  ): RepositoryResultAsync<RepositoryConfig> {
+    if (repository.role === "evidence") {
+      const publicRepository = new GitHubRepository(
+        repository,
+        createGitHubRequest({ abortSignal: this.#abortSignal }),
+      );
+      return publicRepository.resolveCommit()
+        .map(() => ({ ...repository, access: "public" as const }))
+        .orElse((error) =>
+          error.code === "REPOSITORY_GITHUB_NOT_FOUND"
+            ? this.#validateInstallationRepository(repository)
+            : err(error)
+        )
+        .mapErr((error) => this.#accessError(repository, error));
+    }
+
+    return this.#validateInstallationRepository(repository)
+      .mapErr((error) => this.#accessError(repository, error));
+  }
+
+  #validateInstallationRepository(
+    repository: RepositoryConfig,
+  ): RepositoryResultAsync<RepositoryConfig> {
+    return this.#getGitHubToken(repository)
       .andThen((token) =>
         new GitHubRepository(
           repository,
@@ -88,16 +125,24 @@ export class RepositoryConfigurationService {
           }),
         ).resolveCommit()
       )
-      .map(() => undefined)
-      .mapErr((error) =>
-        new RepositoryError(
-          error.code === "REPOSITORY_GITHUB_AUTH_FAILED"
-            ? error.code
-            : "REPOSITORY_GITHUB_FAILED",
-          `I couldn't access ${repository.owner}/${repository.name} with the access Paige needs.`,
-          { cause: error },
-        )
-      );
+      .map(() => ({ ...repository, access: "installation" as const }));
+  }
+
+  #accessError(
+    repository: RepositoryConfig,
+    error: RepositoryError,
+  ): RepositoryError {
+    if (
+      error.code === "REPOSITORY_GITHUB_AUTH_FAILED" ||
+      error.code === "REPOSITORY_GITHUB_RATE_LIMITED"
+    ) {
+      return error;
+    }
+    return new RepositoryError(
+      "REPOSITORY_GITHUB_FAILED",
+      `I couldn't access ${repository.owner}/${repository.name} with the access Paige needs.`,
+      { cause: error },
+    );
   }
 }
 

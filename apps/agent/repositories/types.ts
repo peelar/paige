@@ -3,6 +3,11 @@ export interface RepositoryConfig {
   owner: string;
   name: string;
   role: "documentation" | "evidence";
+  /**
+   * Older saved configurations have no access value. Treat those as
+   * installation-backed so an upgrade never broadens private repository access.
+   */
+  access?: "public" | "installation";
 }
 
 export type DocumentationRepository = RepositoryConfig & {

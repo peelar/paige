@@ -18,12 +18,16 @@ All configured repositories use one authenticated shallow Git cache under
   GitHub firewall access. Eve binds the sandbox to turn cancellation, so the
   Git boundary does not carry a separate abort signal. GitHub App tokens are
   brokered at the firewall and never enter commands, remotes, or tool results.
-- `shared/github.ts` requests a GitHub App token for the repository being used
-  and only the permissions its role needs. `createGitHubRequest` binds that
-  token and Eve's turn cancellation to the HTTP transport. GitHub's verified
-  visibility decides Git transport: public repositories fetch without
-  credentials, while private repositories receive the scoped token through
-  the sandbox firewall.
+- `shared/github.ts` uses unauthenticated GitHub access for verified public
+  evidence repositories. Documentation and private evidence repositories use
+  a GitHub App token with only the permissions their role needs.
+  `createGitHubRequest` binds optional authentication and Eve's turn
+  cancellation to the HTTP transport. GitHub's verified visibility also
+  decides Git transport: public repositories fetch without credentials, while
+  private repositories receive the scoped token through the sandbox firewall.
+- GitHub rate-limit responses remain distinct repository errors with retry
+  timing. They must not be reported as missing repositories or missing app
+  access.
 - `RepositoryFiles` in `files.ts` lists, searches, reads, and compares files
   at commits directly from Git objects, so read operations do not need a
   populated working tree.

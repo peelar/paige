@@ -374,6 +374,59 @@ describe("repository GitHub boundary", () => {
     assert.match(fetchMock.mock.calls[1][0].toString(), /commits\/3.21$/);
   });
 
+  test("omits authentication for public GitHub requests", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({
+        default_branch: "main",
+        private: false,
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        sha: resolvedRepository.commitSha,
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await new GitHubRepository(
+      { ...repository, access: "public" },
+      createGitHubRequest({
+        abortSignal: new AbortController().signal,
+      }),
+    ).resolveCommit();
+
+    assert(result.isOk());
+    assert.deepEqual(fetchMock.mock.calls[0][1]?.headers, {
+      accept: "application/vnd.github+json",
+      "x-github-api-version": "2026-03-10",
+    });
+  });
+
+  test("reports a confirmed GitHub rate limit with its reset time", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(new Response(null, {
+        status: 403,
+        headers: {
+          "x-ratelimit-remaining": "0",
+          "x-ratelimit-reset": "2000000000",
+        },
+      })),
+    );
+
+    const result = await new GitHubRepository(
+      { ...repository, access: "public" },
+      createGitHubRequest({
+        abortSignal: new AbortController().signal,
+      }),
+    ).resolveCommit();
+
+    assert(result.isErr());
+    assert.equal(result.error.code, "REPOSITORY_GITHUB_RATE_LIMITED");
+    assert.equal(
+      result.error.message,
+      "GitHub rate limited this request. Try again after 2033-05-18T03:33:20.000Z.",
+    );
+  });
+
   test("preserves cancellation as a rejected promise", async () => {
     const controller = new AbortController();
     const cancellation = new Error("cancelled");

@@ -77,7 +77,7 @@ export interface GitHubRequest {
 
 /** Binds authentication and turn cancellation to the GitHub HTTP transport. */
 export function createGitHubRequest(input: {
-  token: string;
+  token?: string;
   abortSignal: AbortSignal;
 }): GitHubRequest {
   return {
@@ -86,6 +86,31 @@ export function createGitHubRequest(input: {
     graphql: (query, variables) =>
       githubGraphql(query, variables, input.token, input.abortSignal),
   };
+}
+
+export interface RepositoryGitHubAccess {
+  request: GitHubRequest;
+  token?: string;
+}
+
+/** Resolves the configured public or installation-backed GitHub transport. */
+export function resolveRepositoryGitHubAccess(
+  repository: RepositoryConfig,
+  abortSignal: AbortSignal,
+  getGitHubToken: (
+    repository: RepositoryConfig,
+  ) => RepositoryResultAsync<string> = resolveGitHubToken,
+): RepositoryResultAsync<RepositoryGitHubAccess> {
+  if (repository.access === "public") {
+    return new ResultAsync(Promise.resolve(ok({
+      request: createGitHubRequest({ abortSignal }),
+    })));
+  }
+
+  return getGitHubToken(repository).map((token) => ({
+    request: createGitHubRequest({ token, abortSignal }),
+    token,
+  }));
 }
 
 export class GitHubRepository<
@@ -508,7 +533,7 @@ function normalizeRequestedRef(value: string): RepositoryResult<string> {
 
 function githubJson(
   path: string,
-  token: string,
+  token: string | undefined,
   abortSignal: AbortSignal,
   options: GitHubRequestOptions = {},
 ): RepositoryResultAsync<unknown | undefined> {
@@ -530,7 +555,7 @@ function githubJson(
 function githubGraphql(
   query: string,
   variables: Record<string, unknown>,
-  token: string,
+  token: string | undefined,
   abortSignal: AbortSignal,
 ): RepositoryResultAsync<unknown> {
   const path = "/graphql";
@@ -570,7 +595,7 @@ function githubGraphql(
 
 function githubFetch(
   path: string,
-  token: string,
+  token: string | undefined,
   abortSignal: AbortSignal,
   options: GitHubRequestOptions = {},
 ): RepositoryResultAsync<Response | undefined> {
@@ -578,7 +603,7 @@ function githubFetch(
     accept: "application/vnd.github+json",
     "x-github-api-version": GITHUB_API_VERSION,
   };
-  headers.authorization = `Bearer ${token}`;
+  if (token !== undefined) headers.authorization = `Bearer ${token}`;
   if (options.body !== undefined) headers["content-type"] = "application/json";
 
   const request = fetch(`https://api.github.com${path}`, {
@@ -592,6 +617,15 @@ function githubFetch(
         ? ok(undefined)
         : response.ok
         ? ok(response)
+        : isGitHubRateLimited(response)
+        ? err(gitHubRateLimitError(response))
+        : response.status === 404
+        ? err(
+            new RepositoryError(
+              "REPOSITORY_GITHUB_NOT_FOUND",
+              `GitHub resource was not found: ${path}`,
+            ),
+          )
         : err(
             new RepositoryError(
               "REPOSITORY_GITHUB_FAILED",
@@ -613,6 +647,28 @@ function githubFetch(
   );
 
   return new ResultAsync(request);
+}
+
+function isGitHubRateLimited(response: Response): boolean {
+  return response.status === 429 ||
+    (response.status === 403 &&
+      (response.headers.get("x-ratelimit-remaining") === "0" ||
+        response.headers.has("retry-after")));
+}
+
+function gitHubRateLimitError(response: Response): RepositoryError {
+  const resetSeconds = Number(response.headers.get("x-ratelimit-reset"));
+  const retryAfter = response.headers.get("retry-after");
+  const retryMessage = Number.isSafeInteger(resetSeconds) && resetSeconds > 0
+    ? ` Try again after ${new Date(resetSeconds * 1_000).toISOString()}.`
+    : retryAfter !== null
+    ? ` Try again after ${retryAfter} seconds.`
+    : " Try again later.";
+
+  return new RepositoryError(
+    "REPOSITORY_GITHUB_RATE_LIMITED",
+    `GitHub rate limited this request.${retryMessage}`,
+  );
 }
 
 function readStringProperty(

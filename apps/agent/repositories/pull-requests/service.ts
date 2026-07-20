@@ -10,7 +10,7 @@ import type {
 } from "../shared/errors";
 import { RepositoryError } from "../shared/errors";
 import {
-  createGitHubRequest,
+  resolveRepositoryGitHubAccess,
   resolveGitHubToken,
 } from "../shared/github";
 import type { RepositoryConfig } from "../types";
@@ -316,11 +316,11 @@ export class PullRequestReadService {
     return this.#catalog().andThen((repositories) =>
       resolveConfiguredRepository(repositories, repositoryId).asyncAndThen(
         (repository) =>
-          this.#getGitHubToken(repository).andThen((token) => {
-            const request = createGitHubRequest({
-              token,
-              abortSignal: this.#ctx.abortSignal,
-            });
+          resolveRepositoryGitHubAccess(
+            repository,
+            this.#ctx.abortSignal,
+            this.#getGitHubToken,
+          ).andThen(({ request }) => {
             return request.json(repositoryResource(repository, resource))
               .andThen((value) => parse(value));
           }),
