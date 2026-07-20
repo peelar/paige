@@ -1,5 +1,7 @@
 import { createClient } from "@libsql/client";
+import { err, ok, Result } from "neverthrow";
 
+import type { RepositoryResult } from "../shared/errors";
 import { RepositoryError } from "../shared/errors";
 import {
   LibsqlRepositoryConfigurationStore,
@@ -7,21 +9,32 @@ import {
 
 let store: LibsqlRepositoryConfigurationStore | undefined;
 
-export function repositoryConfigurationStore():
-  LibsqlRepositoryConfigurationStore {
-  if (store !== undefined) return store;
+export function resolveRepositoryConfigurationStore(): RepositoryResult<
+  LibsqlRepositoryConfigurationStore
+> {
+  if (store !== undefined) return ok(store);
 
   const url = process.env.PAIGE_DATABASE_URL?.trim();
   if (!url) {
-    throw new RepositoryError(
+    return err(new RepositoryError(
       "REPOSITORY_CONFIGURATION_FAILED",
       "Repository setup storage is not configured.",
-    );
+    ));
   }
 
-  store = new LibsqlRepositoryConfigurationStore(createClient({
-    url,
-    authToken: process.env.PAIGE_DATABASE_AUTH_TOKEN?.trim() || undefined,
-  }));
-  return store;
+  return Result.fromThrowable(
+    () => {
+      store = new LibsqlRepositoryConfigurationStore(createClient({
+        url,
+        authToken: process.env.PAIGE_DATABASE_AUTH_TOKEN?.trim() || undefined,
+      }));
+      return store;
+    },
+    (cause) =>
+      new RepositoryError(
+        "REPOSITORY_CONFIGURATION_FAILED",
+        "Repository setup storage could not be initialized.",
+        { cause },
+      ),
+  )();
 }

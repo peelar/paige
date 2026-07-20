@@ -1,7 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
-import { repositoryConfigurationStore } from "../../repositories/configuration/database";
+import { resolveRepositoryConfigurationStore } from "../../repositories/configuration/database";
 import {
   clearRepositoryConfigurationProposal,
   deferRepositoryConfiguration,
@@ -36,10 +36,9 @@ export default defineTool({
     "Manage this agent's repository setup. Read the active and proposed setup; propose a complete replacement only after first collecting one documentation GitHub URL and then separately asking for any optional product-evidence GitHub URLs; confirm only after the user explicitly says the summary is correct; discard a proposal for corrections; or defer when the user says not now. Do not propose immediately after the documentation URL alone. Proposals validate access but do not activate anything.",
   inputSchema: repositoryConfigurationToolInputSchema,
   async execute(input, ctx) {
-    const service = new RepositoryConfigurationService(
-      ctx,
-      repositoryConfigurationStore(),
-    );
+    const service = resolveRepositoryConfigurationStore()
+      .map((store) => new RepositoryConfigurationService(ctx, store))
+      .match((value) => value, raiseRepositoryError);
     const session = repositoryConfigurationSessionState.get();
 
     switch (input.action) {

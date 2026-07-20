@@ -1,6 +1,6 @@
 import { defineDynamic, defineInstructions } from "eve/instructions";
 
-import { repositoryConfigurationStore } from "../../repositories/configuration/database";
+import { resolveRepositoryConfigurationStore } from "../../repositories/configuration/database";
 import {
   repositoryConfigurationSessionState,
 } from "../../repositories/configuration/draft";
@@ -12,8 +12,8 @@ export default defineDynamic({
   events: {
     "turn.started": async (_event, _ctx) => {
       const session = repositoryConfigurationSessionState.get();
-      const active = await repositoryConfigurationStore()
-        .get();
+      const active = await resolveRepositoryConfigurationStore()
+        .asyncAndThen((store) => store.get());
       if (active.isErr()) throw active.error;
 
       if (session.proposal !== undefined) {
