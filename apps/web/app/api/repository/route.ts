@@ -1,9 +1,9 @@
-import { repositoryConfigurationStore } from "../../../../agent/repositories/configuration/database";
+import { resolveRepositoryConfigurationStore } from "../../../../agent/repositories/configuration/database";
 import {
   RepositoryConfigurationService,
   summarizeRepositoryConfiguration,
 } from "../../../../agent/repositories/configuration/service";
-import { RepositoryError } from "../../../../agent/repositories/shared/errors";
+import type { RepositoryError } from "../../../../agent/repositories/shared/errors";
 import {
   isOperatorAccessFailure,
   localOperatorAccess,
@@ -17,26 +17,21 @@ export async function GET(request: Request): Promise<Response> {
     return errorResponse(access.status, access.error);
   }
 
-  try {
-    const active = await repositoryConfigurationStore().get().match(
-      (value) => value,
-      raiseRepositoryError,
-    );
+  const result = await resolveRepositoryConfigurationStore()
+    .asyncAndThen((store) => store.get());
+  if (result.isErr()) return repositoryErrorResponse(result.error);
 
-    return Response.json(
-      active === undefined
-        ? { configured: false }
-        : {
-          configured: true,
-          repository: summarizeRepositoryConfiguration(active)
-            .documentationRepository,
-          updatedAt: active.updatedAt,
-        },
-      { headers: noStoreHeaders },
-    );
-  } catch (error) {
-    return repositoryErrorResponse(error);
-  }
+  return Response.json(
+    result.value === undefined
+      ? { configured: false }
+      : {
+        configured: true,
+        repository: summarizeRepositoryConfiguration(result.value)
+          .documentationRepository,
+        updatedAt: result.value.updatedAt,
+      },
+    { headers: noStoreHeaders },
+  );
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -60,53 +55,48 @@ export async function POST(request: Request): Promise<Response> {
   ) {
     return errorResponse(400, "Expected a repository URL.");
   }
+  const repositoryUrl = body.repositoryUrl;
 
-  try {
-    const store = repositoryConfigurationStore();
-    const service = new RepositoryConfigurationService(
-      { abortSignal: request.signal },
-      store,
-    );
-    const active = await service.get().match(
-      (value) => value,
-      raiseRepositoryError,
-    );
-    const evidenceRepositoryUrls = active?.evidenceRepositories.map(
-      ({ owner, name }) => `https://github.com/${owner}/${name}`,
-    ) ?? [];
-    const configuration = await service.propose({
-      documentationRepositoryUrl: body.repositoryUrl,
-      evidenceRepositoryUrls,
-    }).match((value) => value, raiseRepositoryError);
-    const saved = await service.confirm({
-      configuration,
-      expectedRevision: active?.revision ?? null,
-    }).match((value) => value, raiseRepositoryError);
+  const result = await resolveRepositoryConfigurationStore()
+    .asyncAndThen((store) => {
+      const service = new RepositoryConfigurationService(
+        { abortSignal: request.signal },
+        store,
+      );
+      return service.get().andThen((active) => {
+        const evidenceRepositoryUrls = active?.evidenceRepositories.map(
+          ({ owner, name }) => `https://github.com/${owner}/${name}`,
+        ) ?? [];
+        return service.propose({
+          documentationRepositoryUrl: repositoryUrl,
+          evidenceRepositoryUrls,
+        }).andThen((configuration) =>
+          service.confirm({
+            configuration,
+            expectedRevision: active?.revision ?? null,
+          })
+        );
+      });
+    });
+  if (result.isErr()) return repositoryErrorResponse(result.error);
 
-    return Response.json(
-      {
-        configured: true,
-        repository: summarizeRepositoryConfiguration(saved)
-          .documentationRepository,
-        updatedAt: saved.updatedAt,
-      },
-      { headers: noStoreHeaders },
-    );
-  } catch (error) {
-    return repositoryErrorResponse(error);
-  }
+  return Response.json(
+    {
+      configured: true,
+      repository: summarizeRepositoryConfiguration(result.value)
+        .documentationRepository,
+      updatedAt: result.value.updatedAt,
+    },
+    { headers: noStoreHeaders },
+  );
 }
 
 const noStoreHeaders = { "cache-control": "no-store" };
 
-function repositoryErrorResponse(error: unknown): Response {
-  if (error instanceof RepositoryError) {
-    const status = error.code === "REPOSITORY_INVALID_INPUT" ? 400 :
-      error.code === "REPOSITORY_CONFLICT" ? 409 : 503;
-    return errorResponse(status, error.message);
-  }
-
-  return errorResponse(503, "Repository setup is temporarily unavailable.");
+function repositoryErrorResponse(error: RepositoryError): Response {
+  const status = error.code === "REPOSITORY_INVALID_INPUT" ? 400 :
+    error.code === "REPOSITORY_CONFLICT" ? 409 : 503;
+  return errorResponse(status, error.message);
 }
 
 function errorResponse(status: number, error: string): Response {
@@ -114,8 +104,4 @@ function errorResponse(status: number, error: string): Response {
     { error },
     { status, headers: noStoreHeaders },
   );
-}
-
-function raiseRepositoryError(error: Error): never {
-  throw error;
 }

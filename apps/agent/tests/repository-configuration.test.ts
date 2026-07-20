@@ -12,11 +12,38 @@ import {
   proposeRepositoryConfiguration,
 } from "../repositories/configuration/draft";
 import {
+  resolveRepositoryConfigurationStore,
+} from "../repositories/configuration/database";
+import {
   LibsqlRepositoryConfigurationStore,
 } from "../repositories/configuration/store";
 import {
   resolveRepositoryCatalog,
 } from "../repositories/configuration/resolver";
+
+describe("repository configuration database", () => {
+  test("returns a typed error when storage is not configured", () => {
+    const previousUrl = process.env.PAIGE_DATABASE_URL;
+    delete process.env.PAIGE_DATABASE_URL;
+
+    try {
+      const result = resolveRepositoryConfigurationStore();
+
+      assert(result.isErr());
+      assert.equal(result.error.code, "REPOSITORY_CONFIGURATION_FAILED");
+      assert.equal(
+        result.error.message,
+        "Repository setup storage is not configured.",
+      );
+    } finally {
+      if (previousUrl === undefined) {
+        delete process.env.PAIGE_DATABASE_URL;
+      } else {
+        process.env.PAIGE_DATABASE_URL = previousUrl;
+      }
+    }
+  });
+});
 
 describe("repository configuration normalization", () => {
   test("normalizes GitHub URLs and removes duplicate evidence repositories", () => {
