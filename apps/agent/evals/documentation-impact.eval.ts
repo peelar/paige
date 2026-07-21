@@ -33,12 +33,13 @@ export default defineEval({
       t.reply,
       satisfies((reply) => {
         const value = String(reply);
-        const opening = value.slice(0, 160);
-        return /tl;dr/i.test(opening) &&
+        const wordCount = value.trim().split(/\s+/u).length;
+        return wordCount <= 140 &&
           hasDescriptiveMarkdownLink(value, pullRequestUrl) &&
           hasDescriptiveMarkdownLink(value, documentationUrl) &&
           /no (documentation|docs) change (is )?(needed|required)/i.test(value) &&
           /optional/i.test(value) &&
+          !/tl;dr/iu.test(value) &&
           !/(in plain english|simply put|in simple terms)/i.test(value) &&
           !/\n\|.+\|\n\|[-:| ]+\|/.test(value) &&
           !/^#{1,6} bottom line/im.test(value);
