@@ -1,27 +1,23 @@
-import { createSlackAdapter } from "@chat-adapter/slack";
-import { connectSlackAdapter } from "@vercel/connect/chat";
 import { chatSdkChannel } from "eve/channels/chat-sdk";
 
+import { slackAdapter } from "../../slack/adapter";
 import { postSlackAuthorizationRequired } from "../../slack/authorization";
 import { registerSlackMessages } from "../../slack/messages";
+import { quietSlackProgressEvents } from "../../slack/progress";
+import { clearSlackWorkingReaction } from "../../slack/reactions";
 import { SlackChannelService } from "../../slack/service";
 import { createSlackState } from "../../slack/state";
-
-const connector = process.env.PAIGE_SLACK_CONNECTOR?.trim() || "slack/paige";
-const signingSecret = process.env.PAIGE_SLACK_SIGNING_SECRET?.trim();
-if (!signingSecret) {
-  throw new Error("PAIGE_SLACK_SIGNING_SECRET is required.");
-}
-const { botToken } = connectSlackAdapter(connector);
 
 export const { bot, channel, send } = chatSdkChannel({
   adapters: {
     // Slack calls Paige directly so Connect cannot filter thread replies.
     // Keep Connect only for rotating outbound bot credentials.
-    slack: createSlackAdapter({ botToken, signingSecret }),
+    slack: slackAdapter,
   },
   events: {
+    ...quietSlackProgressEvents,
     "authorization.required": async (event, context) => {
+      await clearSlackWorkingReaction(context.thread?.adapter ?? null);
       await postSlackAuthorizationRequired(event, context.thread);
     },
   },
