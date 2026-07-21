@@ -9,6 +9,7 @@
     "db:studio": "drizzle-kit studio",
     "dev": "eve dev",
     "dev:inspect": "eve dev --tools full --logs all",
+    "dev:slack-preview": "node scripts/slack-preview.mjs",
     "dev:portless": "pnpm dev",
     "eval": "eve eval",
     "eval:benchmark": "tsx evals/run-benchmark.ts",

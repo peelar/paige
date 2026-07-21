@@ -4,6 +4,7 @@ import type { Message, Thread } from "chat";
 import { test, vi } from "vitest";
 
 import { postSlackAuthorizationRequired } from "../slack/authorization";
+import { resolveSlackRuntimeConfiguration } from "../slack/configuration";
 import { registerSlackMessages } from "../slack/messages";
 import {
   beginSlackProgressTurn,
@@ -19,6 +20,44 @@ import {
   extractSlackWorkspaceId,
   SlackChannelService,
 } from "../slack/service";
+
+test("Slack uses the managed connector unless preview is explicit", () => {
+  assert.deepEqual(resolveSlackRuntimeConfiguration({
+    PAIGE_SLACK_SIGNING_SECRET: " production-secret ",
+  }), {
+    mode: "connect",
+    connector: "slack/paige",
+    signingSecret: "production-secret",
+  });
+});
+
+test("Slack preview requires its own complete credential pair", () => {
+  assert.deepEqual(resolveSlackRuntimeConfiguration({
+    PAIGE_SLACK_MODE: "preview",
+    PAIGE_SLACK_PREVIEW_BOT_TOKEN: " preview-token ",
+    PAIGE_SLACK_PREVIEW_SIGNING_SECRET: " preview-secret ",
+    PAIGE_SLACK_SIGNING_SECRET: "production-secret",
+  }), {
+    mode: "preview",
+    botToken: "preview-token",
+    signingSecret: "preview-secret",
+  });
+
+  assert.throws(
+    () => resolveSlackRuntimeConfiguration({
+      PAIGE_SLACK_MODE: "preview",
+      PAIGE_SLACK_PREVIEW_SIGNING_SECRET: "preview-secret",
+    }),
+    /PAIGE_SLACK_PREVIEW_BOT_TOKEN is required/,
+  );
+});
+
+test("Slack rejects unknown runtime modes", () => {
+  assert.throws(
+    () => resolveSlackRuntimeConfiguration({ PAIGE_SLACK_MODE: "socket" }),
+    /must be "connect" or "preview"/,
+  );
+});
 
 test("Slack follows mentioned threads and continues every later message", async () => {
   let directMessageHandler:

@@ -22,6 +22,8 @@ production environment, connects the shared Turso database, and verifies the
 coding harness. Then run `pnpm dev` to start the local operator app. Its chat
 connects to the production Paige agent through a server-side authenticated
 proxy; run `pnpm dev:agent` separately only when working on the agent runtime.
+Use the [Slack preview workflow](./docs/SLACK_PREVIEW.md) to exercise local
+agent changes from a dedicated Slack bot without deploying them first.
 
 Paige requires the shared Turso database provisioned through the linked Vercel
 project. Local development does not silently create a separate database.
