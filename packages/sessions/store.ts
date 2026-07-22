@@ -41,7 +41,7 @@ export class LibsqlAgentSessionStore implements AgentSessionStore {
 
   constructor(client: Client) {
     this.#database = drizzle(client);
-    this.#ready = createSchema(client);
+    this.#ready = verifySchema(client);
   }
 
   get(
@@ -162,20 +162,13 @@ export class LibsqlAgentSessionStore implements AgentSessionStore {
   }
 }
 
-async function createSchema(client: Client): Promise<void> {
+async function verifySchema(client: Client): Promise<void> {
+  // Runtime code must never mutate schema. This read makes a missing migration
+  // fail at the storage boundary with the normal typed session error.
   await client.execute(`
-    CREATE TABLE IF NOT EXISTS agent_sessions (
-      session_id TEXT PRIMARY KEY NOT NULL,
-      source TEXT,
-      title TEXT,
-      status TEXT NOT NULL,
-      started_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    )
-  `);
-  await client.execute(`
-    CREATE INDEX IF NOT EXISTS agent_sessions_updated_at_idx
-    ON agent_sessions (updated_at DESC)
+    SELECT session_id, source, title, status, started_at, updated_at
+    FROM agent_sessions
+    LIMIT 0
   `);
 }
 

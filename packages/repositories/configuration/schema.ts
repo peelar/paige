@@ -1,4 +1,5 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type { RepositoryConfigurationData } from "./types.js";
 
@@ -12,4 +13,7 @@ export const repositoryConfiguration = sqliteTable(
     revision: integer("revision").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
+  (table) => [
+    check("agent_repository_configuration_singleton", sql`${table.id} = 1`),
+  ],
 );

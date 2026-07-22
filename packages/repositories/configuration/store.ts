@@ -25,7 +25,7 @@ export class LibsqlRepositoryConfigurationStore
 
   constructor(client: Client) {
     this.#database = drizzle(client);
-    this.#ready = createSchema(client);
+    this.#ready = verifySchema(client);
   }
 
   get(): RepositoryResultAsync<ActiveRepositoryConfiguration | undefined> {
@@ -87,14 +87,12 @@ export class LibsqlRepositoryConfigurationStore
   }
 }
 
-async function createSchema(client: Client): Promise<void> {
+async function verifySchema(client: Client): Promise<void> {
+  // Schema changes belong to the explicit migration command, not a request.
   await client.execute(`
-    CREATE TABLE IF NOT EXISTS agent_repository_configuration (
-      id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
-      configuration TEXT NOT NULL,
-      revision INTEGER NOT NULL,
-      updated_at TEXT NOT NULL
-    )
+    SELECT id, configuration, revision, updated_at
+    FROM agent_repository_configuration
+    LIMIT 0
   `);
 }
 

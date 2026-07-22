@@ -9,9 +9,11 @@ loadEnvFile(fileURLToPath(new URL(".env.local", import.meta.url)));
 // file follows that contract instead of Paige's application module convention.
 export default defineConfig({
   dialect: "turso",
+  out: "../../database/migrations",
   schema: [
     "../../packages/repositories/configuration/schema.ts",
     "../../packages/sessions/schema.ts",
+    "./slack/schema.ts",
   ],
   dbCredentials: {
     url: process.env.PAIGE_DATABASE_URL!,

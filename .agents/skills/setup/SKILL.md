@@ -22,8 +22,8 @@ the coding agent, not a skill exposed to the Paige runtime.
 
    It installs dependencies and pulls the linked production environment into
    a temporary file without printing values. It maps the Vercel-provided Turso
-   variables, verifies the remote connection, and writes app-owned local
-   environments:
+   variables, verifies the remote connection, writes app-owned local
+   environments, and applies committed database migrations:
 
    - `apps/agent/.env.local` contains the database, agent connectors, and model
      access values.
@@ -41,6 +41,8 @@ the coding agent, not a skill exposed to the Paige runtime.
    setup. Slack sends inbound events directly to Paige, so the pulled
    `PAIGE_SLACK_SIGNING_SECRET` is required alongside the Connect connector
    used for outbound bot credentials.
+   Runtime requests never create tables; `pnpm db:migrate` is the same explicit
+   migration command when operating outside this setup flow.
 4. If the provisioner opens Vercel Connect, tell the user to finish the Slack
    installation in the browser. Pause, then rerun the provisioner. Do not ask
    the user to copy a workspace ID or bot token.

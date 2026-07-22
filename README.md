@@ -26,7 +26,10 @@ Use the [Slack preview workflow](./docs/SLACK_PREVIEW.md) to exercise local
 agent changes from a dedicated Slack bot without deploying them first.
 
 Paige requires the shared Turso database provisioned through the linked Vercel
-project. Local development does not silently create a separate database.
+project. The setup flow applies committed migrations; runtime requests never
+create or alter tables. Operators can apply the same migrations explicitly with
+`pnpm db:migrate`. Local development does not silently create a separate
+database.
 
 On the first Slack direct message, Paige offers to connect one documentation
 repository and any optional product repositories it should use as evidence.
@@ -60,7 +63,7 @@ Slack · Linear · Releases · Repositories
 | ------------------- | --------------------------------------------------------------------------------------- |
 | Agent runtime       | [Eve](https://eve.dev)                                                                  |
 | Operator app        | Next.js control plane with explicit local access or allowlisted GitHub authentication   |
-| Workspace           | pnpm and Turborepo with `apps/agent` and `apps/web`                                     |
+| Workspace           | pnpm and Turborepo with app packages plus explicit repository and session state packages |
 | Team context        | Explicit Slack mentions and Linear Agent Sessions                                       |
 | Repositories        | One agent-level setup for a writable documentation repository and optional read-only evidence repositories |
 | Isolation           | Eve sandbox with Git object caches under `/workspace/repositories`                       |

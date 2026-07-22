@@ -9,8 +9,16 @@ import type { QueueEntry } from "chat";
 import { describe, test } from "vitest";
 
 import { LibsqlChatStateAdapter } from "../slack/state";
+import { migrateTestDatabase } from "./database";
 
 describe("durable Slack Chat SDK state", () => {
+  test("requires the database migration before connecting", async () => {
+    const client = createClient({ url: ":memory:" });
+    const state = new LibsqlChatStateAdapter({ client: () => client });
+
+    await assert.rejects(state.connect(), /slack_chat_subscriptions/);
+  });
+
   test("shares subscriptions, cache, and locks across adapter instances", async () => {
     await withDatabase(async (client) => {
       const first = new LibsqlChatStateAdapter({ client: () => client });
@@ -63,6 +71,7 @@ async function withDatabase(
   const directory = await mkdtemp(join(tmpdir(), "paige-slack-state-"));
   const client = createClient({ url: `file:${join(directory, "state.db")}` });
   try {
+    await migrateTestDatabase(client);
     await run(client);
   } finally {
     client.close();

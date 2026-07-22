@@ -63,6 +63,9 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@libsql/client@0.17.4)(kysely@0.29.3)
       microsandbox:
         specifier: 0.5.7
         version: 0.5.7
@@ -9382,7 +9385,7 @@ snapshots:
       rolldown: 1.1.4
       srvx: 0.11.21
       unenv: 2.0.0-rc.24
-      unstorage: 2.0.0-alpha.7(db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3)))(ofetch@2.0.0-alpha.3)
+      unstorage: 2.0.0-alpha.7(db0@0.3.4)(ofetch@2.0.0-alpha.3)
     optionalDependencies:
       dotenv: 17.4.2
       jiti: 2.7.0
@@ -10365,7 +10368,7 @@ snapshots:
 
   unpipe@1.0.0: {}
 
-  unstorage@2.0.0-alpha.7(db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3)))(ofetch@2.0.0-alpha.3):
+  unstorage@2.0.0-alpha.7(db0@0.3.4)(ofetch@2.0.0-alpha.3):
     optionalDependencies:
       db0: 0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))
       ofetch: 2.0.0-alpha.3

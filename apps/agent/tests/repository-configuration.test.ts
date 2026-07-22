@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { createClient } from "@libsql/client";
 import { ResultAsync } from "neverthrow";
@@ -22,6 +25,7 @@ import {
   resolveRepositoryCatalog,
 } from "@paige/repositories/configuration/resolver";
 import { RepositoryConfigurationService } from "@paige/repositories/configuration/service";
+import { migrateTestDatabase } from "./database";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -130,7 +134,7 @@ describe("repository configuration access validation", () => {
     vi.stubGlobal("fetch", fetchMock);
     const service = new RepositoryConfigurationService(
       { abortSignal: new AbortController().signal },
-      createStore(),
+      await createStore(),
       {
         getGitHubToken: (repository) => {
           tokenRequests.push(`${repository.owner}/${repository.name}`);
@@ -170,7 +174,7 @@ describe("repository configuration access validation", () => {
     }));
     const service = new RepositoryConfigurationService(
       { abortSignal: new AbortController().signal },
-      createStore(),
+      await createStore(),
       {
         getGitHubToken: () =>
           ResultAsync.fromSafePromise(Promise.resolve("docs-token")),
@@ -190,8 +194,24 @@ describe("repository configuration access validation", () => {
 });
 
 describe("repository configuration store", () => {
+  test("requires the database migration before reading setup", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "paige-unmigrated-"));
+    const client = createClient({ url: `file:${join(directory, "state.db")}` });
+    const store = new LibsqlRepositoryConfigurationStore(client);
+
+    try {
+      const result = await store.get();
+
+      assert(result.isErr());
+      assert.equal(result.error.code, "REPOSITORY_CONFIGURATION_FAILED");
+    } finally {
+      client.close();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   test("stores one repository setup for the agent", async () => {
-    const store = createStore();
+    const store = await createStore();
     const missing = await store.get();
     assert(missing.isOk());
     assert.equal(missing.value, undefined);
@@ -211,7 +231,7 @@ describe("repository configuration store", () => {
   });
 
   test("activates a setup only when save is called", async () => {
-    const store = createStore();
+    const store = await createStore();
     const proposed = configuration("proposed");
 
     const beforeConfirmation = await store.get();
@@ -227,7 +247,7 @@ describe("repository configuration store", () => {
   });
 
   test("rejects concurrent first setup attempts", async () => {
-    const store = createStore();
+    const store = await createStore();
     const [first, second] = await Promise.all([
       store.save({
         configuration: configuration("first"),
@@ -246,7 +266,7 @@ describe("repository configuration store", () => {
   });
 
   test("uses revisions to reject stale repository changes", async () => {
-    const store = createStore();
+    const store = await createStore();
     const initial = await store.save({
       configuration: configuration("initial"),
       expectedRevision: null,
@@ -297,7 +317,7 @@ describe("conversation-scoped repository setup", () => {
 describe("active repository resolution", () => {
   test("keeps missing configuration explicit", async () => {
     const result = await resolveRepositoryCatalog(
-      createStore(),
+      await createStore(),
     );
 
     assert(result.isErr());
@@ -305,7 +325,7 @@ describe("active repository resolution", () => {
   });
 
   test("shares the active setup across channel identities", async () => {
-    const store = createStore();
+    const store = await createStore();
     const saved = await store.save({
       configuration: configuration("shared"),
       expectedRevision: null,
@@ -325,9 +345,11 @@ describe("active repository resolution", () => {
   });
 });
 
-function createStore(): LibsqlRepositoryConfigurationStore {
+async function createStore(): Promise<LibsqlRepositoryConfigurationStore> {
+  const client = createClient({ url: ":memory:" });
+  await migrateTestDatabase(client);
   return new LibsqlRepositoryConfigurationStore(
-    createClient({ url: ":memory:" }),
+    client,
   );
 }
 

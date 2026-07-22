@@ -12,9 +12,10 @@ import {
   sessionSourceForChannel,
   statusForLifecycleEvent,
 } from "../agent/hooks/session-index";
+import { migrateTestDatabase } from "./database";
 describe("agent session registry", () => {
   test("enriches an earlier lifecycle row without rolling status backward", async () => {
-    const store = createStore();
+    const store = await createStore();
     unwrap(await store.updateLifecycle({
       sessionId: "ses_1",
       status: "running",
@@ -46,7 +47,7 @@ describe("agent session registry", () => {
   });
 
   test("keeps the first title and filters sources by recent activity", async () => {
-    const store = createStore();
+    const store = await createStore();
     await store.register({
       sessionId: "ses_slack",
       source: "slack",
@@ -111,9 +112,11 @@ test("session titles stay compact", () => {
   );
 });
 
-function createStore(): AgentSessionService {
+async function createStore(): Promise<AgentSessionService> {
+  const client = createClient({ url: ":memory:" });
+  await migrateTestDatabase(client);
   return new AgentSessionService(
-    new LibsqlAgentSessionStore(createClient({ url: ":memory:" })),
+    new LibsqlAgentSessionStore(client),
   );
 }
 

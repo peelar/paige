@@ -29,7 +29,7 @@ export class LibsqlChatStateAdapter implements StateAdapter {
     const connecting = (async () => {
       const client = this.#clientProvider();
       try {
-        await createSchema(client);
+        await verifySchema(client);
         this.#client = client;
         this.#connected = true;
       } catch (error) {
@@ -326,37 +326,21 @@ function numberValue(value: Value | undefined): number {
   return 0;
 }
 
-async function createSchema(client: Client): Promise<void> {
+async function verifySchema(client: Client): Promise<void> {
+  // Connecting is intentionally read-only. Operators apply schema changes with
+  // the migration command before starting Paige.
   await client.batch([
     `
-      CREATE TABLE IF NOT EXISTS slack_chat_subscriptions (
-        thread_id TEXT PRIMARY KEY NOT NULL
-      )
+      SELECT thread_id FROM slack_chat_subscriptions LIMIT 0
     `,
     `
-      CREATE TABLE IF NOT EXISTS slack_chat_locks (
-        thread_id TEXT PRIMARY KEY NOT NULL,
-        token TEXT NOT NULL,
-        expires_at INTEGER NOT NULL
-      )
+      SELECT thread_id, token, expires_at FROM slack_chat_locks LIMIT 0
     `,
     `
-      CREATE TABLE IF NOT EXISTS slack_chat_cache (
-        state_key TEXT PRIMARY KEY NOT NULL,
-        state_value TEXT NOT NULL,
-        expires_at INTEGER
-      )
+      SELECT state_key, state_value, expires_at FROM slack_chat_cache LIMIT 0
     `,
     `
-      CREATE TABLE IF NOT EXISTS slack_chat_queue (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        thread_id TEXT NOT NULL,
-        entry TEXT NOT NULL
-      )
+      SELECT id, thread_id, entry FROM slack_chat_queue LIMIT 0
     `,
-    `
-      CREATE INDEX IF NOT EXISTS slack_chat_queue_thread_id_idx
-      ON slack_chat_queue (thread_id, id)
-    `,
-  ], "write");
+  ], "read");
 }

@@ -139,6 +139,10 @@ writeLocalEnvironment(webEnvPath, localEnvironment([
 ]));
 if (existsSync(legacyRootEnvPath)) unlinkSync(legacyRootEnvPath);
 
+// Database structure is applied as an explicit setup step. Application
+// requests only verify the schema and never create or alter tables.
+run("pnpm", ["db:migrate"]);
+
 const configuredConnector = firstValue(
   process.env.PAIGE_SLACK_CONNECTOR?.trim(),
   envValue(pulledEnv, "PAIGE_SLACK_CONNECTOR"),
@@ -159,6 +163,7 @@ console.log("Local development setup complete.");
 console.log(`Slack connector: ${slackConnector.uid}`);
 console.log("Slack installation: verified");
 console.log("Database: Turso connection verified");
+console.log("Database migrations: applied");
 console.log("Production agent: verified");
 
 function resolveProductionAgentUrl(configuredUrl) {
