@@ -1,7 +1,4 @@
-import type {
-  SandboxCommandResult,
-  SandboxSession,
-} from "eve/sandbox";
+import type { SandboxSession } from "eve/sandbox";
 import { err, ok, Result, ResultAsync } from "neverthrow";
 
 import type { RepositoryResult } from "@paige/repositories/errors";
@@ -22,11 +19,10 @@ import {
   MAX_FILE_BYTES,
 } from "./policy";
 import {
-  parseNullSeparated,
+  type DocumentationSandboxCommand,
+  DocumentationSandboxShell,
   quoteShellArgument,
-  successfulCommand,
-  summarizeCommandFailure,
-} from "./sandbox-command";
+} from "./sandbox-shell";
 import type {
   ApprovedDocumentationPublication,
   DocumentationCommit,
@@ -39,6 +35,7 @@ const WORKTREE_ROOT = "/workspace/worktrees";
 
 export class DocumentationWorkspace {
   readonly #sandbox: SandboxSession;
+  readonly #shell: DocumentationSandboxShell;
   readonly #abortSignal: AbortSignal;
 
   constructor(input: {
@@ -46,6 +43,7 @@ export class DocumentationWorkspace {
     abortSignal: AbortSignal;
   }) {
     this.#sandbox = input.sandbox;
+    this.#shell = new DocumentationSandboxShell(input);
     this.#abortSignal = input.abortSignal;
   }
 
@@ -74,8 +72,7 @@ export class DocumentationWorkspace {
         const status = await this.#run(
           `git -C ${quoteShellArgument(path)} status --porcelain=v1`,
         );
-        const statusOk = successfulCommand(
-          status,
+        const statusOk = status.assertSucceeded(
           "Failed to inspect documentation workspace status",
         );
         if (statusOk.isErr()) return err(statusOk.error);
@@ -95,8 +92,7 @@ export class DocumentationWorkspace {
           const removed = await this.#run(
             `git -C ${quoteShellArgument(cache.path)} worktree remove ${quoteShellArgument(path)}`,
           );
-          const removedOk = successfulCommand(
-            removed,
+          const removedOk = removed.assertSucceeded(
             "Failed to replace the clean documentation workspace",
           );
           if (removedOk.isErr()) return err(removedOk.error);
@@ -170,8 +166,7 @@ export class DocumentationWorkspace {
       const switched = await this.#run(
         `git -C ${quoteShellArgument(input.state.path)} switch ${quoteShellArgument(input.branch)}`,
       );
-      const switchedOk = successfulCommand(
-        switched,
+      const switchedOk = switched.assertSucceeded(
         `Failed to reuse local branch ${input.branch}`,
       );
       if (switchedOk.isErr()) return err(switchedOk.error);
@@ -179,15 +174,14 @@ export class DocumentationWorkspace {
       const created = await this.#run(
         `git -C ${quoteShellArgument(input.state.path)} switch -c ${quoteShellArgument(input.branch)}`,
       );
-      const createdOk = successfulCommand(
-        created,
+      const createdOk = created.assertSucceeded(
         `Failed to create local branch ${input.branch}`,
       );
       if (createdOk.isErr()) return err(createdOk.error);
     } else {
       return err(new RepositoryError(
         "REPOSITORY_SANDBOX_FAILED",
-        `Failed to inspect local branch ${input.branch}: ${summarizeCommandFailure(existingBranch)}`,
+        `Failed to inspect local branch ${input.branch}: ${existingBranch.failureSummary()}`,
       ));
     }
 
@@ -195,18 +189,16 @@ export class DocumentationWorkspace {
     const staged = await this.#run(
       `git -C ${quoteShellArgument(input.state.path)} add -A -- ${pathspec}`,
     );
-    const stagedOk = successfulCommand(
-      staged,
+    const stagedOk = staged.assertSucceeded(
       "Failed to stage approved documentation paths",
     );
     if (stagedOk.isErr()) return err(stagedOk.error);
-    const stagedPaths = await this.#readCommand(
+    const stagedPaths = await this.#shell.readNullSeparated(
       `git -C ${quoteShellArgument(input.state.path)} diff --cached --name-only --no-renames -z ${quoteShellArgument(input.state.baseCommitSha)} --`,
       "Failed to verify staged documentation paths",
-      { trim: false },
     );
     if (stagedPaths.isErr()) return err(stagedPaths.error);
-    const actualPaths = parseNullSeparated(stagedPaths.value).sort();
+    const actualPaths = stagedPaths.value.sort();
     if (!sameStrings(actualPaths, [...input.changedFiles].sort())) {
       return err(new RepositoryError(
         "REPOSITORY_APPROVAL_MISMATCH",
@@ -217,8 +209,7 @@ export class DocumentationWorkspace {
     const committed = await this.#run(
       `git -C ${quoteShellArgument(input.state.path)} -c user.name=Paige -c user.email=paige@users.noreply.github.com commit --no-gpg-sign -m ${quoteShellArgument(input.message)}`,
     );
-    const committedOk = successfulCommand(
-      committed,
+    const committedOk = committed.assertSucceeded(
       "Failed to commit approved documentation changes",
     );
     if (committedOk.isErr()) return err(committedOk.error);
@@ -244,7 +235,7 @@ export class DocumentationWorkspace {
     if (branch.exitCode !== 0) {
       return err(new RepositoryError(
         "REPOSITORY_SANDBOX_FAILED",
-        `Failed to inspect local branch ${input.approval.branch}: ${summarizeCommandFailure(branch)}`,
+        `Failed to inspect local branch ${input.approval.branch}: ${branch.failureSummary()}`,
       ));
     }
     const commitSha = branch.stdout.trim();
@@ -304,13 +295,12 @@ export class DocumentationWorkspace {
     digest: string;
     files: ProposedDocumentationFile[];
   }>> {
-    const changed = await this.#readCommand(
+    const changed = await this.#shell.readNullSeparated(
       `git -C ${quoteShellArgument(state.path)} diff --name-only --no-renames -z ${quoteShellArgument(state.baseCommitSha)} ${quoteShellArgument(commitSha)} --`,
       "Failed to inspect committed documentation paths",
-      { trim: false },
     );
     if (changed.isErr()) return err(changed.error);
-    const changedFiles = parseNullSeparated(changed.value).sort();
+    const changedFiles = changed.value.sort();
     if (changedFiles.length === 0 || changedFiles.length > MAX_DIFF_FILES) {
       return err(new RepositoryError(
         "REPOSITORY_APPROVAL_MISMATCH",
@@ -349,8 +339,7 @@ export class DocumentationWorkspace {
         files.push({ path, content: null });
         continue;
       }
-      const existsOk = successfulCommand(
-        exists,
+      const existsOk = exists.assertSucceeded(
         `Failed to inspect committed documentation file: ${path}`,
       );
       if (existsOk.isErr()) return err(existsOk.error);
@@ -401,7 +390,7 @@ export class DocumentationWorkspace {
     if (branch.exitCode !== 0 && branch.exitCode !== 1) {
       return err(new RepositoryError(
         "REPOSITORY_SANDBOX_FAILED",
-        `Failed to inspect the documentation workspace branch: ${summarizeCommandFailure(branch)}`,
+        `Failed to inspect the documentation workspace branch: ${branch.failureSummary()}`,
       ));
     }
     const branchValue = branch.exitCode === 0
@@ -486,8 +475,7 @@ export class DocumentationWorkspace {
       const detached = await this.#run(
         `git -C ${quoteShellArgument(state.path)} switch --detach ${quoteShellArgument(state.baseCommitSha)}`,
       );
-      const detachedOk = successfulCommand(
-        detached,
+      const detachedOk = detached.assertSucceeded(
         "Failed to restore the documentation workspace to its recorded base",
       );
       if (detachedOk.isErr()) return err(detachedOk.error);
@@ -571,23 +559,23 @@ export class DocumentationWorkspace {
     const root = await this.#run(
       `mkdir -p ${quoteShellArgument(WORKTREE_ROOT)}`,
     );
-    const rootOk = successfulCommand(
-      root,
+    const rootOk = root.assertSucceeded(
       "Failed to create the documentation worktree root",
     );
     if (rootOk.isErr()) return err(rootOk.error);
     const pruned = await this.#run(
       `git -C ${quoteShellArgument(cache.path)} worktree prune`,
     );
-    const prunedOk = successfulCommand(
-      pruned,
+    const prunedOk = pruned.assertSucceeded(
       "Failed to prune stale documentation worktrees",
     );
     if (prunedOk.isErr()) return err(prunedOk.error);
     const result = await this.#run(
       `git -C ${quoteShellArgument(cache.path)} worktree add --detach ${quoteShellArgument(path)} ${quoteShellArgument(cache.repository.commitSha)}`,
     );
-    return successfulCommand(result, "Failed to create documentation worktree");
+    return result.assertSucceeded(
+      "Failed to create documentation worktree",
+    );
   }
 
   async #verifyIdentity(input: {
@@ -645,8 +633,7 @@ export class DocumentationWorkspace {
   }
 
   async #pathExists(path: string): Promise<boolean> {
-    const result = await this.#run(`test -e ${quoteShellArgument(path)}`);
-    return result.exitCode === 0;
+    return await this.#shell.pathExists(path);
   }
 
   async #readCommand(
@@ -654,17 +641,11 @@ export class DocumentationWorkspace {
     message: string,
     options: { trim?: boolean } = {},
   ): Promise<RepositoryResult<string>> {
-    const result = await this.#run(command);
-    const successful = successfulCommand(result, message);
-    if (successful.isErr()) return err(successful.error);
-    return ok(options.trim === false ? result.stdout : result.stdout.trim());
+    return await this.#shell.read(command, message, options);
   }
 
-  async #run(command: string): Promise<SandboxCommandResult> {
-    return await this.#sandbox.run({
-      command,
-      abortSignal: this.#abortSignal,
-    });
+  async #run(command: string): Promise<DocumentationSandboxCommand> {
+    return await this.#shell.run(command);
   }
 }
 

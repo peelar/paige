@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import { posix } from "node:path";
 
-import type {
-  SandboxCommandResult,
-  SandboxSession,
-} from "eve/sandbox";
+import type { SandboxSession } from "eve/sandbox";
 import { err, ok, ResultAsync } from "neverthrow";
 
 import {
@@ -18,11 +15,10 @@ import type {
 import { RepositoryError } from "@paige/repositories/errors";
 import { MAX_DIFF_FILES, MAX_FILE_BYTES } from "./policy";
 import {
-  parseNullSeparated,
+  type DocumentationSandboxCommand,
+  DocumentationSandboxShell,
   quoteShellArgument,
-  successfulCommand,
-  summarizeCommandFailure,
-} from "./sandbox-command";
+} from "./sandbox-shell";
 import type {
   DocumentationDiff,
   DocumentationSearchMatch,
@@ -37,6 +33,7 @@ const MAX_SEARCH_EXCERPT_CHARACTERS = 500;
 
 export class DocumentationDraft {
   readonly #sandbox: SandboxSession;
+  readonly #shell: DocumentationSandboxShell;
   readonly #state: DocumentationWorkspaceState;
   readonly #abortSignal: AbortSignal;
 
@@ -46,6 +43,7 @@ export class DocumentationDraft {
     abortSignal: AbortSignal;
   }) {
     this.#sandbox = input.sandbox;
+    this.#shell = new DocumentationSandboxShell(input);
     this.#state = input.state;
     this.#abortSignal = input.abortSignal;
   }
@@ -66,12 +64,13 @@ export class DocumentationDraft {
       const result = await this.#run(
         `git -C ${quoteShellArgument(this.#state.path)} ls-files -co --exclude-standard -z${pathspec}`,
       );
-      const listed = successfulCommand(
-        result,
+      const listed = result.assertSucceeded(
         "Failed to list documentation workspace files",
       );
       if (listed.isErr()) return err(listed.error);
-      const files = [...new Set(parseNullSeparated(result.stdout))].sort();
+      const files = [
+        ...new Set(result.nullSeparatedOutput()),
+      ].sort();
       return ok({
         files: files.slice(0, input.limit),
         truncated: files.length > input.limit,
@@ -154,8 +153,7 @@ export class DocumentationDraft {
         const created = await this.#run(
           `mkdir -p ${quoteShellArgument(`${this.#state.path}/${directory}`)}`,
         );
-        const createdOk = successfulCommand(
-          created,
+        const createdOk = created.assertSucceeded(
           "Failed to create documentation directory",
         );
         if (createdOk.isErr()) return err(createdOk.error);
@@ -203,24 +201,22 @@ export class DocumentationDraft {
       const trackedResult = await this.#run(
         `git -C ${quoteShellArgument(this.#state.path)} diff --name-only --no-renames -z ${quoteShellArgument(this.#state.baseCommitSha)} --`,
       );
-      const trackedOk = successfulCommand(
-        trackedResult,
+      const trackedOk = trackedResult.assertSucceeded(
         "Failed to inspect tracked documentation changes",
       );
       if (trackedOk.isErr()) return err(trackedOk.error);
       const untrackedResult = await this.#run(
         `git -C ${quoteShellArgument(this.#state.path)} ls-files --others --exclude-standard -z`,
       );
-      const untrackedOk = successfulCommand(
-        untrackedResult,
+      const untrackedOk = untrackedResult.assertSucceeded(
         "Failed to inspect untracked documentation files",
       );
       if (untrackedOk.isErr()) return err(untrackedOk.error);
 
-      const untracked = new Set(parseNullSeparated(untrackedResult.stdout));
+      const untracked = new Set(untrackedResult.nullSeparatedOutput());
       const changedFiles = [
         ...new Set([
-          ...parseNullSeparated(trackedResult.stdout),
+          ...trackedResult.nullSeparatedOutput(),
           ...untracked,
         ]),
       ].sort();
@@ -415,8 +411,7 @@ export class DocumentationDraft {
       const binary = await this.#run(
         `git -C ${quoteShellArgument(this.#state.path)} diff --numstat ${quoteShellArgument(this.#state.baseCommitSha)} -- ${quoteShellArgument(path)}`,
       );
-      const binaryOk = successfulCommand(
-        binary,
+      const binaryOk = binary.assertSucceeded(
         `Failed to inspect documentation diff type: ${path}`,
       );
       if (binaryOk.isErr()) return err(binaryOk.error);
@@ -460,8 +455,7 @@ export class DocumentationDraft {
     const tracked = await this.#run(
       `git -C ${quoteShellArgument(this.#state.path)} diff --no-ext-diff --no-renames --no-color ${quoteShellArgument(this.#state.baseCommitSha)} -- ${pathspec}`,
     );
-    const trackedOk = successfulCommand(
-      tracked,
+    const trackedOk = tracked.assertSucceeded(
       "Failed to create the documentation patch",
     );
     if (trackedOk.isErr()) return err(trackedOk.error);
@@ -473,7 +467,7 @@ export class DocumentationDraft {
       if (untracked.exitCode !== 0 && untracked.exitCode !== 1) {
         return err(new RepositoryError(
           "REPOSITORY_SANDBOX_FAILED",
-          `Failed to create the patch for untracked file ${path}: ${summarizeCommandFailure(untracked)}`,
+          `Failed to create the patch for untracked file ${path}: ${untracked.failureSummary()}`,
         ));
       }
       patch += untracked.stdout;
@@ -488,8 +482,7 @@ export class DocumentationDraft {
   }
 
   async #pathExists(path: string): Promise<boolean> {
-    const result = await this.#run(`test -e ${quoteShellArgument(path)}`);
-    return result.exitCode === 0;
+    return await this.#shell.pathExists(path);
   }
 
   async #readCommand(
@@ -497,17 +490,11 @@ export class DocumentationDraft {
     message: string,
     options: { trim?: boolean } = {},
   ): Promise<RepositoryResult<string>> {
-    const result = await this.#run(command);
-    const successful = successfulCommand(result, message);
-    if (successful.isErr()) return err(successful.error);
-    return ok(options.trim === false ? result.stdout : result.stdout.trim());
+    return await this.#shell.read(command, message, options);
   }
 
-  async #run(command: string): Promise<SandboxCommandResult> {
-    return await this.#sandbox.run({
-      command,
-      abortSignal: this.#abortSignal,
-    });
+  async #run(command: string): Promise<DocumentationSandboxCommand> {
+    return await this.#shell.run(command);
   }
 }
 
